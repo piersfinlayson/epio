@@ -213,6 +213,9 @@ int main(int argc, char *argv[]) {
     assert((pin_states & EPIO_GPIO0) == EPIO_GPIO0 && "GPIO0 should be high");
     expected_cycle_count += (DELAY_COUNT+1);
 
+    // Free the epio instance
+    epio_free(epio);
+
     cycle_count = epio_get_cycle_count(epio);
     assert((cycle_count == expected_cycle_count) && "Cycle count should match expected");
     printf("Executed %u PIO cycles\n", cycle_count);

@@ -1,6 +1,4 @@
-# epio
-
-**_RP2350 PIO Emulator_**
+# epio - An RP2350 PIO Emulator
 
 While RP2350 PIO programs are conceptually simple and easy to write, testing their precise behaviour is hard:
 
