@@ -1,0 +1,134 @@
+// Copyright (C) 2026 Piers Finlayson <piers@piers.rocks>
+//
+// MIT License
+
+// epio - A PIO emulator
+
+// To do:
+// - Not yet executing from a single PIO instruction block
+
+// Limitations
+// - No side set support (delays _are_ supported)
+// - Special MOV instructions for RX FIFO access aren't supported
+// - No support for hardware inverted GPIOs, or those forced to 0/1
+// - Doesn't honour GPIO FUNC settings - any PIO block can control any GPIO
+// - Doesn't collate GPIO output settings across all SMs - just applies them
+//   as each SM is scheduled
+// - Does not include/support 2 cycle GPIO input delay via flip-flops
+// - Only supports 4 word FIFOs
+
+#include <stdlib.h>
+#include <string.h>
+#include <epio_priv.h>
+
+// Set up the initial SM state.  Populate the FIFOs and any execute any
+// pre-instructions separately, and then ebale the SM (if desired).
+static void epio_init_sm(
+    epio_t *epio,
+    uint8_t block,
+    uint8_t sm,
+    pio_sm_reg_t *reg
+) {
+    CHECK_BLOCK_SM();
+
+    // Copy register configuration if provided
+    if (reg != NULL) {
+        epio_set_sm_reg(epio, block, sm, reg);
+    }
+    
+    // Initialize runtime state
+    SM(block, sm).x = 0;
+    SM(block, sm).y = 0;
+    SM(block, sm).isr = 0;
+    SM(block, sm).osr = 0;
+    SM(block, sm).isr_count = 0;
+    SM(block, sm).osr_count = 32;   // Empty OSR indicated by count of 32
+    
+    // Set PC to 0.  Will be overridden if there's a JMP start pre-instruction,
+    // Could use PC(block, sm), but using SM for consistency.
+    SM(block, sm).pc = 0;
+    
+    SM(block, sm).delay = 0;
+    SM(block, sm).stalled = 0;
+    SM(block, sm).enabled = 0;
+    SM(block, sm).exec_pending = 0;
+    SM(block, sm).exec_instr = 0;
+
+    // Initialize FIFOs
+    FIFO(block, sm).tx_fifo_count = 0;
+    FIFO(block, sm).rx_fifo_count = 0;
+}
+
+void epio_set_gpiobase(epio_t *epio, uint8_t block, uint32_t gpio_base) {
+    assert(block < NUM_PIO_BLOCKS && "Invalid PIO block");
+    assert((gpio_base == 0 || (gpio_base == 16)) && "GPIO base must be 0 or 16");
+    GPIOBASE(block) = gpio_base;
+}
+
+static void epio_init_block(epio_t *epio, uint8_t block) {
+    // Set up GPIOBASE for this block
+    GPIOBASE(block) = 0;
+
+    // Set up IRQ state (all cleared)
+    IRQ(block).irq = 0;
+    IRQ(block).irq_to_clear = 0;
+    IRQ(block).irq_to_set = 0;
+    
+    for (int sm = 0; sm < NUM_SMS_PER_BLOCK; sm++) {
+        epio_init_sm(epio, block, sm, NULL);
+    }
+}
+
+epio_t *epio_init(void) {
+    // Allocate the epio struct, which will hold the state of the emulator
+    epio_t *epio = (epio_t *)calloc(1, sizeof(epio_t));
+    if (epio == NULL) {
+        return NULL;
+    }
+
+    // Set up SRAM (can fail so do it early)
+    epio_sram_init(epio);
+    if (epio->sram == NULL) {
+        free(epio);
+        return NULL;
+    }
+
+    // Set up GPIOs
+    epio_init_gpios(epio);
+
+    // Set up DMA
+    epio_init_dma(epio);
+
+    // Set up each PIO block
+    for (int ii = 0; ii < NUM_PIO_BLOCKS; ii++) {
+        epio_init_block(epio, ii);
+    }
+
+    // Initialize cycle count
+    epio->cycle_count = 0;
+
+    return epio;
+}
+
+void epio_free(epio_t *epio) {
+    if (epio == NULL) {
+        return;
+    }
+    epio_sram_free(epio);
+    free(epio);
+}
+
+void epio_set_sm_reg(epio_t *epio, uint8_t block, uint8_t sm, pio_sm_reg_t *reg) {
+    CHECK_BLOCK_SM();
+    memcpy(&REG(block, sm), reg, sizeof(pio_sm_reg_t));
+}
+
+void epio_get_sm_reg(epio_t *epio, uint8_t block, uint8_t sm, pio_sm_reg_t *reg) {
+    CHECK_BLOCK_SM();
+    memcpy(reg, &REG(block, sm), sizeof(pio_sm_reg_t));
+}
+
+void epio_enable_sm(epio_t *epio, uint8_t block, uint8_t sm) {
+    SM(block, sm).enabled = 1;
+}
+
