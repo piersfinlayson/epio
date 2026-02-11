@@ -38,7 +38,7 @@ int epio_disassemble_sm(
     uint16_t *instr = BLK(block).instr;
 
     // Start building the output string with the SM information.
-    wrote = snprintf(buffer, buffer_size, "; PIO%d SM%d disassembly (%d instructions)\n", block, sm, (end_instr - first_instr + 1));
+    wrote = snprintf(buffer, buffer_size, "; PIO%d SM%d disassembly (%d instructions)\n;\n", block, sm, (end_instr - first_instr + 1));
     if (wrote < 0 || (size_t)wrote >= buffer_size) {
         return -1;  // Encoding error or buffer too small
     }
@@ -49,7 +49,7 @@ int epio_disassemble_sm(
     wrote = snprintf(
         buffer,
         buffer_size,
-        ";- CLKDIV: %d.%02d\n",
+        "; - CLKDIV: %d.%02d\n",
         clkdiv_int,
         clkdiv_frac
     );
@@ -62,7 +62,7 @@ int epio_disassemble_sm(
     wrote = snprintf(
         buffer,
         buffer_size,
-        "; - EXECCTRL: 0x%08X",
+        "; - EXECCTRL: 0x%08X\n",
         reg->execctrl
     );
     if (wrote < 0 || (size_t)wrote >= buffer_size) {
