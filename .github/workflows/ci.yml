@@ -30,7 +30,7 @@ jobs:
     - name: Install build dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y gcc-arm-none-eabi make
+        sudo apt-get install -y gcc-arm-none-eabi make emscripten python3
         
     - name: Build libepio
       run: |

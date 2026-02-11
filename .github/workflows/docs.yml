@@ -26,7 +26,7 @@ jobs:
         run: make docs
 
       - name: Install Emscripten
-        uses: sudo apt-get install -y emscripten
+        run: sudo apt-get install -y emscripten
 
       - name: Build WASM
         run: make wasm
