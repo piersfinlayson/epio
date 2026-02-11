@@ -6,7 +6,7 @@ It toggles GPIO0 at around 30Hz.
 
 The emulated version logs the programmed PIO configuration, steps the PIOs and checks the state of the GPIO is as expected at key points.
 
-See [files](#files) for the example's source code.
+See [files](#files) below for the example's source code.
 
 ## Hosted (Emulated)
 

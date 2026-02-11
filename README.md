@@ -11,6 +11,10 @@ It provides a [`wasm` build](#wasm), allowing you to run and visualise PIO progr
 
 To make it easy to setup, `epio` integrates with [`apio`](https://github.com/piersfinlayson/apio), a runtime PIO assembler and disassembler.  `apio` allows you to write your PIO programs with C macros directly in your RP2350 firmware (avoding the need for a separate `pioasm` step), and run them both on real RP2350 hardware and emulated using `epio` on non-RP2350 hosts. 
 
+## Live Demo
+
+Try the [live demo](https://piers.rocks/epio/wasm-example/index.html) of the WASM example.
+
 ## Usage
 
 See [the example](example/README.md) for a complete bare-metal RP2350 firmware with a PIO, using `apio` and `epio`.  This example can be built and run on both a real RP2350 and emulated on non-RP2350 hosts.  Here is a snippet that demonstrates how to use `epio` to run a PIO program assembled with `apio`:
@@ -68,9 +72,9 @@ If you need a feature that isn't implemented yet, please raise an issue or submi
 
 `epio` provides a `wasm` build, allowing you to run and visualise PIO programs in the browser, with a simple JavaScript API.
 
-The WASM example is hosted [with the documentation](https://piers.rocks/epio/wasm-example/index.html).
+Try the [live demo](https://piers.rocks/epio/wasm-example/index.html).
 
-The example is documented in [the example README](example/README.md), and the source code is in [the example directory](example/).
+The example is documented in [the example README](https://github.com/piersfinlayson/epio/blob/main/example/README.md), and the source code is in [the example directory](https://github.com/piersfinlayson/epio/tree/main/example).
 
 See also the [JS API](https://piers.rocks/epio/wasm/index.html) for details.
 
