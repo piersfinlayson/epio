@@ -6,6 +6,16 @@ It toggles GPIO0 at around 30Hz.
 
 The emulated version logs the programmed PIO configuration, steps the PIOs and checks the state of the GPIO is as expected at key points.
 
+## Emulated
+
+### Build
+
+To build and run the emulated version, from the root of the repository:
+
+```bash
+make run-example
+```
+
 ## Firmware
 
 ### Build
@@ -33,24 +43,6 @@ If you have `picotool` installed, you can build and flash using the UF2:
 
 ```bash
 make -f example/firmware.mk flash
-```
-
-## Emulated
-
-### Build
-
-To build the emulated version, from the root of the repository:
-
-```bash
-make -f example/emulated.mk
-```
-
-### Run
-
-To run the emulated version:
-
-```bash
-make -f example/emulated.mk run
 ```
 
 ## Logging

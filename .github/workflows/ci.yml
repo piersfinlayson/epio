@@ -32,10 +32,15 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y gcc-arm-none-eabi make
         
-    - name: Build firmware then hosted examples
+    - name: Build libepio
       run: |
-        make -f example/firmware.mk
+        make
 
     - name: Build and run emulated example
       run: |
-        make -f example/emulated.mk run
+        make clean
+        make run-example
+
+    - name: Build firmware then hosted examples
+      run: |
+        make -f example/firmware.mk

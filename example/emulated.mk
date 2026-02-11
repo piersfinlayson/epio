@@ -2,8 +2,11 @@
 #
 # Usage - from the root of the repository, run:
 #
-#   make -f example/emulated.mk
+#   make run-example
 #
+# Do not use this Makefile directly. It is intended to be invoked from the
+# top-level Makefile, as shown above, which will ensure the library is built
+# first.
 
 CC := gcc
 LD := gcc
@@ -12,61 +15,41 @@ OBJDUMP := objdump
 
 BUILD_DIR := build/emulated
 BIN := build/example-emulated
+LIB := build/libepio.a
 
 # Source files
-SRCS := example/main.c \
-		src/epio_apio.c \
-		src/epio_dma.c \
-		src/epio_exec.c \
-		src/epio_fifo.c \
-		src/epio_gpio.c \
-		src/epio_sram.c \
-		src/epio.c
-OBJS := $(patsubst src/%.c,$(BUILD_DIR)/%.o,$(filter src/%,$(SRCS)))
-OBJS += $(patsubst example/%.c,$(BUILD_DIR)/%.o,$(filter example/%,$(SRCS)))
+SRCS := example/main.c
+OBJS := $(patsubst example/%.c,$(BUILD_DIR)/%.o,$(SRCS))
 
 # Compile flags
 CFLAGS := -I include -I apio/include -DAPIO_EMULATION=1 \
 			-g -O0 -Wall -Wextra -Werror -ffunction-sections -fdata-sections \
 			-MMD -MP -fshort-enums -fsanitize=address -fno-omit-frame-pointer
-LDFLAGS := -g -fsanitize=address
+LDFLAGS := -g -fsanitize=address -L build -lepio
 
 # Targets
-.PHONY: all clean clean-apio-src apio run
+.PHONY: all clean run
 
-all: $(BIN)
+all: $(LIB) $(BIN)
 
 $(BUILD_DIR):
 	@mkdir -p $@
 
-$(BUILD_DIR)/%.o: example/%.c | $(BUILD_DIR) apio
+$(BUILD_DIR)/%.o: example/%.c | $(BUILD_DIR)
 	@mkdir -p $(@D)
 	@echo "- Compiling $<"
 	@$(CC) $(CFLAGS) -c $< -o $@
 
-$(BUILD_DIR)/%.o: src/%.c | $(BUILD_DIR) apio
-	@mkdir -p $(@D)
-	@echo "- Compiling $<"
-	@$(CC) $(CFLAGS) -c $< -o $@
-
-$(BIN): $(OBJS)
+$(BIN): $(OBJS) $(LIB)
 	@echo "- Linking $@"
-	@$(LD) $(LDFLAGS) $^ -o $@
+	@$(LD) $(LDFLAGS) $(OBJS) -o $@
 
 run: $(BIN)
 	@echo "- Running $<"
 	@./$<
 
-apio:
-	@if [ ! -d "$@" ]; then \
-		git clone https://github.com/piersfinlayson/apio.git; \
-	fi
-
-clean-apio-src:
-	rm -rf apio/
-
-clean: clean-apio-src
-	@echo "- Cleaning build artifacts"
+clean:
+	@echo "Cleaning emulated-example build artifacts"
 	@rm -rf $(BUILD_DIR) $(BIN)
 
 -include $(OBJS:.o=.d)
