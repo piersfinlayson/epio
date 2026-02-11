@@ -18,7 +18,7 @@ make run-hosted-example
 
 ## WASM
 
-To build the WASM version, from the root of the repository:
+To build the [WASM version](https://piers.rocks/epio/wasm-example/index.html), from the root of the repository:
 
 ```bash
 make run-wasm-example
