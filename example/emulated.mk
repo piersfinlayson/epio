@@ -25,7 +25,7 @@ OBJS := $(patsubst example/%.c,$(BUILD_DIR)/%.o,$(SRCS))
 CFLAGS := -I include -I apio/include -DAPIO_EMULATION=1 \
 			-g -O0 -Wall -Wextra -Werror -ffunction-sections -fdata-sections \
 			-MMD -MP -fshort-enums -fsanitize=address -fno-omit-frame-pointer
-LDFLAGS := -g -fsanitize=address -L build -lepio
+LDFLAGS := -g -fsanitize=address
 
 # Targets
 .PHONY: all clean run
@@ -42,7 +42,7 @@ $(BUILD_DIR)/%.o: example/%.c | $(BUILD_DIR)
 
 $(BIN): $(OBJS) $(LIB)
 	@echo "- Linking $@"
-	@$(LD) $(LDFLAGS) $(OBJS) -o $@
+	@$(LD) $(LDFLAGS) $(OBJS) -L build -lepio -o $@
 
 run: $(BIN)
 	@echo "- Running $<"
