@@ -70,9 +70,7 @@
                                 printf("\n"); \
                             } while(0)
 
-// Include the epio assembler headers, which also includes apio.h, and set
-// APIO_EMU_IMPL to pull in the implementation of the apio emulation layer.
-#define APIO_EMU_IMPL 1
+// Include the epio headers
 #include <epio.h>
 #endif // APIO_EMULATION
 
