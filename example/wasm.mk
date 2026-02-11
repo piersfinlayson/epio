@@ -45,6 +45,8 @@ all: copy-files
 copy-files: | $(LIB) $(BIN) $(BUILD_DIR)
 	@echo "- Copying example files"
 	@cp $(INDEX_HTML) $(BUILD_DIR)
+	@cp $(EPIO_BINDINGS_JS) $(BUILD_DIR)
+	@cp $(EPIO_WASM) $(BUILD_DIR)
 
 $(BUILD_DIR):
 	@mkdir -p $@
@@ -58,10 +60,8 @@ $(BIN): $(OBJS) $(LIB)
 	@echo "- Linking $@"
 	@$(LD) $(LDFLAGS) $(OBJS) -L build/wasm -lepio -o $@
 
-run:
+run: copy-files
 	@echo "- Copying epio WASM files to example build directory"
-	@cp $(EPIO_BINDINGS_JS) $(BUILD_DIR)
-	@cp $(EPIO_WASM) $(BUILD_DIR)
 	@echo "- Starting local server to serve WASM example"
 	@echo "Open http://localhost:8000 in a browser to run the WASM example"
 	@python3 -m http.server --directory $(BUILD_DIR) 8000

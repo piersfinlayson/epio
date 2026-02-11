@@ -50,6 +50,6 @@ jobs:
         make clean
         make wasm-example
 
-    - name: Build firmware then hosted examples
+    - name: Build firmware example
       run: |
         make -f example/firmware.mk
