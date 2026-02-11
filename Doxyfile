@@ -1,0 +1,23 @@
+PROJECT_NAME           = epio
+PROJECT_BRIEF          = "A cycle-accurate RP2350 PIO emulator"
+
+USE_MDFILE_AS_MAINPAGE = README.md
+INPUT                  = README.md example/README.md include/epio.h
+RECURSIVE              = NO
+
+OUTPUT_DIRECTORY       = .
+HTML_OUTPUT            = docs
+
+GENERATE_HTML          = YES
+GENERATE_LATEX         = NO
+GENERATE_XML           = NO
+
+EXTRACT_ALL            = NO
+QUIET                  = YES
+WARN_IF_UNDOCUMENTED   = YES
+
+PREDEFINED             = EPIO_EXPORT=
+EXCLUDE_SYMBOLS        = APIO_EMULATION
+
+HTML_EXTRA_STYLESHEET  = doxygen-awesome/doxygen-awesome.css
+HTML_COLORSTYLE        = LIGHT
