@@ -46,7 +46,7 @@ uint64_t gpio_states = epio_read_pin_states(epio);
 
 ## API
 
-See [`epio.h`](include/epio.h) for the API.
+Start [here](https://piers.rocks/epio/topics.html).
 
 ## Requirements
 
