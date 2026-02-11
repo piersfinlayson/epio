@@ -137,14 +137,15 @@ def js_sig(fn: dict) -> str:
     ) or ''
     return f"epio.{fn['name']}({args}) → {js_type(fn['ret'])}"
 
+DOXYGEN_URL = "https://piers.rocks/epio/epio_8h.html#func-members"
+
 def generate_html(functions: list[dict], js_path: str) -> str:
     js_filename = os.path.basename(js_path)
     rows = "\n".join(
-        f"  <tr>"
-        f"<td><code>{fn['name']}</code></td>"
-        f"<td><code>{c_sig(fn)}</code></td>"
-        f"<td><code>{js_sig(fn)}</code></td>"
-        f"</tr>"
+        f'  <tr>'
+        f'<td><a href="{DOXYGEN_URL}"><code>{c_sig(fn)}</code></a></td>'
+        f'<td><code>{js_sig(fn)}</code></td>'
+        f'</tr>'
         for fn in functions
     )
     return f"""<!DOCTYPE html>
@@ -154,11 +155,13 @@ def generate_html(functions: list[dict], js_path: str) -> str:
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>epio WASM</title>
+  <title>epio WASM API Reference</title>
   <style>
     body {{ font-family: sans-serif; max-width: 1100px; margin: 2em auto; padding: 0 1em; }}
     h1   {{ font-size: 1.4em; }}
     p    {{ color: #444; }}
+    a    {{ color: #0366d6; text-decoration: none; }}
+    a:hover {{ text-decoration: underline; }}
     table {{ border-collapse: collapse; width: 100%; font-size: 0.88em; }}
     th   {{ text-align: left; background: #f0f0f0; padding: 0.4em 0.6em; border: 1px solid #ccc; }}
     td   {{ padding: 0.35em 0.6em; border: 1px solid #ddd; vertical-align: top; }}
@@ -169,12 +172,20 @@ def generate_html(functions: list[dict], js_path: str) -> str:
 <body>
   <h1>epio WASM — API Reference</h1>
   <p>
-    Load <code>epio.js</code> (Emscripten glue) and <code>{js_filename}</code>
-    (generated cwrap bindings) to use the <code>epio</code> object in the browser console.
+    This page documents the JavaScript bindings for
+    <a href="https://piers.rocks/epio/">libepio</a>, a cycle-accurate RP2350 PIO emulator
+    compiled to WebAssembly via Emscripten.
+  </p>
+  <p>
+    The C signatures link to the full API documentation. The JS column shows the
+    equivalent binding exposed by <code>{js_filename}</code>, using Emscripten&#8217;s
+    <code>cwrap</code> type system: <code>&#39;number&#39;</code> for all integer and
+    pointer types, <code>&#39;bigint&#39;</code> for <code>uint64_t</code>, and
+    <code>null</code> for <code>void</code>.
   </p>
   <table>
     <thead>
-      <tr><th>Function</th><th>C signature</th><th>JS binding</th></tr>
+      <tr><th>C signature</th><th>JS binding</th></tr>
     </thead>
     <tbody>
 {rows}
