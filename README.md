@@ -17,7 +17,7 @@ Try the [live demo](https://piers.rocks/epio/wasm-example/index.html) of the WAS
 
 ## Usage
 
-See [the example](example/README.md) for a complete bare-metal RP2350 firmware with a PIO, using `apio` and `epio`.  This example can be built and run on both a real RP2350 and emulated on non-RP2350 hosts.  Here is a snippet that demonstrates how to use `epio` to run a PIO program assembled with `apio`:
+See [the example](https://github.com/piersfinlayson/epio/blob/main/example/README.md) for a complete bare-metal RP2350 firmware with a PIO, using `apio` and `epio`.  This example can be built and run on both a real RP2350 and emulated on non-RP2350 hosts.  Here is a snippet that demonstrates how to use `epio` to run a PIO program assembled with `apio`:
 
 ```c
 // Call the firmware main function, which returns instead of entering an
@@ -54,7 +54,7 @@ Start [here](https://piers.rocks/epio/topics.html).
 
 ## Source Code
 
-[GitHub](https://github.com/piersfinlayson/epio)
+See [the GitHub repo](https://github.com/piersfinlayson/epio).
 
 ## Requirements
 
