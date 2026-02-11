@@ -8,8 +8,6 @@ The emulated version logs the programmed PIO configuration, steps the PIOs and c
 
 ## Emulated
 
-### Build
-
 To build and run the emulated version, from the root of the repository:
 
 ```bash
