@@ -44,9 +44,13 @@ uint64_t gpio_states = epio_read_pin_states(epio);
 - Provides an SRAM API, so tests can simulate reading and writing to the RP2350's SRAM, based on PIO RX/TX FIFOs.
 - WASM build, allowing you to run emulated firmware and visualise PIO programs and GPIO states in the browser.
 
-## API
+## Documentation
 
 Start [here](https://piers.rocks/epio/topics.html).
+
+## Source Code
+
+[GitHub](https://github.com/piersfinlayson/epio)
 
 ## Requirements
 
