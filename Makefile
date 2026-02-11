@@ -39,15 +39,15 @@ apio:
 	fi
 
 example: lib
-	@$(MAKE) -f example/emulated.mk
+	@$(MAKE) --no-print-directory -f example/emulated.mk
 
 run-example: example
-	@$(MAKE) -f example/emulated.mk run
+	@$(MAKE) --no-print-directory -f example/emulated.mk run
 
 clean: clean-lib clean-docs clean-example
 
 clean-example:
-	@$(MAKE) -f example/emulated.mk clean
+	@$(MAKE) --no-print-directory -f example/emulated.mk clean
 
 clean-lib:
 	@echo "Cleaning library build artifacts"
