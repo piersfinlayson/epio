@@ -68,7 +68,11 @@ If you need a feature that isn't implemented yet, please raise an issue or submi
 
 `epio` provides a `wasm` build, allowing you to run and visualise PIO programs in the browser, with a simple JavaScript API.
 
-See the [JS API](https://piers.rocks/epio/wasm/index.html) for details.
+The WASM example is hosted [with the documentation](https://piers.rocks/epio/wasm-example/index.html).
+
+The example is documented in [the example README](example/README.md), and the source code is in [the example directory](example/).
+
+See also the [JS API](https://piers.rocks/epio/wasm/index.html) for details.
 
 ## License
 

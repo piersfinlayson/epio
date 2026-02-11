@@ -1,8 +1,8 @@
-# epio - Makefile for host (emulation) build
+# epio - Makefile for host example
 #
 # Usage - from the root of the repository, run:
 #
-#   make run-example
+#   make run-hosted-example
 #
 # Do not use this Makefile directly. It is intended to be invoked from the
 # top-level Makefile, as shown above, which will ensure the library is built
@@ -13,16 +13,16 @@ LD := gcc
 OBJCOPY := objcopy
 OBJDUMP := objdump
 
-BUILD_DIR := build/emulated
-BIN := build/example-emulated
+BUILD_DIR := build/hosted
+BIN := build/example-hosted
 LIB := build/libepio.a
 
 # Source files
-SRCS := example/main.c
+SRCS := example/hosted_main.c example/firmware_main.c
 OBJS := $(patsubst example/%.c,$(BUILD_DIR)/%.o,$(SRCS))
 
 # Compile flags
-CFLAGS := -I include -I apio/include -DAPIO_EMULATION=1 \
+CFLAGS := -I include -I apio/include -DAPIO_EMULATION=1 -DEPIO_HOSTED_EXAMPLE \
 			-g -O0 -Wall -Wextra -Werror -ffunction-sections -fdata-sections \
 			-MMD -MP -fshort-enums -fsanitize=address -fno-omit-frame-pointer
 LDFLAGS := -g -fsanitize=address
@@ -49,7 +49,7 @@ run: $(BIN)
 	@./$<
 
 clean:
-	@echo "Cleaning emulated-example build artifacts"
+	@echo "Cleaning hosted-example build artifacts"
 	@rm -rf $(BUILD_DIR) $(BIN)
 
 -include $(OBJS:.o=.d)

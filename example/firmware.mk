@@ -20,7 +20,7 @@ MAP := $(NAME).map
 DIS := $(NAME).dis
 
 # Source files
-SRCS := example/main.c example/vector.c example/boot.c
+SRCS := example/firmware_main.c example/vector.c example/boot.c
 OBJS := $(patsubst src/%.c,$(BUILD_DIR)/%.o,$(filter src/%,$(SRCS)))
 OBJS += $(patsubst example/%.c,$(BUILD_DIR)/%.o,$(filter example/%,$(SRCS)))
 SEGGER_SRCS := segger-rtt/RTT/SEGGER_RTT.c segger-rtt/RTT/SEGGER_RTT_printf.c

@@ -40,6 +40,19 @@ jobs:
              build/wasm/index.html \
              docs/wasm/
 
+      - name: Build WASM example
+        run: make wasm-example
+
+      - name: Copy WASM example artefacts into docs
+        run: |
+          mkdir -p docs/wasm-example
+          cp build/wasm-example/epio_example.js \
+             build/wasm-example/epio_example.wasm \
+             build/wasm-example/epio.wasm \
+             build/wasm-example/epio_bindings.js \
+             build/wasm-example/index.html \
+             docs/wasm-example/ 
+
       - uses: actions/upload-pages-artifact@v3
         with:
           path: docs/

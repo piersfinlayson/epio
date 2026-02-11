@@ -40,10 +40,15 @@ jobs:
       run: |
         make wasm
 
-    - name: Build and run emulated example
+    - name: Build and run hosted example
       run: |
         make clean
-        make run-example
+        make run-hosted-example
+
+    - name: Build WASM example
+      run: |
+        make clean
+        make wasm-example
 
     - name: Build firmware then hosted examples
       run: |

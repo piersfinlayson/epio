@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<!--
+  Copyright (C) 2026 Piers Finlayson <piers@piers.rocks>
+  MIT License
+
+  epio WASM example — interactive PIO stepper.
+
+  Loads the example WASM build (epio.js + epio_bindings.js), initialises the
+  PIO program via epio_example_init(), then lets you step the emulation and
+  observe GPIO state.
+-->
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>epio WASM Example</title>
+  <style>
+    body        { font-family: sans-serif; max-width: 600px; margin: 2em auto; padding: 0 1em; }
+    h1          { font-size: 1.4em; }
+    p           { color: #444; }
+    #status     { font-style: italic; color: #666; margin-bottom: 1em; }
+    #controls   { display: flex; align-items: center; gap: 0.6em; margin-bottom: 1.5em; }
+    input[type=number] { width: 5em; padding: 0.3em; font-size: 1em; }
+    button      { padding: 0.35em 1em; font-size: 1em; cursor: pointer; }
+    button:disabled { cursor: not-allowed; opacity: 0.5; }
+    #cycle-count { font-size: 1em; color: #333; }
+    table       { border-collapse: collapse; width: 100%; font-size: 0.9em; }
+    th          { text-align: left; background: #f0f0f0; padding: 0.4em 0.6em; border: 1px solid #ccc; }
+    td          { padding: 0.35em 0.6em; border: 1px solid #ddd; }
+    .high       { color: #2a7a2a; font-weight: bold; }
+    .low        { color: #b00; font-weight: bold; }
+    .undriven   { color: #888; }
+  </style>
+</head>
+<body>
+  <h1>epio WASM Example</h1>
+  <p>
+    Runs a PIO program that toggles GPIO0 at a fixed frequency.
+    Use the controls below to step the emulation and observe GPIO state changing.
+    See the <a href="/wasm/index.html">API reference</a> for the full epio binding documentation.
+  </p>
+
+  <div id="status">Loading WASM…</div>
+
+  <div id="controls">
+    <label for="step-count">Step cycles:</label>
+    <input type="number" id="step-count" value="1" min="1" max="100000">
+    <button id="step-btn" disabled>Step</button>
+    <span id="cycle-count"></span>
+  </div>
+
+  <table id="gpio-table">
+    <thead>
+      <tr><th>GPIO</th><th>Driven</th><th>Level</th></tr>
+    </thead>
+    <tbody id="gpio-body">
+    </tbody>
+  </table>
+
+  <script src="epio_example.js"></script>
+  <script src="epio_bindings.js"></script>
+  <script>
+    // NUM_GPIOS from epio.h - only display pin 0 for the example
+    const DISPLAY_GPIOS = 1;
+
+    var epioPtr = null;
+
+    // epio_example_init is in the example WASM build but not in epio.h,
+    // so we cwrap it here rather than relying on the generated bindings.
+    var epio_example_init;
+
+    Module['onRuntimeInitialized'] = function() {
+      initEpioBindings();
+      epio_example_init = Module.cwrap('epio_example_init', 'number', []);
+
+      epioPtr = epio_example_init();
+      if (!epioPtr) {
+        document.getElementById('status').textContent = 'Error: epio_example_init() returned null.';
+        return;
+      }
+
+      document.getElementById('status').textContent = 'Ready.';
+      document.getElementById('step-btn').disabled = false;
+
+      updateDisplay();
+    };
+
+    document.getElementById('step-btn').addEventListener('click', function() {
+      var n = parseInt(document.getElementById('step-count').value, 10);
+      if (isNaN(n) || n < 1) return;
+      epio.epio_step_cycles(epioPtr, n);
+      updateDisplay();
+    });
+
+    function updateDisplay() {
+      // Cycle count (epio_get_cycle_count returns BigInt)
+      var cycles = epio.epio_get_cycle_count(epioPtr);
+      document.getElementById('cycle-count').textContent = 'Total cycles: ' + cycles.toString();
+
+      // GPIO state
+      var driven = epio.epio_read_driven_pins(epioPtr);
+      var states = epio.epio_read_pin_states(epioPtr);
+      var tbody = document.getElementById('gpio-body');
+      tbody.innerHTML = '';
+
+      for (var i = 0; i < DISPLAY_GPIOS; i++) {
+        var mask = BigInt(1) << BigInt(i);
+        var isDriven = (driven & mask) !== BigInt(0);
+        var isHigh   = (states & mask) !== BigInt(0);
+
+        var row = tbody.insertRow();
+        row.insertCell().textContent = 'GPIO' + i;
+
+        var drivenCell = row.insertCell();
+        drivenCell.textContent = isDriven ? 'yes' : 'no';
+        if (!isDriven) drivenCell.className = 'undriven';
+
+        var levelCell = row.insertCell();
+        levelCell.textContent = isHigh ? 'high' : 'low';
+        levelCell.className   = isHigh ? 'high' : 'low';
+        if (!isDriven) levelCell.className = 'undriven';
+      }
+    }
+  </script>
+</body>
+</html>

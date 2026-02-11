@@ -8,12 +8,20 @@ The emulated version logs the programmed PIO configuration, steps the PIOs and c
 
 See [files](#files) for the example's source code.
 
-## Emulated
+## Hosted (Emulated)
 
 To build and run the emulated version, from the root of the repository:
 
 ```bash
-make run-example
+make run-hosted-example
+```
+
+## WASM
+
+To build the WASM version, from the root of the repository:
+
+```bash
+make run-wasm-example
 ```
 
 ## Firmware
@@ -63,9 +71,14 @@ The emulated build logs to stdout, so you can just run the binary:
 
 The example program is made up of the following files:
 
-- [`main.c`](main.c) - Example code using `apio` to build and run a simple PIO program and `epio` to run and test the emulated version.
+- [`firmware_main.c`](firmware_main.c) - Example RP2350 code using `apio` to build and run a simple PIO program.
+- [`hosted_main.c`](hosted_main.c) - Example hosted code using `epio` to emulate the PIO from `firmware_main.c`, and check PIO operation.
+- [`wasm_main.c`](wasm_main.c) - Example WASM code using `epio` to emulate the PIO from `firmware_main.c`, and check PIO operation.
+- [`include.h`](include.h) - Common includes and definitions for the firmware and hosted examples.
+- [`index.html`](index.html) - WASM example HTML page.
 - [`vector.c`](vector.c) - Firmware reset vectors.
 - [`boot.c`](boot.c) - Firmware boot block.
 - [`linker.ld`](linker.ld) - Firmware Llinker script.
 - [`firmware.mk`](firmware.mk) - Makefile for building the firmware version.
-- [`emulated.mk`](emulated.mk) - Makefile for building the emulated version.
+- [`hosted.mk`](hosted.mk) - Makefile for building the hosted version.
+- [`wasm.mk`](wasm.mk) - Makefile for building the WASM version.

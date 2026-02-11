@@ -104,12 +104,12 @@ def generate_js(functions: list[dict]) -> str:
         "// Copyright (C) 2026 Piers Finlayson <piers@piers.rocks>",
         "// MIT License",
         "",
-        "// Emscripten places the module in the global 'Module' object after WASM is",
-        "// loaded.  We wait for the 'onRuntimeInitialized' callback before binding.",
+        "// Call initEpioBindings() from your own Module['onRuntimeInitialized'] handler",
+        "",
         "",
         "var epio = {};",
         "",
-        "Module['onRuntimeInitialized'] = function() {",
+        "function initEpioBindings() {",
     ]
     for fn in functions:
         ret_str  = js_type(fn['ret'])
