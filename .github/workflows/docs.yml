@@ -25,6 +25,21 @@ jobs:
       - name: Generate docs
         run: make docs
 
+      - name: Install Emscripten
+        uses: sudo apt-get install -y emscripten
+
+      - name: Build WASM
+        run: make wasm
+
+      - name: Copy WASM artefacts into docs
+        run: |
+          mkdir -p docs/wasm
+          cp build/wasm/epio.js \
+             build/wasm/epio.wasm \
+             build/wasm/epio_bindings.js \
+             build/wasm/index.html \
+             docs/wasm/
+
       - uses: actions/upload-pages-artifact@v3
         with:
           path: docs/

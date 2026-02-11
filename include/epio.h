@@ -22,8 +22,8 @@
 #include <stdint.h>
 #include <stddef.h>
 #define APIO_EMULATION  1
-#include <apio.h>
 #include <epio_wasm.h>
+#include <apio.h>
 
 /**
  * @brief Opaque epio instance type.
@@ -490,7 +490,7 @@ EPIO_EXPORT void epio_sram_write_word(epio_t *epio, uint32_t addr, uint32_t valu
  * @return Pointer to the configured epio instance, or NULL on failure.
  * @see epio_init(), epio_free()
  */
-epio_t *epio_from_apio(void);
+EPIO_EXPORT epio_t *epio_from_apio(void);
 
 /** @} */
 

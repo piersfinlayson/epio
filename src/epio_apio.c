@@ -6,6 +6,11 @@
 //
 // Routines to interface with apio, the PIO assembler
 
+#if defined(EPIO_WASM)
+#define APIO_LOG_IMPL 1
+#endif // EPIO_WASM
+#define APIO_EMU_IMPL 1
+
 #include <stdlib.h>
 #include <epio_priv.h>
 

@@ -9,9 +9,14 @@
 #ifndef EPIO_WASM_H
 #define EPIO_WASM_H
 
-#ifdef EPIO_WASM
+#if defined(EPIO_WASM)
 #include <emscripten.h>
 #define EPIO_EXPORT EMSCRIPTEN_KEEPALIVE
+#include <stdio.h>
+#define APIO_LOG_ENABLE(...)    do { \
+                                    printf(__VA_ARGS__); \
+                                    printf("\n"); \
+                                } while(0)
 #else
 #define EPIO_EXPORT
 #endif

@@ -7,7 +7,7 @@ While RP2350 PIO programs are conceptually simple and easy to write, testing the
 
 `epio` solves both of these problems, by providing a cycle-accurate emulator for RP2350 PIO programs, that can run on non-RP2350 hosts, including CI runners.  This allows you to test and verify your PIO programs in a convenient and deterministic way, without needing to rely on real hardware.
 
-It provides a `wasm` build, allowing you to run and visualise PIO programs in the browser, with a simple JavaScript API. 
+It provides a [`wasm` build](#wasm), allowing you to run and visualise PIO programs in the browser, with a simple JavaScript API. 
 
 To make it easy to setup, `epio` integrates with [`apio`](https://github.com/piersfinlayson/apio), a runtime PIO assembler and disassembler.  `apio` allows you to write your PIO programs with C macros directly in your RP2350 firmware (avoding the need for a separate `pioasm` step), and run them both on real RP2350 hardware and emulated using `epio` on non-RP2350 hosts. 
 
@@ -66,7 +66,9 @@ If you need a feature that isn't implemented yet, please raise an issue or submi
 
 ## WASM
 
-!!!
+`epio` provides a `wasm` build, allowing you to run and visualise PIO programs in the browser, with a simple JavaScript API.
+
+See the [JS API](https://piers.rocks/epio/wasm/index.html) for details.
 
 ## License
 
