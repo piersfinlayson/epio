@@ -21,15 +21,29 @@
 #include <string.h>
 #include <epio_priv.h>
 
+void epio_set_sm_debug(epio_t *epio, uint8_t block, uint8_t sm, epio_sm_debug_t *debug) {
+    CHECK_BLOCK_SM();
+    memcpy(&SM(block, sm).debug, debug, sizeof(epio_sm_debug_t));
+}
+
 // Set up the initial SM state.  Populate the FIFOs and any execute any
 // pre-instructions separately, and then ebale the SM (if desired).
 static void epio_init_sm(
     epio_t *epio,
     uint8_t block,
     uint8_t sm,
+    epio_sm_debug_t *debug,
     pio_sm_reg_t *reg
 ) {
     CHECK_BLOCK_SM();
+
+    // Set up debug information
+    SM(block, sm).debug.first_instr = 0xFF;
+    SM(block, sm).debug.start_instr = 0xFF;
+    SM(block, sm).debug.end_instr = 0xFF;
+    if (debug != NULL) {
+        epio_set_sm_debug(epio, block, sm, debug);
+    }
 
     // Copy register configuration if provided
     if (reg != NULL) {
@@ -75,7 +89,7 @@ static void epio_init_block(epio_t *epio, uint8_t block) {
     IRQ(block).irq_to_set = 0;
     
     for (int sm = 0; sm < NUM_SMS_PER_BLOCK; sm++) {
-        epio_init_sm(epio, block, sm, NULL);
+        epio_init_sm(epio, block, sm, NULL, NULL);
     }
 }
 

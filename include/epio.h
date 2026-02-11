@@ -19,6 +19,9 @@
  *       within valid ranges (e.g. block, sm, and pin indices).
  */
 
+#if !defined(EPIO_H)
+#define EPIO_H
+
 #include <stdint.h>
 #include <stddef.h>
 #define APIO_EMULATION  1
@@ -32,6 +35,27 @@
  * epio_init() or epio_from_apio(), and destroy with epio_free().
  */
 typedef struct epio_t epio_t;
+
+/**
+ * @brief Debug information for a single PIO state machine
+ *
+ * This is optional - it can be set by the user, to mark the intended
+ * instruction range of a state machine, which can be used by epio for
+ * logging and debugging purposes.  If not set, those features will be
+ * unavailable or less informative.
+ *
+ * @note These fields are not strictly necessary for any PIO operation.  It
+ * is complete valid for multiple SMs to share the entire block instruction
+ * space.
+ */
+typedef struct {
+    /** The first instruction in the block for this SM */
+    uint8_t first_instr;
+    /** The instruction that this SM starts running from */
+    uint8_t start_instr;
+    /** The last instruction in the block for this SM */
+    uint8_t end_instr;
+} epio_sm_debug_t;
 
 /**
  * @defgroup global Global API
@@ -57,6 +81,19 @@ EPIO_EXPORT epio_t *epio_init(void);
  * @param epio  The epio instance to free.  Must not be used after this call.
  */
 EPIO_EXPORT void epio_free(epio_t *epio);
+
+/**
+ * @brief Sets debug information for a specific state machine.
+ *
+ * This is optional and used for logging and debugging purposes.  It does
+ * not affect the execution of the state machine.
+ *
+ * @param epio  The epio instance.
+ * @param block PIO block index (0 to NUM_PIO_BLOCKS-1).
+ * @param sm    State machine index within the block (0 to NUM_SMS_PER_BLOCK-1).
+ * @param debug Pointer to the debug information to set for this SM.
+ */
+EPIO_EXPORT void epio_set_sm_debug(epio_t *epio, uint8_t block, uint8_t sm, epio_sm_debug_t *debug);
 
 /**
  * @brief Set the GPIO base for a PIO block.
@@ -494,6 +531,28 @@ EPIO_EXPORT epio_t *epio_from_apio(void);
 
 /** @} */
 
+/**
+ * @defgroup apio apio Integration API
+ * @brief Functions for creating an epio instance from apio state.
+ * @{
+ */
+
+/**
+ * @brief Disassemble the instructions of a state machine.
+ *
+ * @param epio        The epio instance.
+ * @param block       PIO block number.
+ * @param sm          State machine number.
+ * @param buffer      Buffer to store the disassembled instructions.
+ * @param buffer_size Size of the buffer.
+ * @return            Number of characters written to the buffer.  0 indicates
+ * a failure, for example no debug information available for the specified SM.
+ * -1 indicates the buffer was too small to hold the full disassembly.
+ */
+EPIO_EXPORT int epio_disassemble_sm(epio_t *epio, uint8_t block, uint8_t sm, char *buffer, size_t buffer_size);
+
+/** @} */
+
 /** @brief Maximum number of supported GPIOs. */
 #define NUM_GPIOS 48
 _Static_assert(NUM_GPIOS <= 64, "NUM_GPIOS must be <= 64 to fit in uint64_t");
@@ -515,3 +574,5 @@ _Static_assert(NUM_GPIOS <= 64, "NUM_GPIOS must be <= 64 to fit in uint64_t");
 
 /** @brief Number of instruction slots per PIO block. */
 #define NUM_INSTRS_PER_BLOCK    32
+
+#endif // EPIO_H

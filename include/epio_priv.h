@@ -29,6 +29,9 @@ typedef struct {
 
 // State of an individual PIO state machine
 typedef struct {
+    // Debug information about this SM
+    epio_sm_debug_t debug;
+
     // PIO SM registers
     pio_sm_reg_t reg;
 
@@ -170,6 +173,7 @@ void epio_init_dma(epio_t *epio);
 #define CHECK_GPIO(GPIO) \
     assert(((GPIO & (0xFFFFFFFFFFFFFFFFULL << NUM_GPIOS)) == 0) && "Invalid GPIO bit(s) set")
 
+#define BLK(BLOCK)           epio->block[BLOCK]
 #define SM(BLOCK, _SM)       epio->block[BLOCK].sm[_SM]
 #define PC(BLOCK, _SM)       SM(BLOCK, _SM).pc
 #define INSTR(BLOCK, INSTR_NUM) epio->block[BLOCK].instr[INSTR_NUM]

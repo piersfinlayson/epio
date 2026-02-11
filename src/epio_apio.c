@@ -35,6 +35,19 @@ epio_t *epio_from_apio(void) {
 
         // Set up each SM in this block
         for (int sm = 0; sm < NUM_SMS_PER_BLOCK; sm++) {
+            if (_apio_emulated_pio.start[block][sm] == 0xFF) {
+                // This SM was not configured, so skip it.
+                continue;
+            }
+
+            // Set up debug info for this SM
+            epio_sm_debug_t debug = {
+                .first_instr = _apio_emulated_pio.first_instr[block][sm],
+                .start_instr = _apio_emulated_pio.start[block][sm],
+                .end_instr = _apio_emulated_pio.end[block][sm]
+            };
+            epio_set_sm_debug(epio, block, sm, &debug);
+
             // Set up the SM registers for this SM
             pio_sm_reg_t reg = _apio_emulated_pio.pio_sm_reg[block][sm];
             epio_set_sm_reg(epio, block, sm, &reg);

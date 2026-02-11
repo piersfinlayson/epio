@@ -11,7 +11,7 @@
 
 EPIO_WASM_EXPORTS := \
 	"_malloc","_free",\
-	"_epio_init","_epio_free","_epio_set_gpiobase",\
+	"_epio_init","_epio_free","_epio_set_sm_debug","_epio_set_gpiobase",\
 	"_epio_set_sm_reg","_epio_get_sm_reg","_epio_enable_sm",\
 	"_epio_set_instr","_epio_get_instr","_epio_step_cycles",\
 	"_epio_get_cycle_count","_epio_reset_cycle_count",\
@@ -24,4 +24,5 @@ EPIO_WASM_EXPORTS := \
 	"_epio_read_pin_states","_epio_read_driven_pins",\
 	"_epio_sram_read_byte","_epio_sram_set",\
 	"_epio_sram_read_halfword","_epio_sram_read_word",\
-	"_epio_sram_write_byte","_epio_sram_write_halfword","_epio_sram_write_word"
+	"_epio_sram_write_byte","_epio_sram_write_halfword","_epio_sram_write_word",\
+	"_epio_disassemble_sm"

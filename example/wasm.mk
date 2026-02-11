@@ -32,7 +32,7 @@ CFLAGS := -I include -I apio/include \
 
 # Linker flags - append _epio_example_init to the shared exports list
 LDFLAGS := -s WASM=1 \
-           -s EXPORTED_RUNTIME_METHODS='["ccall","cwrap"]' \
+           -s EXPORTED_RUNTIME_METHODS='["ccall","cwrap","UTF8ToString"]' \
            -s EXPORTED_FUNCTIONS='[$(EPIO_WASM_EXPORTS),"_epio_example_init"]' \
            -s WASM_BIGINT=1 \
            -s ALLOW_MEMORY_GROWTH=1
