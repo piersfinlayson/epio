@@ -62,7 +62,7 @@ int epio_disassemble_sm(
     wrote = snprintf(
         buffer,
         buffer_size,
-        ";- EXECCTRL: 0x%08X",
+        "; - EXECCTRL: 0x%08X",
         reg->execctrl
     );
     if (wrote < 0 || (size_t)wrote >= buffer_size) {
@@ -74,7 +74,7 @@ int epio_disassemble_sm(
     wrote = snprintf(
         buffer,
         buffer_size,
-        ";- SHIFTCTRL: 0x%08X\n",
+        "; - SHIFTCTRL: 0x%08X\n",
         reg->shiftctrl
     );
     if (wrote < 0 || (size_t)wrote >= buffer_size) {
@@ -86,7 +86,7 @@ int epio_disassemble_sm(
     wrote = snprintf(
         buffer,
         buffer_size,
-        ";- PINCTRL: 0x%08X\n",
+        "; - PINCTRL: 0x%08X\n",
         reg->pinctrl
     );
     if (wrote < 0 || (size_t)wrote >= buffer_size) {
@@ -96,7 +96,7 @@ int epio_disassemble_sm(
     buffer_size -= wrote;
 
     // Add the PIO program name
-    wrote = snprintf(buffer, buffer_size, ".program pio%d_sm%d:\n", block, sm);
+    wrote = snprintf(buffer, buffer_size, "\n.program pio%d_sm%d:\n", block, sm);
     if (wrote < 0 || (size_t)wrote >= buffer_size) {
         return -1;  // Encoding error or buffer too small
     }
