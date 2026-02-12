@@ -24,6 +24,7 @@ See [the example README](example/README.md).
 
 - make
 - gcc
+- cmake (tests: cmocka)
 - emscripten (wasm only)
 - python3 (wasm only)
 - arm-none-eabi-gcc (example firmware build only)

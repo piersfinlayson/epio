@@ -140,5 +140,12 @@ int epio_disassemble_sm(
         }
     }
 
-    return (orig_buffer - buffer);  // Total bytes written
+    // Remove final \n
+    if (buffer > orig_buffer && *(buffer - 1) == '\n') {
+        *(buffer - 1) = '\0';
+        buffer--;
+    }
+
+    // Include NULL terminator in byte count
+    return (buffer - orig_buffer + 1);
 }

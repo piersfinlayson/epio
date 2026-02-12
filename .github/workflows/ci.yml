@@ -53,3 +53,8 @@ jobs:
     - name: Build firmware example
       run: |
         make -f example/firmware.mk
+
+    - name: Run tests
+      run: |
+        make clean
+        make test

@@ -58,6 +58,24 @@ typedef struct {
 } epio_sm_debug_t;
 
 /**
+ * @brief Configurable registers for a single PIO state machine
+ *
+ * This struct is used to set and get the state of the SM configuration
+ * registers.  It does not include runtime state, such as address, instruction
+ * registers, etc.
+ */
+typedef struct {
+    /** CLKDIV register */
+    uint32_t clkdiv;
+    /** EXECCTRL register */
+    uint32_t execctrl;
+    /** SHIFTCTRL register */
+    uint32_t shiftctrl;
+    /** PINCTRL register */
+    uint32_t pinctrl;
+} epio_sm_reg_t;
+
+/**
  * @defgroup global Global API
  * @brief Functions for creating, configuring, and destroying an epio instance.
  * @{
@@ -96,6 +114,17 @@ EPIO_EXPORT void epio_free(epio_t *epio);
 EPIO_EXPORT void epio_set_sm_debug(epio_t *epio, uint8_t block, uint8_t sm, epio_sm_debug_t *debug);
 
 /**
+ * @brief Gets the debug information for a specific state machine.
+ *
+ * @param epio  The epio instance.
+ * @param block PIO block index (0 to NUM_PIO_BLOCKS-1).
+ * @param sm    State machine index within the block (0 to NUM_SMS_PER_BLOCK-1).
+ * @param debug Pointer to a caller-allocated structure to receive the debug
+ *              information for this SM.
+ */
+EPIO_EXPORT void epio_get_sm_debug(epio_t *epio, uint8_t block, uint8_t sm, epio_sm_debug_t *debug);
+
+/**
  * @brief Set the GPIO base for a PIO block.
  *
  * The RP2350 supports GPIOBASE values of 0 and 16 per PIO block, shifting
@@ -121,7 +150,7 @@ EPIO_EXPORT void epio_set_gpiobase(epio_t *epio, uint8_t block, uint32_t gpio_ba
  * @param reg   Pointer to the register state to apply.
  * @see epio_get_sm_reg()
  */
-EPIO_EXPORT void epio_set_sm_reg(epio_t *epio, uint8_t block, uint8_t sm, pio_sm_reg_t *reg);
+EPIO_EXPORT void epio_set_sm_reg(epio_t *epio, uint8_t block, uint8_t sm, epio_sm_reg_t *reg);
 
 /**
  * @brief Read the current SM configuration registers for a state machine.
@@ -134,7 +163,7 @@ EPIO_EXPORT void epio_set_sm_reg(epio_t *epio, uint8_t block, uint8_t sm, pio_sm
  * @param reg   Pointer to a caller-allocated structure to receive the state.
  * @see epio_set_sm_reg()
  */
-EPIO_EXPORT void epio_get_sm_reg(epio_t *epio, uint8_t block, uint8_t sm, pio_sm_reg_t *reg);
+EPIO_EXPORT void epio_get_sm_reg(epio_t *epio, uint8_t block, uint8_t sm, epio_sm_reg_t *reg);
 
 /**
  * @brief Enable a state machine for execution.
@@ -147,6 +176,17 @@ EPIO_EXPORT void epio_get_sm_reg(epio_t *epio, uint8_t block, uint8_t sm, pio_sm
  * @param sm    State machine index within the block (0 to NUM_SMS_PER_BLOCK-1).
  */
 EPIO_EXPORT void epio_enable_sm(epio_t *epio, uint8_t block, uint8_t sm);
+
+/**
+ * @brief Check if a state machine is enabled.
+ *
+ * @param epio  The epio instance.
+ * @param block PIO block index (0 to NUM_PIO_BLOCKS-1).
+ * @param sm    State machine index within the block (0 to NUM_SMS_PER_BLOCK-
+ * 1).
+ * @return      1 if the SM is enabled, 0 otherwise.
+ */
+EPIO_EXPORT uint8_t epio_is_sm_enabled(epio_t *epio, uint8_t block, uint8_t sm);
 
 /** @} */
 

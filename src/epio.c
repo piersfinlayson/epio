@@ -23,7 +23,19 @@
 
 void epio_set_sm_debug(epio_t *epio, uint8_t block, uint8_t sm, epio_sm_debug_t *debug) {
     CHECK_BLOCK_SM();
+    assert(debug != NULL && "Debug information cannot be NULL");
+
+    // Check debug info.  If doing something funky like overlapping SM
+    // instruction ranges, debug information should NOT be set. 
+    assert(debug->first_instr <= debug->start_instr && "first_instr must be <= start_instr");
+    assert(debug->start_instr <= debug->end_instr && "start_instr must be <= end_instr");
+
     memcpy(&SM(block, sm).debug, debug, sizeof(epio_sm_debug_t));
+}
+
+void epio_get_sm_debug(epio_t *epio, uint8_t block, uint8_t sm, epio_sm_debug_t *debug) {
+    CHECK_BLOCK_SM();
+    memcpy(debug, &SM(block, sm).debug, sizeof(epio_sm_debug_t));
 }
 
 // Set up the initial SM state.  Populate the FIFOs and any execute any
@@ -33,7 +45,7 @@ static void epio_init_sm(
     uint8_t block,
     uint8_t sm,
     epio_sm_debug_t *debug,
-    pio_sm_reg_t *reg
+    epio_sm_reg_t *reg
 ) {
     CHECK_BLOCK_SM();
 
@@ -132,17 +144,24 @@ void epio_free(epio_t *epio) {
     free(epio);
 }
 
-void epio_set_sm_reg(epio_t *epio, uint8_t block, uint8_t sm, pio_sm_reg_t *reg) {
+void epio_set_sm_reg(epio_t *epio, uint8_t block, uint8_t sm, epio_sm_reg_t *reg) {
     CHECK_BLOCK_SM();
-    memcpy(&REG(block, sm), reg, sizeof(pio_sm_reg_t));
+    assert(reg != NULL && "Register configuration cannot be NULL");
+    memcpy(&REG(block, sm), reg, sizeof(epio_sm_reg_t));
 }
 
-void epio_get_sm_reg(epio_t *epio, uint8_t block, uint8_t sm, pio_sm_reg_t *reg) {
+void epio_get_sm_reg(epio_t *epio, uint8_t block, uint8_t sm, epio_sm_reg_t *reg) {
     CHECK_BLOCK_SM();
-    memcpy(reg, &REG(block, sm), sizeof(pio_sm_reg_t));
+    assert(reg != NULL && "Output register pointer cannot be NULL");
+    memcpy(reg, &REG(block, sm), sizeof(epio_sm_reg_t));
 }
 
 void epio_enable_sm(epio_t *epio, uint8_t block, uint8_t sm) {
+    CHECK_BLOCK_SM();
     SM(block, sm).enabled = 1;
 }
 
+uint8_t epio_is_sm_enabled(epio_t *epio, uint8_t block, uint8_t sm) {
+    CHECK_BLOCK_SM();
+    return SM(block, sm).enabled;
+}

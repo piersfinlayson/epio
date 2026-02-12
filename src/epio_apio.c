@@ -49,7 +49,13 @@ epio_t *epio_from_apio(void) {
             epio_set_sm_debug(epio, block, sm, &debug);
 
             // Set up the SM registers for this SM
-            pio_sm_reg_t reg = _apio_emulated_pio.pio_sm_reg[block][sm];
+            pio_sm_reg_t apio_reg = _apio_emulated_pio.pio_sm_reg[block][sm];
+            epio_sm_reg_t reg = {
+                .clkdiv = apio_reg.clkdiv,
+                .execctrl = apio_reg.execctrl,
+                .shiftctrl = apio_reg.shiftctrl,
+                .pinctrl = apio_reg.pinctrl
+            };
             epio_set_sm_reg(epio, block, sm, &reg);
 
             // Set up the FIFOs for this SM - push in last to first order.

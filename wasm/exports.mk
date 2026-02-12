@@ -25,4 +25,4 @@ EPIO_WASM_EXPORTS := \
 	"_epio_sram_read_byte","_epio_sram_set",\
 	"_epio_sram_read_halfword","_epio_sram_read_word",\
 	"_epio_sram_write_byte","_epio_sram_write_halfword","_epio_sram_write_word",\
-	"_epio_disassemble_sm"
+	"_epio_disassemble_sm","_epio_is_sm_enabled","_epio_get_sm_debug"

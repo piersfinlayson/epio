@@ -7,7 +7,15 @@
 // Internal header file
 
 #include <stddef.h>
+#ifdef TEST_EPIO
+#include <stdio.h>
+#include <cmocka.h>
+#define assert(x) mock_assert((int)(x), #x, __FILE__, __LINE__)
+#define APIO_LOG_ENABLE(...)    do { \
+                                } while(0)
+#else
 #include <assert.h>
+#endif
 #include <epio.h>
 
 #if defined(EPIO_DEBUG)
