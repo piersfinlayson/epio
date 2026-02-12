@@ -151,11 +151,8 @@ uint8_t epio_exec_instr_sm(epio_t *epio, uint8_t block, uint8_t sm, uint16_t ins
 
     if (SM(block, sm).delay > 0) {
         SM(block, sm).delay--;
-        if (SM(block, sm).delay == 0) {
-            process_new_delay = 0;
-        }
         EPIO_DBG("           Delayed: %d cycles remaining", SM(block, sm).delay);
-        return process_new_delay;
+        return 1;  // PC already points to the next instruction
     }
 
     uint16_t opcode = (instr >> 13) & 0x7;
@@ -213,7 +210,9 @@ uint8_t epio_exec_instr_sm(epio_t *epio, uint8_t block, uint8_t sm, uint16_t ins
                     break;
 
                 case JMP_NOT_OSRE:
-                    if (SM(block, sm).osr_count >= 32) {
+                    ;
+                    uint8_t pull_threshold = PULL_THRESH_GET(block, sm);
+                    if (SM(block, sm).osr_count >= pull_threshold) {
                         NEW_INSTR(new);
                     }
                     break;
@@ -347,12 +346,16 @@ uint8_t epio_exec_instr_sm(epio_t *epio, uint8_t block, uint8_t sm, uint16_t ins
                 
                 // Shift into ISR
                 uint8_t shift_right = IN_SHIFTDIR_R(block, sm);
+                uint32_t mask = (in_count == 32) ? 0xFFFFFFFF : ((1U << in_count) - 1);
                 if (shift_right) {
-                    SM(block, sm).isr = (SM(block, sm).isr >> in_count) | (in_data << (32 - in_count));
+                    uint32_t shifted = (in_count == 32) ? 0 : (SM(block, sm).isr >> in_count);
+                    SM(block, sm).isr = shifted | (in_data << (32 - in_count));
                 } else {
-                    SM(block, sm).isr = (SM(block, sm).isr << in_count) | (in_data & ((1 << in_count) - 1));
+                    uint32_t shifted = (in_count == 32) ? 0 : (SM(block, sm).isr << in_count);
+                    SM(block, sm).isr = shifted | (in_data & mask);
                 }
                 SM(block, sm).isr_count += in_count;
+                if (SM(block, sm).isr_count > 32) SM(block, sm).isr_count = 32;
             }
 
             // Autopush check
@@ -804,10 +807,6 @@ uint8_t epio_exec_instr_sm(epio_t *epio, uint8_t block, uint8_t sm, uint16_t ins
     if (process_new_delay) {
         uint8_t new_delay = (instr >> 8) & 0x1F;
         SM(block, sm).delay = new_delay;
-        if (new_delay > 0) {
-            // Don't update PC when setting a new delay
-            dont_update_pc = 1;
-        }
     }
 
     EPIO_DBG("                                            X=0x%08X Y=0x%08X ISR=0x%08X OSR=0x%08X RX_FIFO=%d TX_FIFO=%d",

@@ -307,23 +307,23 @@ static void wait_gpio_high_with_delay(void **state) {
     // Set GPIO7 high - wait completes, delay of 3 starts
     epio_set_gpio_input_level(epio, 7, 1);
     
-    // Cycle 3: wait completes, delay counter = 3, PC stays at 0
+    // Cycle 3: wait completes, delay counter = 3, PC advances to 1
     epio_step_cycles(epio, 1);
     assert_int_equal(epio_peek_sm_stalled(epio, 0, 0), 0);
     assert_int_equal(epio_peek_sm_delay(epio, 0, 0), 3);
-    assert_int_equal(epio_peek_sm_pc(epio, 0, 0), 0);
+    assert_int_equal(epio_peek_sm_pc(epio, 0, 0), 1);
     assert_int_equal(epio_get_cycle_count(epio), 3);
     
     // Cycle 4: delay 2
     epio_step_cycles(epio, 1);
     assert_int_equal(epio_peek_sm_delay(epio, 0, 0), 2);
-    assert_int_equal(epio_peek_sm_pc(epio, 0, 0), 0);
+    assert_int_equal(epio_peek_sm_pc(epio, 0, 0), 1);
     assert_int_equal(epio_get_cycle_count(epio), 4);
     
     // Cycle 5: delay 1
     epio_step_cycles(epio, 1);
     assert_int_equal(epio_peek_sm_delay(epio, 0, 0), 1);
-    assert_int_equal(epio_peek_sm_pc(epio, 0, 0), 0);
+    assert_int_equal(epio_peek_sm_pc(epio, 0, 0), 1);
     assert_int_equal(epio_get_cycle_count(epio), 5);
     
     // Cycle 6: delay done, PC advances to 1
@@ -348,10 +348,10 @@ static void wait_gpio_high_with_delay_no_stall(void **state) {
     // GPIO7 already high - no stall, delay starts immediately
     epio_set_gpio_input_level(epio, 7, 1);
     
-    // Cycle 1: wait completes, delay=3, PC stays at 0
+    // Cycle 1: wait completes, delay=3, PC advances to 1
     epio_step_cycles(epio, 1);
     assert_int_equal(epio_peek_sm_stalled(epio, 0, 0), 0);
-    assert_int_equal(epio_peek_sm_pc(epio, 0, 0), 0);
+    assert_int_equal(epio_peek_sm_pc(epio, 0, 0), 1);
     assert_int_equal(epio_peek_sm_delay(epio, 0, 0), 3);
     
     // Burn through delay

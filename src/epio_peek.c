@@ -43,6 +43,12 @@ uint8_t epio_peek_sm_osr_count(epio_t *epio, uint8_t block, uint8_t sm) {
     return SM(block, sm).osr_count;
 }
 
+uint8_t epio_peek_sm_osr_empty(epio_t *epio, uint8_t block, uint8_t sm) {
+    CHECK_BLOCK_SM();
+    uint8_t pull_threshold = PULL_THRESH_GET(block, sm);
+    return SM(block, sm).osr_count >= pull_threshold;
+}
+
 uint8_t epio_peek_sm_stalled(epio_t *epio, uint8_t block, uint8_t sm) {
     CHECK_BLOCK_SM();
     return SM(block, sm).stalled;

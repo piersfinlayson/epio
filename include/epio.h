@@ -573,6 +573,11 @@ EPIO_EXPORT void epio_sram_write_word(epio_t *epio, uint32_t addr, uint32_t valu
  * 
  * Remember that the PC is relative to the block's instruction memory, so it
  * ranges from 0 to NUM_INSTRS_PER_BLOCK-1.
+ * 
+ * The PC is updated during at the end of the cycle when the previous
+ * instruction executed, if there is a delay, but not a stall.  This is in
+ * line with the data sheet, which indicates that for a JMP, the delay happens
+ * after PC is updated.
  *
  * @param epio  The epio instance.
  * @param block PIO block index (0 to NUM_PIO_BLOCKS-1).
@@ -662,6 +667,19 @@ EPIO_EXPORT uint8_t epio_peek_sm_isr_count(epio_t *epio, uint8_t block, uint8_t 
 EPIO_EXPORT uint8_t epio_peek_sm_osr_count(epio_t *epio, uint8_t block, uint8_t sm);
 
 /**
+ * @brief Check whether the OSR is considered empty for a state machine.
+ *
+ * Returns true if the OSR shift count has reached or exceeded the configured
+ * PULL_THRESH. This matches the condition used by JMP !OSRE and autopull.
+ *
+ * @param epio  The epio instance.
+ * @param block PIO block index (0 to NUM_PIO_BLOCKS-1).
+ * @param sm    State machine index within the block (0 to NUM_SMS_PER_BLOCK-1).
+ * @return      1 if OSR is empty (at or beyond threshold), 0 otherwise.
+ */
+EPIO_EXPORT uint8_t epio_peek_sm_osr_empty(epio_t *epio, uint8_t block, uint8_t sm);
+
+/**
  * @brief Check if a state machine is currently stalled.
  *
  * A state machine stalls when waiting for a condition that hasn't been met,
@@ -687,6 +705,10 @@ EPIO_EXPORT uint8_t epio_peek_sm_stalled(epio_t *epio, uint8_t block, uint8_t sm
  * PIO instructions can include a delay field that causes the state machine
  * to wait for 0-31 additional cycles before executing the next instruction.
  * This returns the number of delay cycles remaining.
+ * 
+ * After the intruction that included the delay, but before any delay cycles
+ * have elapsed, this will return the full delay value. After all delay cycles
+ * have elapsed, this will return 0.
  *
  * @param epio  The epio instance.
  * @param block PIO block index (0 to NUM_PIO_BLOCKS-1).
