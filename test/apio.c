@@ -8,7 +8,7 @@
 
 #define APIO_LOG_IMPL
 #include "test.h"
-#include "test_pio_programs.h"
+#include "pio_programs.h"
 
 static void epio_from_apio_basic(void **state) {
     setup_basic_pio_apio(state);

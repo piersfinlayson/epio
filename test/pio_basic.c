@@ -8,7 +8,7 @@
 
 #define APIO_LOG_IMPL
 #include "test.h"
-#include "test_pio_programs.h"
+#include "pio_programs.h"
 
 #define EPIO_GPIO0 (1ULL << 0)
 
@@ -35,7 +35,6 @@ static void test_first_instruction_sets_output(void **state) {
     
     uint64_t driven = epio_read_driven_pins(epio);
     uint64_t states = epio_read_pin_states(epio);
-    printf("Driven: 0x%016llX, States: 0x%016llX\n", driven, states);
     
     assert_int_equal(driven & EPIO_GPIO0, EPIO_GPIO0);
     assert_int_equal(states & EPIO_GPIO0, EPIO_GPIO0);

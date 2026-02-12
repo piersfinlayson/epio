@@ -91,6 +91,13 @@ void epio_set_gpiobase(epio_t *epio, uint8_t block, uint32_t gpio_base) {
     GPIOBASE(block) = gpio_base;
 }
 
+uint32_t epio_get_gpiobase(epio_t *epio, uint8_t block) {
+    assert(block < NUM_PIO_BLOCKS && "Invalid PIO block");
+    uint32_t gpio_base = GPIOBASE(block);
+    assert((gpio_base == 0 || (gpio_base == 16)) && "GPIO base must be 0 or 16");
+    return gpio_base;
+}
+
 static void epio_init_block(epio_t *epio, uint8_t block) {
     // Set up GPIOBASE for this block
     GPIOBASE(block) = 0;

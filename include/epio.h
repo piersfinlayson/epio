@@ -138,6 +138,15 @@ EPIO_EXPORT void epio_get_sm_debug(epio_t *epio, uint8_t block, uint8_t sm, epio
 EPIO_EXPORT void epio_set_gpiobase(epio_t *epio, uint8_t block, uint32_t gpio_base);
 
 /**
+ * @brief Get the GPIO base for a PIO block.
+ * 
+ * @param epio The epio instance.
+ * @param block PIO block index (0 to NUM_PIO_BLOCKS-1).
+ * @return The GPIO base offset for this block.
+ */
+EPIO_EXPORT uint32_t epio_get_gpiobase(epio_t *epio, uint8_t block);
+
+/**
  * @brief Set the SM configuration registers for a state machine.
  *
  * Copies the register state from @p reg into the specified SM.  This
@@ -546,6 +555,181 @@ EPIO_EXPORT void epio_sram_write_halfword(epio_t *epio, uint32_t addr, uint16_t 
  * @param value The 32-bit value to write.
  */
 EPIO_EXPORT void epio_sram_write_word(epio_t *epio, uint32_t addr, uint32_t value);
+
+/** @} */
+
+/**
+ * @defgroup peek Peek API
+ * @brief Functions for reading internal state machine and block state for testing.
+ * @{
+ */
+
+/**
+ * @brief Get the current program counter (PC) for a state machine.
+ *
+ * Returns the instruction address that the state machine will execute next.
+ * The PC is automatically incremented after each instruction unless a jump
+ * or wrap occurs.
+ *
+ * @param epio  The epio instance.
+ * @param block PIO block index (0 to NUM_PIO_BLOCKS-1).
+ * @param sm    State machine index within the block (0 to NUM_SMS_PER_BLOCK-1).
+ * @return      Current PC value (0 to NUM_INSTRS_PER_BLOCK-1).
+ */
+EPIO_EXPORT uint8_t epio_peek_sm_pc(epio_t *epio, uint8_t block, uint8_t sm);
+
+/**
+ * @brief Get the current X register value for a state machine.
+ *
+ * The X register is a general-purpose 32-bit scratch register that can be
+ * read and written by PIO instructions.
+ *
+ * @param epio  The epio instance.
+ * @param block PIO block index (0 to NUM_PIO_BLOCKS-1).
+ * @param sm    State machine index within the block (0 to NUM_SMS_PER_BLOCK-1).
+ * @return      Current X register value.
+ */
+EPIO_EXPORT uint32_t epio_peek_sm_x(epio_t *epio, uint8_t block, uint8_t sm);
+
+/**
+ * @brief Get the current Y register value for a state machine.
+ *
+ * The Y register is a general-purpose 32-bit scratch register that can be
+ * read and written by PIO instructions.
+ *
+ * @param epio  The epio instance.
+ * @param block PIO block index (0 to NUM_PIO_BLOCKS-1).
+ * @param sm    State machine index within the block (0 to NUM_SMS_PER_BLOCK-1).
+ * @return      Current Y register value.
+ */
+EPIO_EXPORT uint32_t epio_peek_sm_y(epio_t *epio, uint8_t block, uint8_t sm);
+
+/**
+ * @brief Get the current Input Shift Register (ISR) value for a state machine.
+ *
+ * The ISR accumulates data from IN instructions before being pushed to the
+ * RX FIFO.
+ *
+ * @param epio  The epio instance.
+ * @param block PIO block index (0 to NUM_PIO_BLOCKS-1).
+ * @param sm    State machine index within the block (0 to NUM_SMS_PER_BLOCK-1).
+ * @return      Current ISR value.
+ */
+EPIO_EXPORT uint32_t epio_peek_sm_isr(epio_t *epio, uint8_t block, uint8_t sm);
+
+/**
+ * @brief Get the current Output Shift Register (OSR) value for a state machine.
+ *
+ * The OSR is loaded from the TX FIFO via PULL instructions and provides data
+ * to OUT instructions.
+ *
+ * @param epio  The epio instance.
+ * @param block PIO block index (0 to NUM_PIO_BLOCKS-1).
+ * @param sm    State machine index within the block (0 to NUM_SMS_PER_BLOCK-1).
+ * @return      Current OSR value.
+ */
+EPIO_EXPORT uint32_t epio_peek_sm_osr(epio_t *epio, uint8_t block, uint8_t sm);
+
+/**
+ * @brief Get the current ISR bit counter for a state machine.
+ *
+ * Tracks how many bits have been shifted into the ISR since the last PUSH
+ * or autopush. Used to determine when autopush threshold is reached.
+ *
+ * @param epio  The epio instance.
+ * @param block PIO block index (0 to NUM_PIO_BLOCKS-1).
+ * @param sm    State machine index within the block (0 to NUM_SMS_PER_BLOCK-1).
+ * @return      Number of bits currently in ISR (0 to 32).
+ */
+EPIO_EXPORT uint8_t epio_peek_sm_isr_count(epio_t *epio, uint8_t block, uint8_t sm);
+
+/**
+ * @brief Get the current OSR bit counter for a state machine.
+ *
+ * Tracks how many bits have been shifted out of the OSR since the last PULL
+ * or autopull. Used to determine when autopull threshold is reached.
+ *
+ * @param epio  The epio instance.
+ * @param block PIO block index (0 to NUM_PIO_BLOCKS-1).
+ * @param sm    State machine index within the block (0 to NUM_SMS_PER_BLOCK-1).
+ * @return      Number of bits shifted out from OSR (0 to 32).
+ */
+EPIO_EXPORT uint8_t epio_peek_sm_osr_count(epio_t *epio, uint8_t block, uint8_t sm);
+
+/**
+ * @brief Check if a state machine is currently stalled.
+ *
+ * A state machine stalls when waiting for a condition that hasn't been met,
+ * such as:
+ * - WAIT instruction condition not satisfied
+ * - PULL with empty TX FIFO (blocking)
+ * - PUSH with full RX FIFO (blocking)
+ * - IRQ WAIT instruction waiting for IRQ to clear
+ *
+ * When stalled, the PC does not advance and the same instruction is
+ * re-evaluated each cycle until the stall condition clears.
+ *
+ * @param epio  The epio instance.
+ * @param block PIO block index (0 to NUM_PIO_BLOCKS-1).
+ * @param sm    State machine index within the block (0 to NUM_SMS_PER_BLOCK-1).
+ * @return      1 if stalled, 0 if running normally.
+ */
+EPIO_EXPORT uint8_t epio_peek_sm_stalled(epio_t *epio, uint8_t block, uint8_t sm);
+
+/**
+ * @brief Get the current delay counter for a state machine.
+ *
+ * PIO instructions can include a delay field that causes the state machine
+ * to wait for 0-31 additional cycles before executing the next instruction.
+ * This returns the number of delay cycles remaining.
+ *
+ * @param epio  The epio instance.
+ * @param block PIO block index (0 to NUM_PIO_BLOCKS-1).
+ * @param sm    State machine index within the block (0 to NUM_SMS_PER_BLOCK-1).
+ * @return      Number of delay cycles remaining (0 to 31).
+ */
+EPIO_EXPORT uint8_t epio_peek_sm_delay(epio_t *epio, uint8_t block, uint8_t sm);
+
+/**
+ * @brief Check if a state machine has a pending EXEC instruction.
+ *
+ * When OUT EXEC or MOV EXEC is executed, the state machine stores the
+ * instruction to execute on the next cycle rather than fetching from
+ * instruction memory. This returns whether such an instruction is pending.
+ *
+ * @param epio  The epio instance.
+ * @param block PIO block index (0 to NUM_PIO_BLOCKS-1).
+ * @param sm    State machine index within the block (0 to NUM_SMS_PER_BLOCK-1).
+ * @return      1 if an EXEC instruction is pending, 0 otherwise.
+ */
+EPIO_EXPORT uint8_t epio_peek_sm_exec_pending(epio_t *epio, uint8_t block, uint8_t sm);
+
+/**
+ * @brief Get the pending EXEC instruction for a state machine.
+ *
+ * When OUT EXEC or MOV EXEC is executed, this returns the instruction that
+ * will be executed on the next cycle. Only valid when exec_pending is true.
+ *
+ * @param epio  The epio instance.
+ * @param block PIO block index (0 to NUM_PIO_BLOCKS-1).
+ * @param sm    State machine index within the block (0 to NUM_SMS_PER_BLOCK-1).
+ * @return      The 16-bit instruction that will execute next cycle.
+ */
+EPIO_EXPORT uint16_t epio_peek_sm_exec_instr(epio_t *epio, uint8_t block, uint8_t sm);
+
+/**
+ * @brief Get the current IRQ state bitmask for a PIO block.
+ *
+ * Each PIO block has 8 IRQ flags (0-7) that can be set, cleared, and waited
+ * on by state machines. IRQs can be used for synchronization between state
+ * machines within a block or across blocks.
+ *
+ * @param epio  The epio instance.
+ * @param block PIO block index (0 to NUM_PIO_BLOCKS-1).
+ * @return      32-bit bitmask where bits 0-7 represent IRQ states (1=set, 0=clear).
+ *              Bits 8-31 are reserved and always 0.
+ */
+EPIO_EXPORT uint32_t epio_peek_block_irq(epio_t *epio, uint8_t block);
 
 /** @} */
 

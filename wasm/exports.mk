@@ -11,7 +11,8 @@
 
 EPIO_WASM_EXPORTS := \
 	"_malloc","_free",\
-	"_epio_init","_epio_free","_epio_set_sm_debug","_epio_set_gpiobase",\
+	"_epio_init","_epio_free","_epio_set_sm_debug",\
+	"_epio_set_gpiobase","_epio_get_gpiobase",\
 	"_epio_set_sm_reg","_epio_get_sm_reg","_epio_enable_sm",\
 	"_epio_set_instr","_epio_get_instr","_epio_step_cycles",\
 	"_epio_get_cycle_count","_epio_reset_cycle_count",\
@@ -25,4 +26,10 @@ EPIO_WASM_EXPORTS := \
 	"_epio_sram_read_byte","_epio_sram_set",\
 	"_epio_sram_read_halfword","_epio_sram_read_word",\
 	"_epio_sram_write_byte","_epio_sram_write_halfword","_epio_sram_write_word",\
-	"_epio_disassemble_sm","_epio_is_sm_enabled","_epio_get_sm_debug"
+	"_epio_disassemble_sm","_epio_is_sm_enabled","_epio_get_sm_debug",\
+	"_epio_peek_sm_pc","_epio_peek_sm_x","_epio_peek_sm_y",\
+	"_epio_peek_sm_isr","_epio_peek_sm_osr",\
+	"_epio_peek_sm_isr_count","_epio_peek_sm_osr_count",\
+	"_epio_peek_sm_stalled","_epio_peek_sm_delay",\
+	"_epio_peek_sm_exec_pending","_epio_peek_sm_exec_instr",\
+	"_epio_peek_block_irq"
