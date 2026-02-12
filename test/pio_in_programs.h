@@ -441,3 +441,53 @@ static int setup_in_bit_count_32(void **state) {
 
     while (1) { APIO_ASM_WFI(); }
 }
+
+// IN PINS wrap around — IN_BASE=30, shift right, 3 bits
+static int setup_in_pins_wraps_around(void **state) {
+    (void)state;
+    APIO_ASM_INIT();
+    APIO_SET_BLOCK(0);
+    APIO_SET_SM(0);
+
+    APIO_ADD_INSTR(APIO_IN_PINS(3));
+    APIO_WRAP_TOP();
+    APIO_ADD_INSTR(APIO_SET_X(20));
+
+    APIO_SM_CLKDIV_SET(1, 0);
+    APIO_SM_EXECCTRL_SET(0);
+    APIO_SM_SHIFTCTRL_SET(APIO_IN_SHIFTDIR_R);
+    APIO_SM_PINCTRL_SET(
+        APIO_IN_BASE(30)
+    );
+    APIO_SM_JMP_TO_START();
+    APIO_END_BLOCK();
+    APIO_ENABLE_SMS(0, 1);
+
+    while (1) { APIO_ASM_WFI(); }
+}
+
+// IN PINS wrap around with GPIOBASE=16 — IN_BASE=30, 3 bits
+// Window pins 30, 31, 0 → actual GPIOs 46, 47, 16
+static int setup_in_pins_wraps_around_gpiobase16(void **state) {
+    (void)state;
+    APIO_ASM_INIT();
+    APIO_SET_BLOCK(0);
+    APIO_GPIOBASE_16();
+
+    APIO_SET_SM(0);
+    APIO_ADD_INSTR(APIO_IN_PINS(3));
+    APIO_WRAP_TOP();
+    APIO_ADD_INSTR(APIO_SET_X(20));
+
+    APIO_SM_CLKDIV_SET(1, 0);
+    APIO_SM_EXECCTRL_SET(0);
+    APIO_SM_SHIFTCTRL_SET(APIO_IN_SHIFTDIR_R);
+    APIO_SM_PINCTRL_SET(
+        APIO_IN_BASE(30)
+    );
+    APIO_SM_JMP_TO_START();
+    APIO_END_BLOCK();
+    APIO_ENABLE_SMS(0, 1);
+
+    while (1) { APIO_ASM_WFI(); }
+}

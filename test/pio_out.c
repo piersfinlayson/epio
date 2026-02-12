@@ -542,6 +542,62 @@ static void drive_gpios_ext_overwrites_input_level(void **state) {
     epio_free(epio);
 }
 
+static void out_pins_wraps_around(void **state) {
+    setup_out_pins_wraps_around(state);
+    epio_t *epio = epio_from_apio();
+    assert_non_null(epio);
+
+    epio_set_gpio_output(epio, 30);
+    epio_set_gpio_output(epio, 31);
+    epio_set_gpio_output(epio, 0);
+
+    // Drive GPIO 0 low so we can confirm PIO drives it high
+    epio_drive_gpios_ext(epio, (uint64_t)1 << 0, 0);
+    assert_int_equal(epio_get_gpio_input(epio, 0), 0);
+
+    epio_push_tx_fifo(epio, 0, 0, 0x00000005);  // 0b101
+
+    // Cycle 1: PULL
+    epio_step_cycles(epio, 1);
+
+    // Cycle 2: OUT PINS, 3 → GPIO30=1, GPIO31=0, GPIO0=1
+    epio_step_cycles(epio, 1);
+    uint64_t pins = epio_read_pin_states(epio);
+    assert_int_equal((pins >> 30) & 1, 1);
+    assert_int_equal((pins >> 31) & 1, 0);
+    assert_int_equal((pins >> 0) & 1, 1);
+
+    // Verify GPIO 32 was NOT driven
+    uint64_t driven = epio_read_driven_pins(epio);
+    assert_int_equal((driven >> 32) & 1, 0);
+
+    epio_free(epio);
+}
+
+static void out_pins_wraps_around_gpiobase16(void **state) {
+    setup_out_pins_wraps_around_gpiobase16(state);
+    epio_t *epio = epio_from_apio();
+    assert_non_null(epio);
+
+    epio_set_gpio_output(epio, 46);
+    epio_set_gpio_output(epio, 47);
+    epio_set_gpio_output(epio, 16);
+
+    epio_push_tx_fifo(epio, 0, 0, 0x00000005);  // 0b101
+
+    // Cycle 1: PULL
+    epio_step_cycles(epio, 1);
+
+    // Cycle 2: OUT PINS, 3 → GPIO46=1, GPIO47=0, GPIO16=1
+    epio_step_cycles(epio, 1);
+    uint64_t pins = epio_read_pin_states(epio);
+    assert_int_equal((pins >> 46) & 1, 1);
+    assert_int_equal((pins >> 47) & 1, 0);
+    assert_int_equal((pins >> 16) & 1, 1);
+
+    epio_free(epio);
+}
+
 int main(void) {
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(out_x_shift_right),
@@ -565,6 +621,8 @@ int main(void) {
         cmocka_unit_test(out_pindirs_shift_right),
         cmocka_unit_test(out_exec_with_executee_delay),
         cmocka_unit_test(drive_gpios_ext_overwrites_input_level),
+        cmocka_unit_test(out_pins_wraps_around),
+        cmocka_unit_test(out_pins_wraps_around_gpiobase16),
     };
     return cmocka_run_group_tests(tests, NULL, NULL);
 }

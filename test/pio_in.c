@@ -484,6 +484,42 @@ static void in_autopush_thresh_0_means_32(void **state) {
     epio_free(epio);
 }
 
+static void in_pins_wraps_around(void **state) {
+    setup_in_pins_wraps_around(state);
+    epio_t *epio = epio_from_apio();
+    assert_non_null(epio);
+
+    // IN_BASE=30, 3 bits → reads GPIOs 30, 31, 0
+    // Drive: GPIO30=1, GPIO31=0, GPIO0=1
+    epio_drive_gpios_ext(epio, (uint64_t)1 << 30 | (uint64_t)1 << 31 | (uint64_t)1 << 0,
+                                (uint64_t)1 << 30 | (uint64_t)0      | (uint64_t)1 << 0);
+
+    // Cycle 1: IN PINS, 3 → ISR = 0b101 = 5 (shift right)
+    epio_step_cycles(epio, 1);
+    assert_int_equal(epio_peek_sm_isr(epio, 0, 0), (uint32_t)5 << 29);
+    assert_int_equal(epio_peek_sm_isr_count(epio, 0, 0), 3);
+
+    epio_free(epio);
+}
+
+static void in_pins_wraps_around_gpiobase16(void **state) {
+    setup_in_pins_wraps_around_gpiobase16(state);
+    epio_t *epio = epio_from_apio();
+    assert_non_null(epio);
+
+    // IN_BASE=30, GPIOBASE=16 → reads GPIOs 46, 47, 16
+    // Drive: GPIO46=1, GPIO47=0, GPIO16=1
+    epio_drive_gpios_ext(epio, (uint64_t)1 << 46 | (uint64_t)1 << 47 | (uint64_t)1 << 16,
+                                (uint64_t)1 << 46 | (uint64_t)0      | (uint64_t)1 << 16);
+
+    // Cycle 1: IN PINS, 3 → ISR = 0b101 = 5 (shift right)
+    epio_step_cycles(epio, 1);
+    assert_int_equal(epio_peek_sm_isr(epio, 0, 0), (uint32_t)5 << 29);
+    assert_int_equal(epio_peek_sm_isr_count(epio, 0, 0), 3);
+
+    epio_free(epio);
+}
+
 int main(void) {
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(in_pins_shift_left),
@@ -504,6 +540,8 @@ int main(void) {
         cmocka_unit_test(in_bit_count_32_shift_right),
         cmocka_unit_test(in_autopush_threshold_crossing),
         cmocka_unit_test(in_autopush_thresh_0_means_32),
+        cmocka_unit_test(in_pins_wraps_around),
+        cmocka_unit_test(in_pins_wraps_around_gpiobase16),
     };
     return cmocka_run_group_tests(tests, NULL, NULL);
 }

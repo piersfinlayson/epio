@@ -327,7 +327,7 @@ uint8_t epio_exec_instr_sm(epio_t *epio, uint8_t block, uint8_t sm, uint16_t ins
                         ;
                         uint8_t in_base = IN_BASE_GET(block, sm);
                         for (int ii = 0; ii < in_count; ii++) {
-                            uint8_t pin = in_base + ii + GPIOBASE(block);
+                            uint8_t pin = ((in_base + ii) % 32) + GPIOBASE(block);
                             if (epio_get_gpio_input(epio, pin)) {
                                 in_data |= (1 << ii);
                             }
@@ -438,7 +438,7 @@ uint8_t epio_exec_instr_sm(epio_t *epio, uint8_t block, uint8_t sm, uint16_t ins
                     ;
                     uint8_t out_base = OUT_BASE_GET(block, sm);
                     for (int ii = 0; ii < out_count; ii++) {
-                        uint8_t pin = out_base + ii + GPIOBASE(block);
+                        uint8_t pin = ((out_base + ii) % 32) + GPIOBASE(block);
                         epio_set_gpio_output_level(epio, pin, (out_data >> ii) & 0x1);
                     }
                     break;
@@ -458,7 +458,7 @@ uint8_t epio_exec_instr_sm(epio_t *epio, uint8_t block, uint8_t sm, uint16_t ins
                     ;
                     uint8_t pindirs_base = OUT_BASE_GET(block, sm);
                     for (int ii = 0; ii < out_count; ii++) {
-                        uint8_t pin = pindirs_base + ii + GPIOBASE(block);
+                        uint8_t pin = ((pindirs_base + ii) % 32) + GPIOBASE(block);
                         if ((out_data >> ii) & 0x1) {
                             epio_set_gpio_output(epio, pin);
                         } else {
@@ -590,7 +590,7 @@ uint8_t epio_exec_instr_sm(epio_t *epio, uint8_t block, uint8_t sm, uint16_t ins
                     uint8_t in_base = IN_BASE_GET(block, sm);
                     uint8_t in_count = IN_COUNT(block, sm);
                     for (int ii = 0; ii < in_count; ii++) {
-                        uint8_t pin = in_base + ii + GPIOBASE(block);
+                        uint8_t pin = ((in_base + ii) % 32) + GPIOBASE(block);
                         if (epio_get_gpio_input(epio, pin)) {
                             mov_value |= (1 << ii);
                         }
@@ -683,7 +683,7 @@ uint8_t epio_exec_instr_sm(epio_t *epio, uint8_t block, uint8_t sm, uint16_t ins
                     uint8_t out_base = OUT_BASE_GET(block, sm);
                     uint8_t out_count = OUT_COUNT_GET(block, sm);
                     for (int ii = 0; ii < out_count; ii++) {
-                        uint8_t pin = out_base + ii + GPIOBASE(block);
+                        uint8_t pin = ((out_base + ii) % 32) + GPIOBASE(block);
                         epio_set_gpio_output_level(epio, pin, (mov_value >> ii) & 0b1);
                     }
                     break;
@@ -701,7 +701,7 @@ uint8_t epio_exec_instr_sm(epio_t *epio, uint8_t block, uint8_t sm, uint16_t ins
                     uint8_t pindirs_base = OUT_BASE_GET(block, sm);
                     uint8_t pindirs_count = OUT_COUNT_GET(block, sm);
                     for (int ii = 0; ii < pindirs_count; ii++) {
-                        uint8_t pin = pindirs_base + ii + GPIOBASE(block);
+                        uint8_t pin = ((pindirs_base + ii) % 32) + GPIOBASE(block);
                         if ((mov_value >> ii) & 0b1) {
                             epio_set_gpio_output(epio, pin);
                         } else {
@@ -783,7 +783,7 @@ uint8_t epio_exec_instr_sm(epio_t *epio, uint8_t block, uint8_t sm, uint16_t ins
                     uint8_t set_base = SET_BASE_GET(block, sm);
                     uint8_t set_count = SET_COUNT_GET(block, sm);
                     for (int ii = 0; ii < set_count; ii++) {
-                        uint8_t pin = set_base + ii + GPIOBASE(block);
+                        uint8_t pin = ((set_base + ii) % 32) + GPIOBASE(block);
                         epio_set_gpio_output_level(epio, pin, (set_data >> ii) & 0b1);
                     }
                     break;
@@ -801,7 +801,7 @@ uint8_t epio_exec_instr_sm(epio_t *epio, uint8_t block, uint8_t sm, uint16_t ins
                     uint8_t pindirs_base = SET_BASE_GET(block, sm);
                     uint8_t pindirs_count = SET_COUNT_GET(block, sm);
                     for (int ii = 0; ii < pindirs_count; ii++) {
-                        uint8_t pin = pindirs_base + ii + GPIOBASE(block);
+                        uint8_t pin = ((pindirs_base + ii) % 32) + GPIOBASE(block);
                         if ((set_data >> ii) & 0b1) {
                             epio_set_gpio_output(epio, pin);
                         } else {

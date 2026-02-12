@@ -10,8 +10,12 @@ Additional function:
 
 PIO instructions to test:
 - PUSH/PULL
-- MOV
+- MOV - make sure I cover pins wrapping (should be mod 32, then GPIOBASE applied), for both SRC, DST and PINs and PINDIRS
 - IRQ
 - SET
+
+
+Holes to plug:
+- Test cases for pins wrapping mod 32, IN and MOV
 
 Test epio_wait_tx_fifo() - won't be triggered by a PIO, would be triggered by some other program (or DMA channel) pushing to the TX FIFO.  But there's an argument for a bunch of integration testing.
