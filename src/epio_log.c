@@ -27,7 +27,7 @@ int epio_disassemble_sm(
     }
 
     // Get the information we need to disassemble this SM.
-    pio_sm_reg_t *reg = &REG(block, sm);
+    epio_sm_reg_t *reg = &REG(block, sm);
     uint16_t clkdiv_int = APIO_CLKDIV_INT_FROM_REG(reg->clkdiv);
     uint8_t clkdiv_frac = APIO_CLKDIV_FRAC_FROM_REG(reg->clkdiv);
     uint8_t wrap_bottom = APIO_WRAP_BOTTOM_FROM_REG(reg->execctrl);

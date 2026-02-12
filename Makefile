@@ -94,7 +94,7 @@ $(TEST_BUILD_DIR):
 $(TEST_LIB_BUILD_DIR):
 	@mkdir -p $@
 
-$(TEST_LIB_BUILD_DIR)/%.o: src/%.c | $(TEST_LIB_BUILD_DIR) apio
+$(TEST_LIB_BUILD_DIR)/%.o: src/%.c | $(TEST_LIB_BUILD_DIR) apio  $(CMOCKA_LIB)
 	@echo "- Compiling test lib $<"
 	@$(CC) $(TEST_CFLAGS) -c $< -o $@
 

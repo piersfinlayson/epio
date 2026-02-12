@@ -18,7 +18,7 @@ void epio_init_gpios(epio_t *epio) {
         epio_set_gpio_input(epio, ii);
         epio_set_gpio_input_level(epio, ii, 1);
     }
-}   
+}
 
 uint8_t epio_get_gpio_input(epio_t *epio, uint8_t pin) {
     return (epio->gpio.gpio_input_state >> pin) & 0x1;

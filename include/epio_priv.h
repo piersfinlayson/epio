@@ -41,7 +41,7 @@ typedef struct {
     epio_sm_debug_t debug;
 
     // PIO SM registers
-    pio_sm_reg_t reg;
+    epio_sm_reg_t reg;
 
     // X register
     uint32_t x;
