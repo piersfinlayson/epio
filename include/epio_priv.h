@@ -254,7 +254,8 @@ void epio_init_dma(epio_t *epio);
             break; \
              \
         case IRQ_BLOCK_REL: \
-            IRQ_INDEX = ((IRQ_INDEX + _SM) & 0b11); \
+            /* Bit 2 is unaffected.  Module 4 on 2 LSBs */ \
+            IRQ_INDEX = (IRQ_INDEX & 0b100) | ((IRQ_INDEX + _SM) & 0b11); \
             break; \
              \
         case IRQ_BLOCK_NEXT: \

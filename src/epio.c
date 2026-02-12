@@ -9,6 +9,11 @@
 
 // Limitations
 // - No side set pins support (delays _are_ supported)
+//   - Note side setting pins takes precedence over OUT/SET for same pins from
+//     same SM
+//   - For clashes between SMs, highest numbered is preferred (easy to deal
+//     with just using incrementing scheduling order).  This is handled
+//     separately for direction and levels. 
 // - Special MOV instructions for RX FIFO access aren't supported
 // - No support for hardware inverted GPIOs, or those forced to 0/1
 // - Doesn't honour GPIO FUNC settings - any PIO block can control any GPIO
