@@ -520,6 +520,7 @@ uint8_t epio_exec_instr_sm(epio_t *epio, uint8_t block, uint8_t sm, uint16_t ins
                     if (epio_tx_fifo_depth(epio, block, sm) > 0) {
                         SM(block, sm).osr = epio_pop_tx_fifo(epio, block, sm);
                         SM(block, sm).osr_count = 0;
+                        SM(block, sm).stalled = 0;
                     } else {
                         // TX FIFO empty
                         if (block_bit) {
@@ -531,6 +532,7 @@ uint8_t epio_exec_instr_sm(epio_t *epio, uint8_t block, uint8_t sm, uint16_t ins
                             // Non-blocking: copy X to OSR
                             SM(block, sm).osr = SM(block, sm).x;
                             SM(block, sm).osr_count = 0;
+                            SM(block, sm).stalled = 0;
                         }
                     }
                 }
@@ -553,6 +555,7 @@ uint8_t epio_exec_instr_sm(epio_t *epio, uint8_t block, uint8_t sm, uint16_t ins
                         epio_push_rx_fifo(epio, block, sm, SM(block, sm).isr);
                         SM(block, sm).isr = 0;
                         SM(block, sm).isr_count = 0;
+                        SM(block, sm).stalled = 0;
                     } else {
                         // RX FIFO full
                         if (block_bit) {
@@ -566,10 +569,6 @@ uint8_t epio_exec_instr_sm(epio_t *epio, uint8_t block, uint8_t sm, uint16_t ins
                             SM(block, sm).isr_count = 0;
                         }
                     }
-                } else {
-                    // if_full condition not met, still clear ISR
-                    SM(block, sm).isr = 0;
-                    SM(block, sm).isr_count = 0;
                 }
             }
             break;

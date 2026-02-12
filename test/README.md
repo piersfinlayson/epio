@@ -1,3 +1,10 @@
+# Tests
+
+This directory contains comprehensive unit tests for epio, including coverage of the APIs and operation of the supported PIO instructions.  This also serves as tests for the apio (runtime C PIO assembler) which is primarily used to construct PIO programs for testing.  
+
+
+## To Do
+
 Additional function:
 - DMA
 
