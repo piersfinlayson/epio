@@ -170,6 +170,8 @@ void epio_init_dma(epio_t *epio);
 #define MIN_SRAM_ADDR       0x20000000
 #define MAX_SRAM_ADDR       (MIN_SRAM_ADDR + SRAM_SIZE - 1)
 
+#define CHECK_BLOCK() \
+    assert((block) < NUM_PIO_BLOCKS)
 #define CHECK_BLOCK_SM() \
     assert((block) < NUM_PIO_BLOCKS); \
     assert((sm) < NUM_SMS_PER_BLOCK)

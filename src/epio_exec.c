@@ -152,8 +152,8 @@ static void epio_sm_step(epio_t *epio, uint8_t block, uint8_t sm) {
 // effects and returning whether the PC should be updated or not (e.g. due to 
 // a JMP or WAIT).
 uint8_t epio_exec_instr_sm(epio_t *epio, uint8_t block, uint8_t sm, uint16_t instr) {
+#if defined(EPIO_DEBUG)
     char instr_str[64];
-
     // Decode using absolute (not offset) addressing
     apio_instruction_decoder(instr, instr_str, 0);
     EPIO_DBG("  PIO%d SM%d PC=%d 0x%04X %-20s X=0x%08X Y=0x%08X ISR=0x%08X OSR=0x%08X RX_FIFO=%d TX_FIFO=%d",
@@ -161,6 +161,7 @@ uint8_t epio_exec_instr_sm(epio_t *epio, uint8_t block, uint8_t sm, uint16_t ins
         SM(block, sm).x, SM(block, sm).y,
         SM(block, sm).isr, SM(block, sm).osr,
         epio_rx_fifo_depth(epio, block, sm), epio_tx_fifo_depth(epio, block, sm));
+#endif // EPIO_DEBUG
 
     uint8_t dont_update_pc = 0;
     uint8_t process_new_delay = 1;
