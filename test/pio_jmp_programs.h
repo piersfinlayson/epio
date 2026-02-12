@@ -128,3 +128,256 @@ static int setup_jmp_x_dec_when_nonzero(void **state) {
     
     while (1) { APIO_ASM_WFI(); }
 }
+
+// JMP !Y when Y=0 - should jump
+static int setup_jmp_not_y_when_zero(void **state) {
+    (void)state;
+    APIO_ASM_INIT();
+    APIO_SET_BLOCK(0);
+    APIO_SET_SM(0);
+    
+    APIO_SM_EXEC_INSTR(APIO_SET_Y(0));
+    APIO_LABEL_NEW_OFFSET(target, 2);
+    APIO_ADD_INSTR(APIO_JMP_NOT_Y(APIO_LABEL(target)));
+    APIO_ADD_INSTR(APIO_SET_X(10));  // Should not execute
+    APIO_ADD_INSTR(APIO_SET_X(20));  // Target
+    
+    APIO_SM_CLKDIV_SET(1, 0);
+    APIO_SM_EXECCTRL_SET(0);
+    APIO_SM_SHIFTCTRL_SET(0);
+    APIO_SM_PINCTRL_SET(0);
+    APIO_SM_JMP_TO_START();
+    APIO_END_BLOCK();
+    APIO_ENABLE_SMS(0, 1);
+    
+    while (1) { APIO_ASM_WFI(); }
+}
+
+// JMP !Y when Y!=0 - should not jump
+static int setup_jmp_not_y_when_nonzero(void **state) {
+    (void)state;
+    APIO_ASM_INIT();
+    APIO_SET_BLOCK(0);
+    APIO_SET_SM(0);
+    
+    APIO_SM_EXEC_INSTR(APIO_SET_Y(7));
+    APIO_LABEL_NEW_OFFSET(target, 2);
+    APIO_ADD_INSTR(APIO_JMP_NOT_Y(APIO_LABEL(target)));
+    APIO_ADD_INSTR(APIO_SET_X(20));  // Should execute
+    APIO_WRAP_TOP();
+    APIO_ADD_INSTR(APIO_SET_X(10));  // Target - should not execute
+    
+    APIO_SM_CLKDIV_SET(1, 0);
+    APIO_SM_EXECCTRL_SET(0);
+    APIO_SM_SHIFTCTRL_SET(0);
+    APIO_SM_PINCTRL_SET(0);
+    APIO_SM_JMP_TO_START();
+    APIO_END_BLOCK();
+    APIO_ENABLE_SMS(0, 1);
+    
+    while (1) { APIO_ASM_WFI(); }
+}
+
+// JMP Y-- when Y=0 - should not jump, Y wraps to 0xFFFFFFFF
+static int setup_jmp_y_dec_when_zero(void **state) {
+    (void)state;
+    APIO_ASM_INIT();
+    APIO_SET_BLOCK(0);
+    APIO_SET_SM(0);
+    
+    APIO_SM_EXEC_INSTR(APIO_SET_Y(0));
+    APIO_LABEL_NEW_OFFSET(target, 2);
+    APIO_ADD_INSTR(APIO_JMP_Y_DEC(APIO_LABEL(target)));
+    APIO_ADD_INSTR(APIO_SET_X(20));  // Should execute
+    APIO_WRAP_TOP();
+    APIO_ADD_INSTR(APIO_SET_X(10));  // Target
+    
+    APIO_SM_CLKDIV_SET(1, 0);
+    APIO_SM_EXECCTRL_SET(0);
+    APIO_SM_SHIFTCTRL_SET(0);
+    APIO_SM_PINCTRL_SET(0);
+    APIO_SM_JMP_TO_START();
+    APIO_END_BLOCK();
+    APIO_ENABLE_SMS(0, 1);
+    
+    while (1) { APIO_ASM_WFI(); }
+}
+
+// JMP Y-- when Y=3 - should jump, Y becomes 2
+static int setup_jmp_y_dec_when_nonzero(void **state) {
+    (void)state;
+    APIO_ASM_INIT();
+    APIO_SET_BLOCK(0);
+    APIO_SET_SM(0);
+    
+    APIO_SM_EXEC_INSTR(APIO_SET_Y(3));
+    APIO_LABEL_NEW_OFFSET(target, 2);
+    APIO_ADD_INSTR(APIO_JMP_Y_DEC(APIO_LABEL(target)));
+    APIO_ADD_INSTR(APIO_SET_X(10));  // Should not execute
+    APIO_ADD_INSTR(APIO_SET_X(20));  // Target
+    
+    APIO_SM_CLKDIV_SET(1, 0);
+    APIO_SM_EXECCTRL_SET(0);
+    APIO_SM_SHIFTCTRL_SET(0);
+    APIO_SM_PINCTRL_SET(0);
+    APIO_SM_JMP_TO_START();
+    APIO_END_BLOCK();
+    APIO_ENABLE_SMS(0, 1);
+    
+    while (1) { APIO_ASM_WFI(); }
+}
+
+// JMP X!=Y when X==Y - should not jump
+static int setup_jmp_x_not_y_when_equal(void **state) {
+    (void)state;
+    APIO_ASM_INIT();
+    APIO_SET_BLOCK(0);
+    APIO_SET_SM(0);
+    
+    APIO_SM_EXEC_INSTR(APIO_SET_X(15));
+    APIO_SM_EXEC_INSTR(APIO_SET_Y(15));
+    APIO_LABEL_NEW_OFFSET(target, 2);
+    APIO_ADD_INSTR(APIO_JMP_X_NOT_Y(APIO_LABEL(target)));
+    APIO_ADD_INSTR(APIO_SET_X(20));  // Should execute
+    APIO_WRAP_TOP();
+    APIO_ADD_INSTR(APIO_SET_X(10));  // Target - should not execute
+    
+    APIO_SM_CLKDIV_SET(1, 0);
+    APIO_SM_EXECCTRL_SET(0);
+    APIO_SM_SHIFTCTRL_SET(0);
+    APIO_SM_PINCTRL_SET(0);
+    APIO_SM_JMP_TO_START();
+    APIO_END_BLOCK();
+    APIO_ENABLE_SMS(0, 1);
+    
+    while (1) { APIO_ASM_WFI(); }
+}
+
+// JMP X!=Y when X!=Y - should jump
+static int setup_jmp_x_not_y_when_different(void **state) {
+    (void)state;
+    APIO_ASM_INIT();
+    APIO_SET_BLOCK(0);
+    APIO_SET_SM(0);
+    
+    APIO_SM_EXEC_INSTR(APIO_SET_X(7));
+    APIO_SM_EXEC_INSTR(APIO_SET_Y(13));
+    APIO_LABEL_NEW_OFFSET(target, 2);
+    APIO_ADD_INSTR(APIO_JMP_X_NOT_Y(APIO_LABEL(target)));
+    APIO_ADD_INSTR(APIO_SET_X(10));  // Should not execute
+    APIO_ADD_INSTR(APIO_SET_X(20));  // Target
+    
+    APIO_SM_CLKDIV_SET(1, 0);
+    APIO_SM_EXECCTRL_SET(0);
+    APIO_SM_SHIFTCTRL_SET(0);
+    APIO_SM_PINCTRL_SET(0);
+    APIO_SM_JMP_TO_START();
+    APIO_END_BLOCK();
+    APIO_ENABLE_SMS(0, 1);
+    
+    while (1) { APIO_ASM_WFI(); }
+}
+
+// JMP PIN when pin is low - should not jump
+static int setup_jmp_pin_when_low(void **state) {
+    (void)state;
+    APIO_ASM_INIT();
+    APIO_SET_BLOCK(0);
+    APIO_SET_SM(0);
+    
+    APIO_LABEL_NEW_OFFSET(target, 2);
+    APIO_ADD_INSTR(APIO_JMP_PIN(APIO_LABEL(target)));
+    APIO_ADD_INSTR(APIO_SET_X(20));  // Should execute
+    APIO_WRAP_TOP();
+    APIO_ADD_INSTR(APIO_SET_X(10));  // Target - should not execute
+    
+    APIO_SM_CLKDIV_SET(1, 0);
+    APIO_SM_EXECCTRL_SET(APIO_EXECCTRL_JMP_PIN(5));  // JMP pin is GPIO5
+    APIO_SM_SHIFTCTRL_SET(0);
+    APIO_SM_PINCTRL_SET(0);
+    APIO_SM_JMP_TO_START();
+    APIO_END_BLOCK();
+    APIO_ENABLE_SMS(0, 1);
+    
+    while (1) { APIO_ASM_WFI(); }
+}
+
+// JMP PIN when pin is high - should jump
+static int setup_jmp_pin_when_high(void **state) {
+    (void)state;
+    APIO_ASM_INIT();
+    APIO_SET_BLOCK(0);
+    APIO_SET_SM(0);
+    
+    APIO_LABEL_NEW_OFFSET(target, 2);
+    APIO_ADD_INSTR(APIO_JMP_PIN(APIO_LABEL(target)));
+    APIO_ADD_INSTR(APIO_SET_X(10));  // Should not execute
+    APIO_ADD_INSTR(APIO_SET_X(20));  // Target
+    
+    APIO_SM_CLKDIV_SET(1, 0);
+    APIO_SM_EXECCTRL_SET(APIO_EXECCTRL_JMP_PIN(5));  // JMP pin is GPIO5
+    APIO_SM_SHIFTCTRL_SET(0);
+    APIO_SM_PINCTRL_SET(0);
+    APIO_SM_JMP_TO_START();
+    APIO_END_BLOCK();
+    APIO_ENABLE_SMS(0, 1);
+    
+    while (1) { APIO_ASM_WFI(); }
+}
+
+// JMP !OSRE when OSR is empty (count=32) - should jump
+static int setup_jmp_not_osre_when_empty(void **state) {
+    (void)state;
+    APIO_ASM_INIT();
+    APIO_SET_BLOCK(0);
+    APIO_SET_SM(0);
+    
+    // Shift out 32 bits to make OSR empty
+    APIO_SM_EXEC_INSTR(APIO_OUT_NULL(32));
+    APIO_LABEL_NEW_OFFSET(target, 2);
+    APIO_ADD_INSTR(APIO_JMP_NOT_OSRE(APIO_LABEL(target)));
+    APIO_ADD_INSTR(APIO_SET_X(10));  // Should not execute
+    APIO_ADD_INSTR(APIO_SET_X(20));  // Target
+    
+    APIO_SM_CLKDIV_SET(1, 0);
+    APIO_SM_EXECCTRL_SET(0);
+    APIO_SM_SHIFTCTRL_SET(0);
+    APIO_SM_PINCTRL_SET(0);
+    APIO_SM_JMP_TO_START();
+    APIO_END_BLOCK();
+    APIO_ENABLE_SMS(0, 1);
+    
+    while (1) { APIO_ASM_WFI(); }
+}
+
+// JMP !OSRE when OSR is not empty (count<32) - should not jump
+static int setup_jmp_not_osre_when_not_empty(void **state) {
+    (void)state;
+    APIO_ASM_INIT();
+    APIO_SET_BLOCK(0);
+    APIO_SET_SM(0);
+    
+    // Shift out 16 bits, leaving OSR not empty
+    APIO_SM_EXEC_INSTR(APIO_OUT_NULL(16));
+    APIO_LABEL_NEW_OFFSET(target, 2);
+    APIO_ADD_INSTR(APIO_JMP_NOT_OSRE(APIO_LABEL(target)));
+    APIO_ADD_INSTR(APIO_SET_X(20));  // Should execute
+    APIO_WRAP_TOP();
+    APIO_ADD_INSTR(APIO_SET_X(10));  // Target - should not execute
+    
+    APIO_SM_CLKDIV_SET(1, 0);
+    APIO_SM_EXECCTRL_SET(0);
+    APIO_SM_SHIFTCTRL_SET(0);
+    APIO_SM_PINCTRL_SET(0);
+
+    // Push value to TX FIFO, pull it to OSR, then shift out 16 bits
+    APIO_TXF = 0x12345678;
+    APIO_SM_EXEC_INSTR(APIO_PULL_BLOCK);
+    APIO_SM_EXEC_INSTR(APIO_OUT_NULL(16));
+
+    APIO_SM_JMP_TO_START();
+    APIO_END_BLOCK();
+    APIO_ENABLE_SMS(0, 1);
+    
+    while (1) { APIO_ASM_WFI(); }
+}

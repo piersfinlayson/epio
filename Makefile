@@ -55,7 +55,7 @@ WASM_GEN_JS_BIND := wasm/gen_js_bind.py
 WASM_EPIO_BINDINGS_JS := $(WASM_BUILD_DIR)/epio_bindings.js
 WASM_EPIO_INDEX_HTML := $(WASM_BUILD_DIR)/index.html
 
-.PHONY: all lib wasm clean clean-lib clean-docs clean-wasm docs clean-hosted-example clean-wasm-example wasm-bindings run-hosted-example run-wasm-example clean-test test cmocka clean-cmocka clean-test-lib
+.PHONY: all lib wasm clean clean-lib clean-docs clean-wasm docs clean-hosted-example clean-wasm-example wasm-bindings run-hosted-example run-wasm-example clean-test test cmocka clean-cmocka clean-test-lib clean-apio
 
 all: lib
 
@@ -144,7 +144,7 @@ run-hosted-example: hosted-example
 run-wasm-example: wasm-example
 	@$(MAKE) --no-print-directory -f example/wasm.mk run
 
-clean: clean-lib clean-docs clean-hosted-example clean-wasm clean-wasm-example clean-test
+clean: clean-lib clean-docs clean-hosted-example clean-wasm clean-wasm-example clean-test clean-apio
 
 clean-wasm:
 	@echo "Cleaning WASM build artifacts"
@@ -184,6 +184,10 @@ clean-test: clean-cmocka clean-test-lib
 clean-cmocka:
 	@echo "Cleaning CMocka build artifacts"
 	@rm -rf $(CMOCKA_BUILD_DIR) $(CMOCKA_DIR)
+
+clean-apio:
+	@echo "Cleaning apio submodule"
+	@rm -rf apio
 
 -include $(LIB_OBJS:.o=.d)
 -include $(WASM_OBJS:.o=.d)

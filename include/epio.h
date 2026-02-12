@@ -649,6 +649,8 @@ EPIO_EXPORT uint8_t epio_peek_sm_isr_count(epio_t *epio, uint8_t block, uint8_t 
  * Tracks how many bits have been shifted out of the OSR since the last PULL
  * or autopull. Used to determine when autopull threshold is reached.
  *
+ * OSR count indicates 32 when the OSR is empty (32 bits shifted out)
+ * 
  * @param epio  The epio instance.
  * @param block PIO block index (0 to NUM_PIO_BLOCKS-1).
  * @param sm    State machine index within the block (0 to NUM_SMS_PER_BLOCK-1).

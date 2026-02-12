@@ -213,7 +213,7 @@ uint8_t epio_exec_instr_sm(epio_t *epio, uint8_t block, uint8_t sm, uint16_t ins
                     break;
 
                 case JMP_NOT_OSRE:
-                    if (SM(block, sm).isr_count == 0) {
+                    if (SM(block, sm).osr_count >= 32) {
                         NEW_INSTR(new);
                     }
                     break;
