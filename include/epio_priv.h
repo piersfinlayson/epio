@@ -180,7 +180,9 @@ void epio_init_dma(epio_t *epio);
     assert((addr <= MAX_SRAM_ADDR) && "Address above maximum SRAM address")
 #define CHECK_SRAM_ALIGN(ADDR, ALIGN) \
     assert(((addr - MIN_SRAM_ADDR) % (ALIGN)) == 0 && "Address not aligned to required boundary")
-#define CHECK_GPIO(GPIO) \
+#define CHECK_GPIO(PIN) \
+    assert((PIN) < NUM_GPIOS && "Invalid GPIO pin")
+#define CHECK_GPIO_MASK(GPIO) \
     assert(((GPIO & (0xFFFFFFFFFFFFFFFFULL << NUM_GPIOS)) == 0) && "Invalid GPIO bit(s) set")
 
 #define BLK(BLOCK)           epio->block[BLOCK]
