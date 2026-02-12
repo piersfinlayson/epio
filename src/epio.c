@@ -8,7 +8,7 @@
 // - Not yet executing from a single PIO instruction block
 
 // Limitations
-// - No side set support (delays _are_ supported)
+// - No side set pins support (delays _are_ supported)
 // - Special MOV instructions for RX FIFO access aren't supported
 // - No support for hardware inverted GPIOs, or those forced to 0/1
 // - Doesn't honour GPIO FUNC settings - any PIO block can control any GPIO

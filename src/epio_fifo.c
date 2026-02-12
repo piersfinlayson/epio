@@ -39,10 +39,27 @@ uint8_t epio_rx_fifo_depth(epio_t *epio, uint8_t block, uint8_t sm) {
     return SM(block, sm).fifo.rx_fifo_count;
 }
 
+uint32_t epio_pop_tx_fifo(epio_t *epio, uint8_t block, uint8_t sm)
+{
+    assert(FIFO(block, sm).tx_fifo_count > 0);
+    uint32_t value = FIFO(block, sm).tx_fifo[0];
+    EPIO_DBG("  Popping from PIO%d SM%d TX FIFO: 0x%08X", block, sm, value);
+    FIFO(block, sm).tx_fifo_count--;
+    for (int i = 0; i < FIFO(block, sm).tx_fifo_count; i++) {
+        FIFO(block, sm).tx_fifo[i] = FIFO(block, sm).tx_fifo[i + 1];
+    }
+    return value;
+}
+
 uint32_t epio_pop_rx_fifo(epio_t *epio, uint8_t block, uint8_t sm) {
     assert(FIFO(block, sm).rx_fifo_count > 0);
-    EPIO_DBG("  Popping from PIO%d SM%d RX FIFO: 0x%08X", block, sm, FIFO(block, sm).rx_fifo[FIFO(block, sm).rx_fifo_count-1]);
-    return FIFO(block, sm).rx_fifo[--FIFO(block, sm).rx_fifo_count];
+    uint32_t value = FIFO(block, sm).rx_fifo[0];
+    EPIO_DBG("  Popping from PIO%d SM%d RX FIFO: 0x%08X", block, sm, value);
+    FIFO(block, sm).rx_fifo_count--;
+    for (int i = 0; i < FIFO(block, sm).rx_fifo_count; i++) {
+        FIFO(block, sm).rx_fifo[i] = FIFO(block, sm).rx_fifo[i + 1];
+    }
+    return value;
 }
 
 void epio_push_tx_fifo(epio_t *epio, uint8_t block, uint8_t sm, uint32_t value) {
@@ -53,7 +70,7 @@ void epio_push_tx_fifo(epio_t *epio, uint8_t block, uint8_t sm, uint32_t value) 
 }
 
 void epio_push_rx_fifo(epio_t *epio, uint8_t block, uint8_t sm, uint32_t value) {
-    assert(FIFO(block, sm).rx_fifo_count < (MAX_FIFO_DEPTH-1));
+    assert(FIFO(block, sm).rx_fifo_count <= (MAX_FIFO_DEPTH-1));
     EPIO_DBG("  Pushing to PIO%d SM%d RX FIFO: 0x%08X", block, sm, value);
     FIFO(block, sm).rx_fifo[FIFO(block, sm).rx_fifo_count++] = value;
     return;

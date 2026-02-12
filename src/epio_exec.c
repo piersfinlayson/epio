@@ -107,19 +107,34 @@ static void epio_sm_step(epio_t *epio, uint8_t block, uint8_t sm) {
 
     // Check whether we have a pending EXEC instruction from previous OUT EXEC
     if (SM(block, sm).exec_pending) {
+        // Do not mark EXEC as NOT pending, unless the instruction fully
+        // executes with no delay
         instr = SM(block, sm).exec_instr;
-        SM(block, sm).exec_pending = 0;
     } else {
         instr = CUR_INSTR(block, sm);
     }
 
     // Execute the instruction
-    uint8_t dont_update_pc = epio_exec_instr_sm(epio, block, sm, instr);
+    uint8_t dont_update_pc;
+    uint8_t was_exec_pending = SM(block, sm).exec_pending;
+    if (SM(block, sm).delay > 0) {
+        SM(block, sm).delay--;
+        EPIO_DBG("           Delayed: %d cycles remaining", SM(block, sm).delay);
+        dont_update_pc = 1; // PC already points to the next instruction
+    } else {
+        dont_update_pc = epio_exec_instr_sm(epio, block, sm, instr);
+    }
 
     // Handle wrap
     if (dont_update_pc) {
         // JMP
     } else {
+        if (was_exec_pending) {
+            // Now, we can mark the EXEC as no longer pending.  But not if
+            // it's just been set
+            SM(block, sm).exec_pending = 0;
+        }
+
         uint8_t wrap_top = WRAP_TOP(block, sm);
         uint8_t wrap_bottom = WRAP_BOTTOM(block, sm);
 
@@ -138,22 +153,21 @@ static void epio_sm_step(epio_t *epio, uint8_t block, uint8_t sm) {
 // a JMP or WAIT).
 uint8_t epio_exec_instr_sm(epio_t *epio, uint8_t block, uint8_t sm, uint16_t instr) {
     char instr_str[64];
+
     // Decode using absolute (not offset) addressing
     apio_instruction_decoder(instr, instr_str, 0);
     EPIO_DBG("  PIO%d SM%d PC=%d 0x%04X %-20s X=0x%08X Y=0x%08X ISR=0x%08X OSR=0x%08X RX_FIFO=%d TX_FIFO=%d",
         block, sm, PC(block, sm), instr, instr_str,
         SM(block, sm).x, SM(block, sm).y,
         SM(block, sm).isr, SM(block, sm).osr,
-        FIFO(block, sm).rx_fifo_count, FIFO(block, sm).tx_fifo_count);
+        epio_rx_fifo_depth(epio, block, sm), epio_tx_fifo_depth(epio, block, sm));
 
     uint8_t dont_update_pc = 0;
     uint8_t process_new_delay = 1;
 
-    if (SM(block, sm).delay > 0) {
-        SM(block, sm).delay--;
-        EPIO_DBG("           Delayed: %d cycles remaining", SM(block, sm).delay);
-        return 1;  // PC already points to the next instruction
-    }
+    // Calculate any delay from this instruction now, so it can be overriden on
+    // a per-instruction basis (OUT EXEC, delay is ignored).
+    uint8_t new_delay = (instr >> 8) & 0x1F;
 
     uint16_t opcode = (instr >> 13) & 0x7;
     switch (opcode) {
@@ -362,8 +376,8 @@ uint8_t epio_exec_instr_sm(epio_t *epio, uint8_t block, uint8_t sm, uint16_t ins
             uint8_t autopush = AUTOPUSH_GET(block, sm);
             uint8_t push_threshold = PUSH_THRESH_GET(block, sm);
             if (autopush && SM(block, sm).isr_count >= push_threshold) {
-                if (FIFO(block, sm).rx_fifo_count < MAX_FIFO_DEPTH) {
-                    FIFO(block, sm).rx_fifo[FIFO(block, sm).rx_fifo_count++] = SM(block, sm).isr;
+                if (epio_rx_fifo_depth(epio, block, sm) < MAX_FIFO_DEPTH) {
+                    epio_push_rx_fifo(epio, block, sm, SM(block, sm).isr);
                     SM(block, sm).isr = 0;
                     SM(block, sm).isr_count = 0;
                     SM(block, sm).stalled = 0;
@@ -383,10 +397,11 @@ uint8_t epio_exec_instr_sm(epio_t *epio, uint8_t block, uint8_t sm, uint16_t ins
             uint8_t pull_threshold = PULL_THRESH_GET(block, sm);
                     
             if (autopull && SM(block, sm).osr_count >= pull_threshold) {
-                if (FIFO(block, sm).tx_fifo_count > 0) {
-                    // Pull fresh data
-                    SM(block, sm).osr = FIFO(block, sm).tx_fifo[--FIFO(block, sm).tx_fifo_count];
+                if (epio_tx_fifo_depth(epio, block, sm) > 0) {
+                    // Pull fresh data and unstall
+                    SM(block, sm).osr = epio_pop_tx_fifo(epio, block, sm);
                     SM(block, sm).osr_count = 0;
+                    SM(block, sm).stalled = 0;
                 } else {
                     // Stall - don't execute OUT
                     SM(block, sm).stalled = 1;
@@ -404,11 +419,12 @@ uint8_t epio_exec_instr_sm(epio_t *epio, uint8_t block, uint8_t sm, uint16_t ins
             uint32_t out_data;
             uint8_t out_shift_right = OUT_SHIFTDIR_R(block, sm);
             if (out_shift_right) {
-                out_data = SM(block, sm).osr & ((1 << out_count) - 1);
-                SM(block, sm).osr >>= out_count;
+                uint32_t mask = (out_count == 32) ? 0xFFFFFFFF : ((1U << out_count) - 1);
+                out_data = SM(block, sm).osr & mask;
+                SM(block, sm).osr = (out_count == 32) ? 0 : (SM(block, sm).osr >> out_count);
             } else {
                 out_data = SM(block, sm).osr >> (32 - out_count);
-                SM(block, sm).osr <<= out_count;
+                SM(block, sm).osr = (out_count == 32) ? 0 : (SM(block, sm).osr << out_count);
             }
             SM(block, sm).osr_count += out_count;
             if (SM(block, sm).osr_count > 32) {
@@ -463,6 +479,7 @@ uint8_t epio_exec_instr_sm(epio_t *epio, uint8_t block, uint8_t sm, uint16_t ins
                 case OUT_DEST_EXEC:
                     SM(block, sm).exec_instr = out_data & 0xFFFF;
                     SM(block, sm).exec_pending = 1;
+                    new_delay = 0; // OUT EXEC ignores delay field in instruction
                     break;
                     
                 default:
@@ -482,11 +499,11 @@ uint8_t epio_exec_instr_sm(epio_t *epio, uint8_t block, uint8_t sm, uint16_t ins
                 // PULL
                 uint8_t if_empty = (instr >> 6) & 0b1;
                 uint8_t block_bit = (instr >> 5) & 0b1;
-                
+                uint8_t pull_threshold = PULL_THRESH_GET(block, sm);
+
                 // Check if_empty condition
                 uint8_t should_pull = 1;
                 if (if_empty) {
-                    uint8_t pull_threshold = PULL_THRESH_GET(block, sm);
                     if (SM(block, sm).osr_count < pull_threshold) {
                         should_pull = 0;
                     }
@@ -494,13 +511,13 @@ uint8_t epio_exec_instr_sm(epio_t *epio, uint8_t block, uint8_t sm, uint16_t ins
                 
                 // If autopull enabled and OSR is full, PULL is a no-op (barrier)
                 uint8_t autopull = AUTOPULL_GET(block, sm);
-                if (autopull && SM(block, sm).osr_count == 0) {
+                if (autopull && SM(block, sm).osr_count < pull_threshold) {
                     should_pull = 0;
                 }
                 
                 if (should_pull) {
-                    if (FIFO(block, sm).tx_fifo_count > 0) {
-                        SM(block, sm).osr = FIFO(block, sm).tx_fifo[--FIFO(block, sm).tx_fifo_count];
+                    if (epio_tx_fifo_depth(epio, block, sm) > 0) {
+                        SM(block, sm).osr = epio_pop_tx_fifo(epio, block, sm);
                         SM(block, sm).osr_count = 0;
                     } else {
                         // TX FIFO empty
@@ -531,8 +548,8 @@ uint8_t epio_exec_instr_sm(epio_t *epio, uint8_t block, uint8_t sm, uint16_t ins
                 }
                 
                 if (should_push) {
-                    if (FIFO(block, sm).rx_fifo_count < MAX_FIFO_DEPTH) {
-                        FIFO(block, sm).rx_fifo[FIFO(block, sm).rx_fifo_count++] = SM(block, sm).isr;
+                    if (epio_rx_fifo_depth(epio, block, sm) < MAX_FIFO_DEPTH) {
+                        epio_push_rx_fifo(epio, block, sm, SM(block, sm).isr);
                         SM(block, sm).isr = 0;
                         SM(block, sm).isr_count = 0;
                     } else {
@@ -599,11 +616,11 @@ uint8_t epio_exec_instr_sm(epio_t *epio, uint8_t block, uint8_t sm, uint16_t ins
                     
                     switch (status_sel) {
                         case 0b00: // TXLEVEL
-                            mov_value = (FIFO(block, sm).tx_fifo_count < status_n) ? 0xFFFFFFFF : 0;
+                            mov_value = (epio_tx_fifo_depth(epio, block, sm) < status_n) ? 0xFFFFFFFF : 0;
                             break;
                             
                         case 0b01: // RXLEVEL
-                            mov_value = (FIFO(block, sm).rx_fifo_count < status_n) ? 0xFFFFFFFF : 0;
+                            mov_value = (epio_rx_fifo_depth(epio, block, sm) < status_n) ? 0xFFFFFFFF : 0;
                             break;
                             
                         case 0b10: // IRQ
@@ -805,14 +822,13 @@ uint8_t epio_exec_instr_sm(epio_t *epio, uint8_t block, uint8_t sm, uint16_t ins
     }
 
     if (process_new_delay) {
-        uint8_t new_delay = (instr >> 8) & 0x1F;
         SM(block, sm).delay = new_delay;
     }
 
     EPIO_DBG("                                            X=0x%08X Y=0x%08X ISR=0x%08X OSR=0x%08X RX_FIFO=%d TX_FIFO=%d",
         SM(block, sm).x, SM(block, sm).y,
         SM(block, sm).isr, SM(block, sm).osr,
-        FIFO(block, sm).rx_fifo_count, FIFO(block, sm).tx_fifo_count);
+        epio_rx_fifo_depth(epio, block, sm), epio_tx_fifo_depth(epio, block, sm));
 
     return dont_update_pc;
 }

@@ -18,6 +18,7 @@ EPIO_WASM_EXPORTS := \
 	"_epio_get_cycle_count","_epio_reset_cycle_count",\
 	"_epio_wait_tx_fifo","_epio_tx_fifo_depth","_epio_rx_fifo_depth",\
 	"_epio_pop_rx_fifo","_epio_push_tx_fifo","_epio_push_rx_fifo",\
+	"_epio_pop_tx_fifo",\
 	"_epio_drive_gpios_ext","_epio_read_gpios_ext",\
 	"_epio_get_gpio_input","_epio_init_gpios",\
 	"_epio_set_gpio_input","_epio_set_gpio_output",\

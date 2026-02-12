@@ -316,6 +316,21 @@ EPIO_EXPORT uint8_t epio_rx_fifo_depth(epio_t *epio, uint8_t block, uint8_t sm);
 EPIO_EXPORT uint32_t epio_pop_rx_fifo(epio_t *epio, uint8_t block, uint8_t sm);
 
 /**
+ * @brief Pop a value from the TX FIFO.
+ *
+ * Removes and returns the oldest entry from the TX FIFO.  The TX FIFO is
+ * read by the SM (via PULL instructions).
+ *
+ * Asserts if the TX FIFO is empty (i.e. has no entries to pop).
+ *
+ * @param epio  The epio instance.
+ * @param block PIO block index (0 to NUM_PIO_BLOCKS-1).
+ * @param sm    State machine index within the block (0 to NUM_SMS_PER_BLOCK-1).
+ * @return      The 32-bit value popped from the TX FIFO.
+ */
+EPIO_EXPORT uint32_t epio_pop_tx_fifo(epio_t *epio, uint8_t block, uint8_t sm);
+
+/**
  * @brief Push a value into the TX FIFO.
  *
  * Adds @p value to the TX FIFO.  The SM will consume this via PULL
