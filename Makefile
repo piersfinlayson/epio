@@ -190,7 +190,7 @@ clean-cmocka:
 	@rm -rf $(CMOCKA_BUILD_DIR) $(CMOCKA_DIR)
 
 clean-apio:
-	@echo "Cleaning apio submodule"
+	@echo "Cleaning apio repo"
 	@rm -rf apio
 
 -include $(LIB_OBJS:.o=.d)

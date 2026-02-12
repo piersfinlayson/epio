@@ -8,7 +8,7 @@
 
 #define APIO_LOG_IMPL
 #include "test.h"
-#include "pio_programs.h"
+#include "pio_basic_programs.h"
 
 #define EPIO_GPIO0 (1ULL << 0)
 

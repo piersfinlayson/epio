@@ -570,6 +570,9 @@ EPIO_EXPORT void epio_sram_write_word(epio_t *epio, uint32_t addr, uint32_t valu
  * Returns the instruction address that the state machine will execute next.
  * The PC is automatically incremented after each instruction unless a jump
  * or wrap occurs.
+ * 
+ * Remember that the PC is relative to the block's instruction memory, so it
+ * ranges from 0 to NUM_INSTRS_PER_BLOCK-1.
  *
  * @param epio  The epio instance.
  * @param block PIO block index (0 to NUM_PIO_BLOCKS-1).
