@@ -45,6 +45,9 @@ static void test_first_instruction_sets_output(void **state) {
     epio_t *epio = epio_from_apio();
     assert_non_null(epio);
 
+    uint32_t first_instr = epio_get_instr(epio, 0, 0);
+    assert_int_equal(first_instr, APIO_SET_PIN_DIRS(1));
+
     epio_step_cycles(epio, 1);
     
     uint64_t driven = epio_read_driven_pins(epio);

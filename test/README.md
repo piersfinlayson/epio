@@ -9,11 +9,7 @@ Additional function:
 - DMA
 
 PIO instructions to test:
-- PUSH/PULL
 - MOV - make sure I cover pins wrapping (should be mod 32, then GPIOBASE applied), for both SRC, DST and PINs and PINDIRS
-- IRQ
-- SET
-
 
 Holes to plug:
 - Test cases for pins wrapping mod 32, IN and MOV
@@ -23,3 +19,11 @@ Test epio_wait_tx_fifo() - won't be triggered by a PIO, would be triggered by so
 Validate autopush and autopull 11.5.4.1 and 11.5.4.2 from the datasheet again tests and behaviour.
 
 Uncomment the IRQ test that require knowledge of what happens when set/clear for the same IRQ are issues in the same cycle.  See https://github.com/raspberrypi/documentation/issues/4281
+
+## Code Coverage
+
+```bash
+lcov --capture --directory . --output-file /tmp/coverage.info
+genhtml /tmp/coverage.info --output-directory /tmp/coverage_html
+open /tmp/coverage_html/index.html
+```

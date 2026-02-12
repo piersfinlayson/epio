@@ -233,8 +233,10 @@ uint8_t epio_exec_instr_sm(epio_t *epio, uint8_t block, uint8_t sm, uint16_t ins
                     break;
 
                 default:
+                    // LCOV_EXCL_START
                     assert(0 && "Invalid JMP condition");
                     break;
+                    // LCOV_EXCL_STOP
             }
             break;
 
@@ -282,8 +284,10 @@ uint8_t epio_exec_instr_sm(epio_t *epio, uint8_t block, uint8_t sm, uint16_t ins
                             break;
 
                         default:
+                            // LCOV_EXCL_START
                             assert(0 && "Invalid IRQ block");
                             break;
+                            // LCOV_EXCL_STOP
                     }
                     uint8_t irq_state = (IRQ(irq_block).irq >> irq_index) & 0x1;
                     condition_met = (irq_state == polarity);
@@ -300,8 +304,10 @@ uint8_t epio_exec_instr_sm(epio_t *epio, uint8_t block, uint8_t sm, uint16_t ins
                     break;
                     
                 default:
+                    // LCOV_EXCL_START
                     assert(0 && "Invalid WAIT source");
                     break;
+                    // LCOV_EXCL_STOP
             }
             
             if (!condition_met) {
@@ -355,8 +361,10 @@ uint8_t epio_exec_instr_sm(epio_t *epio, uint8_t block, uint8_t sm, uint16_t ins
                         break;
                         
                     default:
+                        // LCOV_EXCL_START
                         assert(0 && "Invalid IN source");
                         break;
+                        // LCOV_EXCL_STOP
                 }
                 
                 // Shift into ISR
@@ -484,8 +492,10 @@ uint8_t epio_exec_instr_sm(epio_t *epio, uint8_t block, uint8_t sm, uint16_t ins
                     break;
                     
                 default:
+                    // LCOV_EXCL_START
                     assert(0 && "Invalid OUT destination");
                     break;
+                    // LCOV_EXCL_STOP
             }
             break;
 
@@ -634,8 +644,10 @@ uint8_t epio_exec_instr_sm(epio_t *epio, uint8_t block, uint8_t sm, uint16_t ins
                             break;
                             
                         default:
+                            // LCOV_EXCL_START
                             assert(0 && "Invalid STATUS_SEL");
                             break;
+                            // LCOV_EXCL_STOP
                     }
                     break;                    
                 case MOV_SRC_ISR:
@@ -647,8 +659,10 @@ uint8_t epio_exec_instr_sm(epio_t *epio, uint8_t block, uint8_t sm, uint16_t ins
                     break;
                     
                 default:
+                    // LCOV_EXCL_START
                     assert(0 && "Invalid MOV source");
                     break;
+                    // LCOV_EXCL_STOP
             }
             
             // Apply operation
@@ -672,8 +686,10 @@ uint8_t epio_exec_instr_sm(epio_t *epio, uint8_t block, uint8_t sm, uint16_t ins
                     break;
                     
                 default:
+                    // LCOV_EXCL_START
                     assert(0 && "Invalid MOV operation");
                     break;
+                    // LCOV_EXCL_STOP
             }
             
             // Write to destination
@@ -731,8 +747,11 @@ uint8_t epio_exec_instr_sm(epio_t *epio, uint8_t block, uint8_t sm, uint16_t ins
                     break;
                     
                 default:
+                    // LCOV_EXCL_START
                     assert(0 && "Invalid MOV destination");
                     break;
+                    // LCOV_EXCL_STOP
+
             }
             break;
 
@@ -811,14 +830,18 @@ uint8_t epio_exec_instr_sm(epio_t *epio, uint8_t block, uint8_t sm, uint16_t ins
                     break;
                     
                 default:
+                    // LCOV_EXCL_START
                     assert(0 && "Invalid SET destination");
                     break;
+                    // LCOV_EXCL_STOP
             }
             break;
 
         default:
+            // LCOV_EXCL_START
             assert(0 && "Invalid opcode");
             break;
+            // LCOV_EXCL_STOP
     }
 
     if (process_new_delay) {

@@ -48,9 +48,7 @@ void epio_get_sm_debug(epio_t *epio, uint8_t block, uint8_t sm, epio_sm_debug_t 
 static void epio_init_sm(
     epio_t *epio,
     uint8_t block,
-    uint8_t sm,
-    epio_sm_debug_t *debug,
-    epio_sm_reg_t *reg
+    uint8_t sm
 ) {
     CHECK_BLOCK_SM();
 
@@ -58,15 +56,7 @@ static void epio_init_sm(
     SM(block, sm).debug.first_instr = 0xFF;
     SM(block, sm).debug.start_instr = 0xFF;
     SM(block, sm).debug.end_instr = 0xFF;
-    if (debug != NULL) {
-        epio_set_sm_debug(epio, block, sm, debug);
-    }
 
-    // Copy register configuration if provided
-    if (reg != NULL) {
-        epio_set_sm_reg(epio, block, sm, reg);
-    }
-    
     // Initialize runtime state
     SM(block, sm).x = 0;
     SM(block, sm).y = 0;
@@ -113,7 +103,7 @@ static void epio_init_block(epio_t *epio, uint8_t block) {
     IRQ(block).irq_to_set = 0;
     
     for (int sm = 0; sm < NUM_SMS_PER_BLOCK; sm++) {
-        epio_init_sm(epio, block, sm, NULL, NULL);
+        epio_init_sm(epio, block, sm);
     }
 }
 
@@ -149,9 +139,7 @@ epio_t *epio_init(void) {
 }
 
 void epio_free(epio_t *epio) {
-    if (epio == NULL) {
-        return;
-    }
+    assert(epio != NULL && "Cannot free a NULL epio instance");
     epio_sram_free(epio);
     free(epio);
 }

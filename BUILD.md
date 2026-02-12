@@ -28,6 +28,7 @@ See [the example README](example/README.md).
 - emscripten (wasm only)
 - python3 (wasm only)
 - arm-none-eabi-gcc (example firmware build only)
+- lcov (code coverage for tests only)
 
 #### Linux
 

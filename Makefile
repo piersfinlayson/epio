@@ -34,8 +34,8 @@ CFLAGS := -I include -I apio/include -DAPIO_EMULATION=1 \
           -Wall -Wextra -Werror -ffunction-sections -fdata-sections \
           -MMD -MP -fshort-enums -g -O3 -Werror=unused-variable
 
-TEST_CFLAGS := $(CFLAGS) -I$(CMOCKA_INCLUDE) -DTEST_EPIO
-TEST_LDFLAGS := $(TEST_LIB) $(CMOCKA_LIB)
+TEST_CFLAGS := --coverage $(CFLAGS) -I$(CMOCKA_INCLUDE) -DTEST_EPIO
+TEST_LDFLAGS := --coverage $(TEST_LIB) $(CMOCKA_LIB)
 
 # WASM object files (same sources, different build dir)
 WASM_OBJS := $(patsubst src/%.c,$(WASM_BUILD_DIR)/%.o,$(filter src/%,$(LIB_SRCS)))
