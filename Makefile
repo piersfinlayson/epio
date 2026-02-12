@@ -32,7 +32,7 @@ TEST_LIB_OBJS := $(patsubst src/%.c,$(TEST_LIB_BUILD_DIR)/%.o,$(LIB_SRCS))
 
 CFLAGS := -I include -I apio/include -DAPIO_EMULATION=1 \
           -Wall -Wextra -Werror -ffunction-sections -fdata-sections \
-          -MMD -MP -fshort-enums -g -O3
+          -MMD -MP -fshort-enums -g -O3 -Werror=unused-variable
 
 TEST_CFLAGS := $(CFLAGS) -I$(CMOCKA_INCLUDE) -DTEST_EPIO
 TEST_LDFLAGS := $(TEST_LIB) $(CMOCKA_LIB)
@@ -55,7 +55,7 @@ WASM_GEN_JS_BIND := wasm/gen_js_bind.py
 WASM_EPIO_BINDINGS_JS := $(WASM_BUILD_DIR)/epio_bindings.js
 WASM_EPIO_INDEX_HTML := $(WASM_BUILD_DIR)/index.html
 
-.PHONY: all lib wasm clean clean-lib clean-docs clean-wasm docs clean-hosted-example clean-wasm-example wasm-bindings run-hosted-example run-wasm-example clean-test test cmocka clean-cmocka clean-test-lib clean-apio
+.PHONY: all lib wasm clean clean-lib clean-docs clean-wasm docs clean-hosted-example clean-wasm-example wasm-bindings run-hosted-example run-wasm-example clean-test test cmocka clean-cmocka clean-test-lib clean-apio clean-test-bins
 
 all: lib
 
@@ -177,6 +177,10 @@ clean-test-lib:
 	@echo "Cleaning test library build artifacts"
 	@rm -rf $(TEST_LIB_BUILD_DIR) $(TEST_LIB)
 
+clean-test-bins:
+	@echo "Cleaning test binaries"
+	@rm -rf $(TEST_BINS)	
+
 clean-test: clean-cmocka clean-test-lib
 	@echo "Cleaning test build artifacts"
 	@rm -rf $(TEST_BUILD_DIR)
@@ -192,3 +196,4 @@ clean-apio:
 -include $(LIB_OBJS:.o=.d)
 -include $(WASM_OBJS:.o=.d)
 -include $(TEST_LIB_OBJS:.o=.d)
+-include $(TEST_BINS:=.d)

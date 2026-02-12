@@ -12,6 +12,20 @@
 
 #define EPIO_GPIO0 (1ULL << 0)
 
+static void diassemble_program(void **state) { 
+    setup_basic_pio_apio(state);
+    epio_t *epio = epio_from_apio();
+    assert_non_null(epio);
+    
+    size_t buffer_size = 4096;
+    char buffer[buffer_size];
+    int length = epio_disassemble_sm(epio, 0, 0, buffer, buffer_size);
+    assert_int_equal(length, sizeof(disassembly_basic_pio_apio));
+    assert_string_equal(buffer, disassembly_basic_pio_apio);
+
+    epio_free(epio);
+}
+
 static void test_initial_gpio_state(void **state) {
     setup_basic_pio_apio(state);
     epio_t *epio = epio_from_apio();
@@ -110,6 +124,7 @@ static void test_cycle_count_accumulates(void **state) {
 
 int main(void) {
     const struct CMUnitTest tests[] = {
+        cmocka_unit_test(diassemble_program),
         cmocka_unit_test(test_initial_gpio_state),
         cmocka_unit_test(test_first_instruction_sets_output),
         cmocka_unit_test(test_pin_high_with_delay),

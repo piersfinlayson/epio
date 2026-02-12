@@ -4,7 +4,7 @@
 
 // epio - A PIO emulator
 //
-// Unit tests for apio related functions from apio.c
+// Unit tests for PIO JMP instructions
 
 #define APIO_LOG_IMPL
 #include "test.h"

@@ -250,8 +250,7 @@ uint8_t epio_exec_instr_sm(epio_t *epio, uint8_t block, uint8_t sm, uint16_t ins
                     ;
                     uint8_t irq_block_bits = (wait_index >> 3) & 0b11;
                     uint8_t irq_block = block;
-                    uint8_t irq_index = wait_index & 0x7;
-                    uint8_t clear_irq = polarity;
+                    uint8_t irq_index = wait_index & 0b111;
                     switch (irq_block_bits) {
                         case IRQ_BLOCK_THIS:
                             break;
@@ -273,8 +272,9 @@ uint8_t epio_exec_instr_sm(epio_t *epio, uint8_t block, uint8_t sm, uint16_t ins
                             break;
                     }
                     uint8_t irq_state = (IRQ(irq_block).irq >> irq_index) & 0x1;
-                    condition_met = (irq_state == clear_irq);
-                    if (condition_met && (instr & 0x10)) {
+                    condition_met = (irq_state == polarity);
+                    if (condition_met && polarity) {
+                        // If we were waiting for an IRQ to be set, we will clear it
                         IRQ(irq_block).irq_to_clear |= (1 << irq_index);
                     }
                     break;
@@ -721,7 +721,7 @@ uint8_t epio_exec_instr_sm(epio_t *epio, uint8_t block, uint8_t sm, uint16_t ins
             uint8_t clr = (instr >> 6) & 0b1;
             uint8_t wait = (instr >> 5) & 0b1;
             uint8_t idx_mode = (instr >> 3) & 0b11;
-            uint8_t index = instr & 0b11;
+            uint8_t index = instr & 0b111;
 
             // Determine which block and index
             uint8_t irq_block, irq_index;
