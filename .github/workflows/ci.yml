@@ -32,6 +32,16 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y gcc-arm-none-eabi make emscripten python3
         
+    - name: Install latest lcov
+      run: |
+        sudo apt-get install -y perl libcapture-tiny-perl libjson-xs-perl libdatetime-perl
+        git clone https://github.com/linux-test-project/lcov.git
+        cd lcov
+        git checkout v2.4
+        make install PREFIX=$HOME/lcov-install
+        echo "$HOME/lcov-install/bin" >> $GITHUB_PATH
+        lcov --version
+
     - name: Build libepio
       run: |
         make
@@ -58,14 +68,6 @@ jobs:
       run: |
         make clean
         make test
-
-    - name: Install latest lcov
-      run: |
-        git clone https://github.com/linux-test-project/lcov.git
-        cd lcov
-        git checkout v2.4
-        make install PREFIX=$HOME/lcov-install
-        echo "$HOME/lcov-install/bin" >> $GITHUB_PATH
 
     - name: Check code coverage
       run: |
