@@ -61,6 +61,5 @@ jobs:
 
     - name: Check code coverage
       run: |
-        lcov --version
         make clean
         make cov
