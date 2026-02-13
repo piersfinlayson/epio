@@ -733,7 +733,7 @@ uint8_t epio_exec_instr_sm(epio_t *epio, uint8_t block, uint8_t sm, uint16_t ins
                     break;
                     
                 case MOV_DEST_PC:
-                    PC(block, sm) = mov_value;
+                    PC(block, sm) = mov_value & 0x1F; // PC is 5 bits
                     dont_update_pc = 1;
                     break;
                     
