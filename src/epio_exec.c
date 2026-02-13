@@ -729,6 +729,7 @@ uint8_t epio_exec_instr_sm(epio_t *epio, uint8_t block, uint8_t sm, uint16_t ins
                 case MOV_DEST_EXEC:
                     SM(block, sm).exec_instr = mov_value & 0xFFFF;
                     SM(block, sm).exec_pending = 1;
+                    new_delay = 0; // MOV EXEC ignores delay field in instruction
                     break;
                     
                 case MOV_DEST_PC:
