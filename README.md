@@ -1,4 +1,4 @@
-# epio - An RP2350 PIO Emulator
+# epio - An cycle exact RP2350 PIO Emulator
 
 While RP2350 PIO programs are conceptually simple and easy to write, testing their precise behaviour is hard:
 
@@ -11,7 +11,7 @@ It provides a [`wasm` build](#wasm), allowing you to run and visualise PIO progr
 
 To make it easy to setup, `epio` integrates with [`apio`](https://github.com/piersfinlayson/apio), a runtime PIO assembler and disassembler.  `apio` allows you to write your PIO programs with C macros directly in your RP2350 firmware (avoding the need for a separate `pioasm` step), and run them both on real RP2350 hardware and emulated using `epio` on non-RP2350 hosts.
 
-`epio` includes comprehensive unit tests.
+`epio` includes comprehensive automated testing to ensure correct, cycle exact PIO emulation behaviour, and to avoid regressions.
 
 ## Live Demo
 
