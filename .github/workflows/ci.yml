@@ -30,7 +30,7 @@ jobs:
     - name: Install build dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y gcc-arm-none-eabi make emscripten python3 lcov
+        sudo apt-get install -y gcc-arm-none-eabi make emscripten python3
         
     - name: Build libepio
       run: |
@@ -59,7 +59,14 @@ jobs:
         make clean
         make test
 
+    - name: Install latest lcov
+      run: |
+        git clone https://github.com/linux-test-project/lcov.git
+        cd lcov
+        git checkout v2.4
+        make install PREFIX=$HOME/lcov-install
+        echo "$HOME/lcov-install/bin" >> $GITHUB_PATH
+
     - name: Check code coverage
       run: |
-        make clean
         make cov
