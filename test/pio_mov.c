@@ -46,8 +46,12 @@
 #define SV0_REV     0x00000000u         // bit_reverse(0x00000000)
 
 // EXECCTRL values for STATUS tests
-#define STATUS_ONES  (APIO_STATUS_SEL_TXLEVEL | APIO_STATUS_N(1))
-#define STATUS_ZEROS (APIO_STATUS_SEL_TXLEVEL | APIO_STATUS_N(0))
+#define STATUS_TX_ONES   (APIO_STATUS_SEL_TXLEVEL | APIO_STATUS_N(1))
+#define STATUS_TX_ZEROS  (APIO_STATUS_SEL_TXLEVEL | APIO_STATUS_N(0))
+#define STATUS_RX_ONES   (APIO_STATUS_SEL_RXLEVEL | APIO_STATUS_N(1))
+#define STATUS_RX_ZEROS  (APIO_STATUS_SEL_RXLEVEL | APIO_STATUS_N(0))
+#define STATUS_IRQ_ONES  (APIO_STATUS_SEL_IRQ | APIO_STATUS_N(0))
+#define STATUS_IRQ_ZEROS (APIO_STATUS_SEL_IRQ | APIO_STATUS_N(0))
 
 // ============================================================
 // Shared test infrastructure
@@ -103,8 +107,9 @@ static epio_t *mov_step(uint16_t mov_instr, int src, uint32_t src_val,
 //
 // pins_dst: set non-zero for PINS destination
 // exec_dst: set non-zero for EXEC destination
+// irq: if >= 0, raise this IRQ flag before stepping
 static epio_t *mov_step_status(uint16_t mov_instr, uint32_t execctrl,
-                               int pins_dst, int exec_dst) {
+                               int pins_dst, int exec_dst, int irq) {
     setup_mov_status(mov_instr, execctrl, exec_dst);
     epio_t *epio = epio_from_apio();
     assert_non_null(epio);
@@ -112,6 +117,10 @@ static epio_t *mov_step_status(uint16_t mov_instr, uint32_t execctrl,
     if (pins_dst) {
         for (int i = 8; i < 16; i++)
             epio_set_gpio_output(epio, i);
+    }
+
+    if (irq >= 0) {
+        epio_set_block_irq(epio, 0, (uint8_t)irq);
     }
 
     // No pre-instructions for STATUS source — just step the MOV
@@ -201,72 +210,72 @@ static epio_t *mov_step_status(uint16_t mov_instr, uint32_t execctrl,
         epio_free(epio); \
     }
 
-// STATUS test macros — one per destination type, parameterized by EXECCTRL
+// STATUS test macros — one per destination type, parameterized by EXECCTRL and IRQ
 
-#define MOV_X_STATUS_TEST(tname, mov, ec, exp) \
+#define MOV_X_STATUS_TEST(tname, mov, ec, irq, exp) \
     static void tname(void **state) { \
         (void)state; \
-        epio_t *epio = mov_step_status(mov, ec, 0, 0); \
+        epio_t *epio = mov_step_status(mov, ec, 0, 0, irq); \
         assert_int_equal(epio_peek_sm_x(epio, 0, 0), (uint32_t)(exp)); \
         epio_free(epio); \
     }
 
-#define MOV_Y_STATUS_TEST(tname, mov, ec, exp) \
+#define MOV_Y_STATUS_TEST(tname, mov, ec, irq, exp) \
     static void tname(void **state) { \
         (void)state; \
-        epio_t *epio = mov_step_status(mov, ec, 0, 0); \
+        epio_t *epio = mov_step_status(mov, ec, 0, 0, irq); \
         assert_int_equal(epio_peek_sm_y(epio, 0, 0), (uint32_t)(exp)); \
         epio_free(epio); \
     }
 
-#define MOV_ISR_STATUS_TEST(tname, mov, ec, exp) \
+#define MOV_ISR_STATUS_TEST(tname, mov, ec, irq, exp) \
     static void tname(void **state) { \
         (void)state; \
-        epio_t *epio = mov_step_status(mov, ec, 0, 0); \
+        epio_t *epio = mov_step_status(mov, ec, 0, 0, irq); \
         assert_int_equal(epio_peek_sm_isr(epio, 0, 0), (uint32_t)(exp)); \
         assert_int_equal(epio_peek_sm_isr_count(epio, 0, 0), 0); \
         epio_free(epio); \
     }
 
-#define MOV_OSR_STATUS_TEST(tname, mov, ec, exp) \
+#define MOV_OSR_STATUS_TEST(tname, mov, ec, irq, exp) \
     static void tname(void **state) { \
         (void)state; \
-        epio_t *epio = mov_step_status(mov, ec, 0, 0); \
+        epio_t *epio = mov_step_status(mov, ec, 0, 0, irq); \
         assert_int_equal(epio_peek_sm_osr(epio, 0, 0), (uint32_t)(exp)); \
         assert_int_equal(epio_peek_sm_osr_count(epio, 0, 0), 0); \
         epio_free(epio); \
     }
 
-#define MOV_PINS_STATUS_TEST(tname, mov, ec, exp) \
+#define MOV_PINS_STATUS_TEST(tname, mov, ec, irq, exp) \
     static void tname(void **state) { \
         (void)state; \
-        epio_t *epio = mov_step_status(mov, ec, 1, 0); \
+        epio_t *epio = mov_step_status(mov, ec, 1, 0, irq); \
         uint64_t pins = epio_read_pin_states(epio); \
         assert_int_equal((pins >> 8) & 0xFF, (uint32_t)(exp) & 0xFF); \
         epio_free(epio); \
     }
 
-#define MOV_PINDIRS_STATUS_TEST(tname, mov, ec, exp) \
+#define MOV_PINDIRS_STATUS_TEST(tname, mov, ec, irq, exp) \
     static void tname(void **state) { \
         (void)state; \
-        epio_t *epio = mov_step_status(mov, ec, 0, 0); \
+        epio_t *epio = mov_step_status(mov, ec, 0, 0, irq); \
         uint64_t driven = epio_read_driven_pins(epio); \
         assert_int_equal((driven >> 8) & 0xFF, (uint32_t)(exp) & 0xFF); \
         epio_free(epio); \
     }
 
-#define MOV_PC_STATUS_TEST(tname, mov, ec, exp) \
+#define MOV_PC_STATUS_TEST(tname, mov, ec, irq, exp) \
     static void tname(void **state) { \
         (void)state; \
-        epio_t *epio = mov_step_status(mov, ec, 0, 0); \
+        epio_t *epio = mov_step_status(mov, ec, 0, 0, irq); \
         assert_int_equal(epio_peek_sm_pc(epio, 0, 0), (uint32_t)(exp) & 0x1F); \
         epio_free(epio); \
     }
 
-#define MOV_EXEC_STATUS_TEST(tname, mov, ec, exp) \
+#define MOV_EXEC_STATUS_TEST(tname, mov, ec, irq, exp) \
     static void tname(void **state) { \
         (void)state; \
-        epio_t *epio = mov_step_status(mov, ec, 0, 1); \
+        epio_t *epio = mov_step_status(mov, ec, 0, 1, irq); \
         assert_int_equal(epio_peek_sm_exec_pending(epio, 0, 0), 1); \
         assert_int_equal(epio_peek_sm_exec_instr(epio, 0, 0), (uint32_t)(exp) & 0xFFFF); \
         epio_free(epio); \
@@ -509,44 +518,44 @@ MOV_EXEC_TEST(mov_exec_osr_rev,  APIO_MOV_SRC_REVERSE(APIO_MOV_EXEC_OSR),      M
 // ============================================================
 
 // DST = X
-MOV_X_STATUS_TEST(mov_x_status1,        APIO_MOV_X_STATUS,                            STATUS_ONES, SV1)
-MOV_X_STATUS_TEST(mov_x_status1_inv,    APIO_MOV_SRC_INVERT(APIO_MOV_X_STATUS),      STATUS_ONES, SV1_INV)
-MOV_X_STATUS_TEST(mov_x_status1_rev,    APIO_MOV_SRC_REVERSE(APIO_MOV_X_STATUS),     STATUS_ONES, SV1_REV)
+MOV_X_STATUS_TEST(mov_x_txlevel1,        APIO_MOV_X_STATUS,                            STATUS_TX_ONES, -1, SV1)
+MOV_X_STATUS_TEST(mov_x_txlevel1_inv,    APIO_MOV_SRC_INVERT(APIO_MOV_X_STATUS),      STATUS_TX_ONES, -1, SV1_INV)
+MOV_X_STATUS_TEST(mov_x_txlevel1_rev,    APIO_MOV_SRC_REVERSE(APIO_MOV_X_STATUS),     STATUS_TX_ONES, -1, SV1_REV)
 
 // DST = Y
-MOV_Y_STATUS_TEST(mov_y_status1,        APIO_MOV_Y_STATUS,                            STATUS_ONES, SV1)
-MOV_Y_STATUS_TEST(mov_y_status1_inv,    APIO_MOV_SRC_INVERT(APIO_MOV_Y_STATUS),      STATUS_ONES, SV1_INV)
-MOV_Y_STATUS_TEST(mov_y_status1_rev,    APIO_MOV_SRC_REVERSE(APIO_MOV_Y_STATUS),     STATUS_ONES, SV1_REV)
+MOV_Y_STATUS_TEST(mov_y_txlevel1,        APIO_MOV_Y_STATUS,                            STATUS_TX_ONES, -1, SV1)
+MOV_Y_STATUS_TEST(mov_y_txlevel1_inv,    APIO_MOV_SRC_INVERT(APIO_MOV_Y_STATUS),      STATUS_TX_ONES, -1, SV1_INV)
+MOV_Y_STATUS_TEST(mov_y_txlevel1_rev,    APIO_MOV_SRC_REVERSE(APIO_MOV_Y_STATUS),     STATUS_TX_ONES, -1, SV1_REV)
 
 // DST = ISR
-MOV_ISR_STATUS_TEST(mov_isr_status1,      APIO_MOV_ISR_STATUS,                          STATUS_ONES, SV1)
-MOV_ISR_STATUS_TEST(mov_isr_status1_inv,  APIO_MOV_SRC_INVERT(APIO_MOV_ISR_STATUS),    STATUS_ONES, SV1_INV)
-MOV_ISR_STATUS_TEST(mov_isr_status1_rev,  APIO_MOV_SRC_REVERSE(APIO_MOV_ISR_STATUS),   STATUS_ONES, SV1_REV)
+MOV_ISR_STATUS_TEST(mov_isr_txlevel1,      APIO_MOV_ISR_STATUS,                          STATUS_TX_ONES, -1, SV1)
+MOV_ISR_STATUS_TEST(mov_isr_txlevel1_inv,  APIO_MOV_SRC_INVERT(APIO_MOV_ISR_STATUS),    STATUS_TX_ONES, -1, SV1_INV)
+MOV_ISR_STATUS_TEST(mov_isr_txlevel1_rev,  APIO_MOV_SRC_REVERSE(APIO_MOV_ISR_STATUS),   STATUS_TX_ONES, -1, SV1_REV)
 
 // DST = OSR
-MOV_OSR_STATUS_TEST(mov_osr_status1,      APIO_MOV_OSR_STATUS,                          STATUS_ONES, SV1)
-MOV_OSR_STATUS_TEST(mov_osr_status1_inv,  APIO_MOV_SRC_INVERT(APIO_MOV_OSR_STATUS),    STATUS_ONES, SV1_INV)
-MOV_OSR_STATUS_TEST(mov_osr_status1_rev,  APIO_MOV_SRC_REVERSE(APIO_MOV_OSR_STATUS),   STATUS_ONES, SV1_REV)
+MOV_OSR_STATUS_TEST(mov_osr_txlevel1,      APIO_MOV_OSR_STATUS,                          STATUS_TX_ONES, -1, SV1)
+MOV_OSR_STATUS_TEST(mov_osr_txlevel1_inv,  APIO_MOV_SRC_INVERT(APIO_MOV_OSR_STATUS),    STATUS_TX_ONES, -1, SV1_INV)
+MOV_OSR_STATUS_TEST(mov_osr_txlevel1_rev,  APIO_MOV_SRC_REVERSE(APIO_MOV_OSR_STATUS),   STATUS_TX_ONES, -1, SV1_REV)
 
 // DST = PINS
-MOV_PINS_STATUS_TEST(mov_pins_status1,      APIO_MOV_PINS_STATUS,                          STATUS_ONES, SV1)
-MOV_PINS_STATUS_TEST(mov_pins_status1_inv,  APIO_MOV_SRC_INVERT(APIO_MOV_PINS_STATUS),    STATUS_ONES, SV1_INV)
-MOV_PINS_STATUS_TEST(mov_pins_status1_rev,  APIO_MOV_SRC_REVERSE(APIO_MOV_PINS_STATUS),   STATUS_ONES, SV1_REV)
+MOV_PINS_STATUS_TEST(mov_pins_txlevel1,      APIO_MOV_PINS_STATUS,                          STATUS_TX_ONES, -1, SV1)
+MOV_PINS_STATUS_TEST(mov_pins_txlevel1_inv,  APIO_MOV_SRC_INVERT(APIO_MOV_PINS_STATUS),    STATUS_TX_ONES, -1, SV1_INV)
+MOV_PINS_STATUS_TEST(mov_pins_txlevel1_rev,  APIO_MOV_SRC_REVERSE(APIO_MOV_PINS_STATUS),   STATUS_TX_ONES, -1, SV1_REV)
 
 // DST = PINDIRS
-MOV_PINDIRS_STATUS_TEST(mov_pindirs_status1,      APIO_MOV_PINDIRS_STATUS,                          STATUS_ONES, SV1)
-MOV_PINDIRS_STATUS_TEST(mov_pindirs_status1_inv,  APIO_MOV_SRC_INVERT(APIO_MOV_PINDIRS_STATUS),    STATUS_ONES, SV1_INV)
-MOV_PINDIRS_STATUS_TEST(mov_pindirs_status1_rev,  APIO_MOV_SRC_REVERSE(APIO_MOV_PINDIRS_STATUS),   STATUS_ONES, SV1_REV)
+MOV_PINDIRS_STATUS_TEST(mov_pindirs_txlevel1,      APIO_MOV_PINDIRS_STATUS,                          STATUS_TX_ONES, -1, SV1)
+MOV_PINDIRS_STATUS_TEST(mov_pindirs_txlevel1_inv,  APIO_MOV_SRC_INVERT(APIO_MOV_PINDIRS_STATUS),    STATUS_TX_ONES, -1, SV1_INV)
+MOV_PINDIRS_STATUS_TEST(mov_pindirs_txlevel1_rev,  APIO_MOV_SRC_REVERSE(APIO_MOV_PINDIRS_STATUS),   STATUS_TX_ONES, -1, SV1_REV)
 
 // DST = PC
-MOV_PC_STATUS_TEST(mov_pc_status1,      APIO_MOV_PC_STATUS,                          STATUS_ONES, SV1)
-MOV_PC_STATUS_TEST(mov_pc_status1_inv,  APIO_MOV_SRC_INVERT(APIO_MOV_PC_STATUS),    STATUS_ONES, SV1_INV)
-MOV_PC_STATUS_TEST(mov_pc_status1_rev,  APIO_MOV_SRC_REVERSE(APIO_MOV_PC_STATUS),   STATUS_ONES, SV1_REV)
+MOV_PC_STATUS_TEST(mov_pc_txlevel1,      APIO_MOV_PC_STATUS,                          STATUS_TX_ONES, -1, SV1)
+MOV_PC_STATUS_TEST(mov_pc_txlevel1_inv,  APIO_MOV_SRC_INVERT(APIO_MOV_PC_STATUS),    STATUS_TX_ONES, -1, SV1_INV)
+MOV_PC_STATUS_TEST(mov_pc_txlevel1_rev,  APIO_MOV_SRC_REVERSE(APIO_MOV_PC_STATUS),   STATUS_TX_ONES, -1, SV1_REV)
 
 // DST = EXEC
-MOV_EXEC_STATUS_TEST(mov_exec_status1,      APIO_MOV_EXEC_STATUS,                          STATUS_ONES, SV1)
-MOV_EXEC_STATUS_TEST(mov_exec_status1_inv,  APIO_MOV_SRC_INVERT(APIO_MOV_EXEC_STATUS),    STATUS_ONES, SV1_INV)
-MOV_EXEC_STATUS_TEST(mov_exec_status1_rev,  APIO_MOV_SRC_REVERSE(APIO_MOV_EXEC_STATUS),   STATUS_ONES, SV1_REV)
+MOV_EXEC_STATUS_TEST(mov_exec_txlevel1,      APIO_MOV_EXEC_STATUS,                          STATUS_TX_ONES, -1, SV1)
+MOV_EXEC_STATUS_TEST(mov_exec_txlevel1_inv,  APIO_MOV_SRC_INVERT(APIO_MOV_EXEC_STATUS),    STATUS_TX_ONES, -1, SV1_INV)
+MOV_EXEC_STATUS_TEST(mov_exec_txlevel1_rev,  APIO_MOV_SRC_REVERSE(APIO_MOV_EXEC_STATUS),   STATUS_TX_ONES, -1, SV1_REV)
 
 // ============================================================
 // SRC = STATUS, all-zeroes
@@ -554,44 +563,192 @@ MOV_EXEC_STATUS_TEST(mov_exec_status1_rev,  APIO_MOV_SRC_REVERSE(APIO_MOV_EXEC_S
 // ============================================================
 
 // DST = X
-MOV_X_STATUS_TEST(mov_x_status0,        APIO_MOV_X_STATUS,                            STATUS_ZEROS, SV0)
-MOV_X_STATUS_TEST(mov_x_status0_inv,    APIO_MOV_SRC_INVERT(APIO_MOV_X_STATUS),      STATUS_ZEROS, SV0_INV)
-MOV_X_STATUS_TEST(mov_x_status0_rev,    APIO_MOV_SRC_REVERSE(APIO_MOV_X_STATUS),     STATUS_ZEROS, SV0_REV)
+MOV_X_STATUS_TEST(mov_x_txlevel0,        APIO_MOV_X_STATUS,                            STATUS_TX_ZEROS, -1, SV0)
+MOV_X_STATUS_TEST(mov_x_txlevel0_inv,    APIO_MOV_SRC_INVERT(APIO_MOV_X_STATUS),      STATUS_TX_ZEROS, -1, SV0_INV)
+MOV_X_STATUS_TEST(mov_x_txlevel0_rev,    APIO_MOV_SRC_REVERSE(APIO_MOV_X_STATUS),     STATUS_TX_ZEROS, -1, SV0_REV)
 
 // DST = Y
-MOV_Y_STATUS_TEST(mov_y_status0,        APIO_MOV_Y_STATUS,                            STATUS_ZEROS, SV0)
-MOV_Y_STATUS_TEST(mov_y_status0_inv,    APIO_MOV_SRC_INVERT(APIO_MOV_Y_STATUS),      STATUS_ZEROS, SV0_INV)
-MOV_Y_STATUS_TEST(mov_y_status0_rev,    APIO_MOV_SRC_REVERSE(APIO_MOV_Y_STATUS),     STATUS_ZEROS, SV0_REV)
+MOV_Y_STATUS_TEST(mov_y_txlevel0,        APIO_MOV_Y_STATUS,                            STATUS_TX_ZEROS, -1, SV0)
+MOV_Y_STATUS_TEST(mov_y_txlevel0_inv,    APIO_MOV_SRC_INVERT(APIO_MOV_Y_STATUS),      STATUS_TX_ZEROS, -1, SV0_INV)
+MOV_Y_STATUS_TEST(mov_y_txlevel0_rev,    APIO_MOV_SRC_REVERSE(APIO_MOV_Y_STATUS),     STATUS_TX_ZEROS, -1, SV0_REV)
 
 // DST = ISR
-MOV_ISR_STATUS_TEST(mov_isr_status0,      APIO_MOV_ISR_STATUS,                          STATUS_ZEROS, SV0)
-MOV_ISR_STATUS_TEST(mov_isr_status0_inv,  APIO_MOV_SRC_INVERT(APIO_MOV_ISR_STATUS),    STATUS_ZEROS, SV0_INV)
-MOV_ISR_STATUS_TEST(mov_isr_status0_rev,  APIO_MOV_SRC_REVERSE(APIO_MOV_ISR_STATUS),   STATUS_ZEROS, SV0_REV)
+MOV_ISR_STATUS_TEST(mov_isr_txlevel0,      APIO_MOV_ISR_STATUS,                          STATUS_TX_ZEROS, -1, SV0)
+MOV_ISR_STATUS_TEST(mov_isr_txlevel0_inv,  APIO_MOV_SRC_INVERT(APIO_MOV_ISR_STATUS),    STATUS_TX_ZEROS, -1, SV0_INV)
+MOV_ISR_STATUS_TEST(mov_isr_txlevel0_rev,  APIO_MOV_SRC_REVERSE(APIO_MOV_ISR_STATUS),   STATUS_TX_ZEROS, -1, SV0_REV)
 
 // DST = OSR
-MOV_OSR_STATUS_TEST(mov_osr_status0,      APIO_MOV_OSR_STATUS,                          STATUS_ZEROS, SV0)
-MOV_OSR_STATUS_TEST(mov_osr_status0_inv,  APIO_MOV_SRC_INVERT(APIO_MOV_OSR_STATUS),    STATUS_ZEROS, SV0_INV)
-MOV_OSR_STATUS_TEST(mov_osr_status0_rev,  APIO_MOV_SRC_REVERSE(APIO_MOV_OSR_STATUS),   STATUS_ZEROS, SV0_REV)
+MOV_OSR_STATUS_TEST(mov_osr_txlevel0,      APIO_MOV_OSR_STATUS,                          STATUS_TX_ZEROS, -1, SV0)
+MOV_OSR_STATUS_TEST(mov_osr_txlevel0_inv,  APIO_MOV_SRC_INVERT(APIO_MOV_OSR_STATUS),    STATUS_TX_ZEROS, -1, SV0_INV)
+MOV_OSR_STATUS_TEST(mov_osr_txlevel0_rev,  APIO_MOV_SRC_REVERSE(APIO_MOV_OSR_STATUS),   STATUS_TX_ZEROS, -1, SV0_REV)
 
 // DST = PINS
-MOV_PINS_STATUS_TEST(mov_pins_status0,      APIO_MOV_PINS_STATUS,                          STATUS_ZEROS, SV0)
-MOV_PINS_STATUS_TEST(mov_pins_status0_inv,  APIO_MOV_SRC_INVERT(APIO_MOV_PINS_STATUS),    STATUS_ZEROS, SV0_INV)
-MOV_PINS_STATUS_TEST(mov_pins_status0_rev,  APIO_MOV_SRC_REVERSE(APIO_MOV_PINS_STATUS),   STATUS_ZEROS, SV0_REV)
+MOV_PINS_STATUS_TEST(mov_pins_txlevel0,      APIO_MOV_PINS_STATUS,                          STATUS_TX_ZEROS, -1, SV0)
+MOV_PINS_STATUS_TEST(mov_pins_txlevel0_inv,  APIO_MOV_SRC_INVERT(APIO_MOV_PINS_STATUS),    STATUS_TX_ZEROS, -1, SV0_INV)
+MOV_PINS_STATUS_TEST(mov_pins_txlevel0_rev,  APIO_MOV_SRC_REVERSE(APIO_MOV_PINS_STATUS),   STATUS_TX_ZEROS, -1, SV0_REV)
 
 // DST = PINDIRS
-MOV_PINDIRS_STATUS_TEST(mov_pindirs_status0,      APIO_MOV_PINDIRS_STATUS,                          STATUS_ZEROS, SV0)
-MOV_PINDIRS_STATUS_TEST(mov_pindirs_status0_inv,  APIO_MOV_SRC_INVERT(APIO_MOV_PINDIRS_STATUS),    STATUS_ZEROS, SV0_INV)
-MOV_PINDIRS_STATUS_TEST(mov_pindirs_status0_rev,  APIO_MOV_SRC_REVERSE(APIO_MOV_PINDIRS_STATUS),   STATUS_ZEROS, SV0_REV)
+MOV_PINDIRS_STATUS_TEST(mov_pindirs_txlevel0,      APIO_MOV_PINDIRS_STATUS,                          STATUS_TX_ZEROS, -1, SV0)
+MOV_PINDIRS_STATUS_TEST(mov_pindirs_txlevel0_inv,  APIO_MOV_SRC_INVERT(APIO_MOV_PINDIRS_STATUS),    STATUS_TX_ZEROS, -1, SV0_INV)
+MOV_PINDIRS_STATUS_TEST(mov_pindirs_txlevel0_rev,  APIO_MOV_SRC_REVERSE(APIO_MOV_PINDIRS_STATUS),   STATUS_TX_ZEROS, -1, SV0_REV)
 
 // DST = PC
-MOV_PC_STATUS_TEST(mov_pc_status0,      APIO_MOV_PC_STATUS,                          STATUS_ZEROS, SV0)
-MOV_PC_STATUS_TEST(mov_pc_status0_inv,  APIO_MOV_SRC_INVERT(APIO_MOV_PC_STATUS),    STATUS_ZEROS, SV0_INV)
-MOV_PC_STATUS_TEST(mov_pc_status0_rev,  APIO_MOV_SRC_REVERSE(APIO_MOV_PC_STATUS),   STATUS_ZEROS, SV0_REV)
+MOV_PC_STATUS_TEST(mov_pc_txlevel0,      APIO_MOV_PC_STATUS,                          STATUS_TX_ZEROS, -1, SV0)
+MOV_PC_STATUS_TEST(mov_pc_txlevel0_inv,  APIO_MOV_SRC_INVERT(APIO_MOV_PC_STATUS),    STATUS_TX_ZEROS, -1, SV0_INV)
+MOV_PC_STATUS_TEST(mov_pc_txlevel0_rev,  APIO_MOV_SRC_REVERSE(APIO_MOV_PC_STATUS),   STATUS_TX_ZEROS, -1, SV0_REV)
 
 // DST = EXEC
-MOV_EXEC_STATUS_TEST(mov_exec_status0,      APIO_MOV_EXEC_STATUS,                          STATUS_ZEROS, SV0)
-MOV_EXEC_STATUS_TEST(mov_exec_status0_inv,  APIO_MOV_SRC_INVERT(APIO_MOV_EXEC_STATUS),    STATUS_ZEROS, SV0_INV)
-MOV_EXEC_STATUS_TEST(mov_exec_status0_rev,  APIO_MOV_SRC_REVERSE(APIO_MOV_EXEC_STATUS),   STATUS_ZEROS, SV0_REV)
+MOV_EXEC_STATUS_TEST(mov_exec_txlevel0,      APIO_MOV_EXEC_STATUS,                          STATUS_TX_ZEROS, -1, SV0)
+MOV_EXEC_STATUS_TEST(mov_exec_txlevel0_inv,  APIO_MOV_SRC_INVERT(APIO_MOV_EXEC_STATUS),    STATUS_TX_ZEROS, -1, SV0_INV)
+MOV_EXEC_STATUS_TEST(mov_exec_txlevel0_rev,  APIO_MOV_SRC_REVERSE(APIO_MOV_EXEC_STATUS),   STATUS_TX_ZEROS, -1, SV0_REV)
+
+// ============================================================
+// SRC = STATUS, RXLEVEL all-ones (24 tests)
+// RXLEVEL, N=1, empty RX FIFO → 0 < 1 → 0xFFFFFFFF
+// ============================================================
+
+MOV_X_STATUS_TEST(mov_x_rxlevel1,          APIO_MOV_X_STATUS,                            STATUS_RX_ONES, -1, SV1)
+MOV_X_STATUS_TEST(mov_x_rxlevel1_inv,      APIO_MOV_SRC_INVERT(APIO_MOV_X_STATUS),      STATUS_RX_ONES, -1, SV1_INV)
+MOV_X_STATUS_TEST(mov_x_rxlevel1_rev,      APIO_MOV_SRC_REVERSE(APIO_MOV_X_STATUS),     STATUS_RX_ONES, -1, SV1_REV)
+
+MOV_Y_STATUS_TEST(mov_y_rxlevel1,          APIO_MOV_Y_STATUS,                            STATUS_RX_ONES, -1, SV1)
+MOV_Y_STATUS_TEST(mov_y_rxlevel1_inv,      APIO_MOV_SRC_INVERT(APIO_MOV_Y_STATUS),      STATUS_RX_ONES, -1, SV1_INV)
+MOV_Y_STATUS_TEST(mov_y_rxlevel1_rev,      APIO_MOV_SRC_REVERSE(APIO_MOV_Y_STATUS),     STATUS_RX_ONES, -1, SV1_REV)
+
+MOV_ISR_STATUS_TEST(mov_isr_rxlevel1,      APIO_MOV_ISR_STATUS,                          STATUS_RX_ONES, -1, SV1)
+MOV_ISR_STATUS_TEST(mov_isr_rxlevel1_inv,  APIO_MOV_SRC_INVERT(APIO_MOV_ISR_STATUS),    STATUS_RX_ONES, -1, SV1_INV)
+MOV_ISR_STATUS_TEST(mov_isr_rxlevel1_rev,  APIO_MOV_SRC_REVERSE(APIO_MOV_ISR_STATUS),   STATUS_RX_ONES, -1, SV1_REV)
+
+MOV_OSR_STATUS_TEST(mov_osr_rxlevel1,      APIO_MOV_OSR_STATUS,                          STATUS_RX_ONES, -1, SV1)
+MOV_OSR_STATUS_TEST(mov_osr_rxlevel1_inv,  APIO_MOV_SRC_INVERT(APIO_MOV_OSR_STATUS),    STATUS_RX_ONES, -1, SV1_INV)
+MOV_OSR_STATUS_TEST(mov_osr_rxlevel1_rev,  APIO_MOV_SRC_REVERSE(APIO_MOV_OSR_STATUS),   STATUS_RX_ONES, -1, SV1_REV)
+
+MOV_PINS_STATUS_TEST(mov_pins_rxlevel1,      APIO_MOV_PINS_STATUS,                          STATUS_RX_ONES, -1, SV1)
+MOV_PINS_STATUS_TEST(mov_pins_rxlevel1_inv,  APIO_MOV_SRC_INVERT(APIO_MOV_PINS_STATUS),    STATUS_RX_ONES, -1, SV1_INV)
+MOV_PINS_STATUS_TEST(mov_pins_rxlevel1_rev,  APIO_MOV_SRC_REVERSE(APIO_MOV_PINS_STATUS),   STATUS_RX_ONES, -1, SV1_REV)
+
+MOV_PINDIRS_STATUS_TEST(mov_pindirs_rxlevel1,      APIO_MOV_PINDIRS_STATUS,                          STATUS_RX_ONES, -1, SV1)
+MOV_PINDIRS_STATUS_TEST(mov_pindirs_rxlevel1_inv,  APIO_MOV_SRC_INVERT(APIO_MOV_PINDIRS_STATUS),    STATUS_RX_ONES, -1, SV1_INV)
+MOV_PINDIRS_STATUS_TEST(mov_pindirs_rxlevel1_rev,  APIO_MOV_SRC_REVERSE(APIO_MOV_PINDIRS_STATUS),   STATUS_RX_ONES, -1, SV1_REV)
+
+MOV_PC_STATUS_TEST(mov_pc_rxlevel1,      APIO_MOV_PC_STATUS,                          STATUS_RX_ONES, -1, SV1)
+MOV_PC_STATUS_TEST(mov_pc_rxlevel1_inv,  APIO_MOV_SRC_INVERT(APIO_MOV_PC_STATUS),    STATUS_RX_ONES, -1, SV1_INV)
+MOV_PC_STATUS_TEST(mov_pc_rxlevel1_rev,  APIO_MOV_SRC_REVERSE(APIO_MOV_PC_STATUS),   STATUS_RX_ONES, -1, SV1_REV)
+
+MOV_EXEC_STATUS_TEST(mov_exec_rxlevel1,      APIO_MOV_EXEC_STATUS,                          STATUS_RX_ONES, -1, SV1)
+MOV_EXEC_STATUS_TEST(mov_exec_rxlevel1_inv,  APIO_MOV_SRC_INVERT(APIO_MOV_EXEC_STATUS),    STATUS_RX_ONES, -1, SV1_INV)
+MOV_EXEC_STATUS_TEST(mov_exec_rxlevel1_rev,  APIO_MOV_SRC_REVERSE(APIO_MOV_EXEC_STATUS),   STATUS_RX_ONES, -1, SV1_REV)
+
+// ============================================================
+// SRC = STATUS, RXLEVEL all-zeroes (24 tests)
+// RXLEVEL, N=0, empty RX FIFO → 0 < 0 → 0x00000000
+// ============================================================
+
+MOV_X_STATUS_TEST(mov_x_rxlevel0,          APIO_MOV_X_STATUS,                            STATUS_RX_ZEROS, -1, SV0)
+MOV_X_STATUS_TEST(mov_x_rxlevel0_inv,      APIO_MOV_SRC_INVERT(APIO_MOV_X_STATUS),      STATUS_RX_ZEROS, -1, SV0_INV)
+MOV_X_STATUS_TEST(mov_x_rxlevel0_rev,      APIO_MOV_SRC_REVERSE(APIO_MOV_X_STATUS),     STATUS_RX_ZEROS, -1, SV0_REV)
+
+MOV_Y_STATUS_TEST(mov_y_rxlevel0,          APIO_MOV_Y_STATUS,                            STATUS_RX_ZEROS, -1, SV0)
+MOV_Y_STATUS_TEST(mov_y_rxlevel0_inv,      APIO_MOV_SRC_INVERT(APIO_MOV_Y_STATUS),      STATUS_RX_ZEROS, -1, SV0_INV)
+MOV_Y_STATUS_TEST(mov_y_rxlevel0_rev,      APIO_MOV_SRC_REVERSE(APIO_MOV_Y_STATUS),     STATUS_RX_ZEROS, -1, SV0_REV)
+
+MOV_ISR_STATUS_TEST(mov_isr_rxlevel0,      APIO_MOV_ISR_STATUS,                          STATUS_RX_ZEROS, -1, SV0)
+MOV_ISR_STATUS_TEST(mov_isr_rxlevel0_inv,  APIO_MOV_SRC_INVERT(APIO_MOV_ISR_STATUS),    STATUS_RX_ZEROS, -1, SV0_INV)
+MOV_ISR_STATUS_TEST(mov_isr_rxlevel0_rev,  APIO_MOV_SRC_REVERSE(APIO_MOV_ISR_STATUS),   STATUS_RX_ZEROS, -1, SV0_REV)
+
+MOV_OSR_STATUS_TEST(mov_osr_rxlevel0,      APIO_MOV_OSR_STATUS,                          STATUS_RX_ZEROS, -1, SV0)
+MOV_OSR_STATUS_TEST(mov_osr_rxlevel0_inv,  APIO_MOV_SRC_INVERT(APIO_MOV_OSR_STATUS),    STATUS_RX_ZEROS, -1, SV0_INV)
+MOV_OSR_STATUS_TEST(mov_osr_rxlevel0_rev,  APIO_MOV_SRC_REVERSE(APIO_MOV_OSR_STATUS),   STATUS_RX_ZEROS, -1, SV0_REV)
+
+MOV_PINS_STATUS_TEST(mov_pins_rxlevel0,      APIO_MOV_PINS_STATUS,                          STATUS_RX_ZEROS, -1, SV0)
+MOV_PINS_STATUS_TEST(mov_pins_rxlevel0_inv,  APIO_MOV_SRC_INVERT(APIO_MOV_PINS_STATUS),    STATUS_RX_ZEROS, -1, SV0_INV)
+MOV_PINS_STATUS_TEST(mov_pins_rxlevel0_rev,  APIO_MOV_SRC_REVERSE(APIO_MOV_PINS_STATUS),   STATUS_RX_ZEROS, -1, SV0_REV)
+
+MOV_PINDIRS_STATUS_TEST(mov_pindirs_rxlevel0,      APIO_MOV_PINDIRS_STATUS,                          STATUS_RX_ZEROS, -1, SV0)
+MOV_PINDIRS_STATUS_TEST(mov_pindirs_rxlevel0_inv,  APIO_MOV_SRC_INVERT(APIO_MOV_PINDIRS_STATUS),    STATUS_RX_ZEROS, -1, SV0_INV)
+MOV_PINDIRS_STATUS_TEST(mov_pindirs_rxlevel0_rev,  APIO_MOV_SRC_REVERSE(APIO_MOV_PINDIRS_STATUS),   STATUS_RX_ZEROS, -1, SV0_REV)
+
+MOV_PC_STATUS_TEST(mov_pc_rxlevel0,      APIO_MOV_PC_STATUS,                          STATUS_RX_ZEROS, -1, SV0)
+MOV_PC_STATUS_TEST(mov_pc_rxlevel0_inv,  APIO_MOV_SRC_INVERT(APIO_MOV_PC_STATUS),    STATUS_RX_ZEROS, -1, SV0_INV)
+MOV_PC_STATUS_TEST(mov_pc_rxlevel0_rev,  APIO_MOV_SRC_REVERSE(APIO_MOV_PC_STATUS),   STATUS_RX_ZEROS, -1, SV0_REV)
+
+MOV_EXEC_STATUS_TEST(mov_exec_rxlevel0,      APIO_MOV_EXEC_STATUS,                          STATUS_RX_ZEROS, -1, SV0)
+MOV_EXEC_STATUS_TEST(mov_exec_rxlevel0_inv,  APIO_MOV_SRC_INVERT(APIO_MOV_EXEC_STATUS),    STATUS_RX_ZEROS, -1, SV0_INV)
+MOV_EXEC_STATUS_TEST(mov_exec_rxlevel0_rev,  APIO_MOV_SRC_REVERSE(APIO_MOV_EXEC_STATUS),   STATUS_RX_ZEROS, -1, SV0_REV)
+
+// ============================================================
+// SRC = STATUS, IRQ raised (24 tests)
+// IRQ mode, STATUS_N=0, IRQ 0 raised → 0xFFFFFFFF
+// ============================================================
+
+MOV_X_STATUS_TEST(mov_x_irq1,          APIO_MOV_X_STATUS,                            STATUS_IRQ_ONES, 0, SV1)
+MOV_X_STATUS_TEST(mov_x_irq1_inv,      APIO_MOV_SRC_INVERT(APIO_MOV_X_STATUS),      STATUS_IRQ_ONES, 0, SV1_INV)
+MOV_X_STATUS_TEST(mov_x_irq1_rev,      APIO_MOV_SRC_REVERSE(APIO_MOV_X_STATUS),     STATUS_IRQ_ONES, 0, SV1_REV)
+
+MOV_Y_STATUS_TEST(mov_y_irq1,          APIO_MOV_Y_STATUS,                            STATUS_IRQ_ONES, 0, SV1)
+MOV_Y_STATUS_TEST(mov_y_irq1_inv,      APIO_MOV_SRC_INVERT(APIO_MOV_Y_STATUS),      STATUS_IRQ_ONES, 0, SV1_INV)
+MOV_Y_STATUS_TEST(mov_y_irq1_rev,      APIO_MOV_SRC_REVERSE(APIO_MOV_Y_STATUS),     STATUS_IRQ_ONES, 0, SV1_REV)
+
+MOV_ISR_STATUS_TEST(mov_isr_irq1,      APIO_MOV_ISR_STATUS,                          STATUS_IRQ_ONES, 0, SV1)
+MOV_ISR_STATUS_TEST(mov_isr_irq1_inv,  APIO_MOV_SRC_INVERT(APIO_MOV_ISR_STATUS),    STATUS_IRQ_ONES, 0, SV1_INV)
+MOV_ISR_STATUS_TEST(mov_isr_irq1_rev,  APIO_MOV_SRC_REVERSE(APIO_MOV_ISR_STATUS),   STATUS_IRQ_ONES, 0, SV1_REV)
+
+MOV_OSR_STATUS_TEST(mov_osr_irq1,      APIO_MOV_OSR_STATUS,                          STATUS_IRQ_ONES, 0, SV1)
+MOV_OSR_STATUS_TEST(mov_osr_irq1_inv,  APIO_MOV_SRC_INVERT(APIO_MOV_OSR_STATUS),    STATUS_IRQ_ONES, 0, SV1_INV)
+MOV_OSR_STATUS_TEST(mov_osr_irq1_rev,  APIO_MOV_SRC_REVERSE(APIO_MOV_OSR_STATUS),   STATUS_IRQ_ONES, 0, SV1_REV)
+
+MOV_PINS_STATUS_TEST(mov_pins_irq1,      APIO_MOV_PINS_STATUS,                          STATUS_IRQ_ONES, 0, SV1)
+MOV_PINS_STATUS_TEST(mov_pins_irq1_inv,  APIO_MOV_SRC_INVERT(APIO_MOV_PINS_STATUS),    STATUS_IRQ_ONES, 0, SV1_INV)
+MOV_PINS_STATUS_TEST(mov_pins_irq1_rev,  APIO_MOV_SRC_REVERSE(APIO_MOV_PINS_STATUS),   STATUS_IRQ_ONES, 0, SV1_REV)
+
+MOV_PINDIRS_STATUS_TEST(mov_pindirs_irq1,      APIO_MOV_PINDIRS_STATUS,                          STATUS_IRQ_ONES, 0, SV1)
+MOV_PINDIRS_STATUS_TEST(mov_pindirs_irq1_inv,  APIO_MOV_SRC_INVERT(APIO_MOV_PINDIRS_STATUS),    STATUS_IRQ_ONES, 0, SV1_INV)
+MOV_PINDIRS_STATUS_TEST(mov_pindirs_irq1_rev,  APIO_MOV_SRC_REVERSE(APIO_MOV_PINDIRS_STATUS),   STATUS_IRQ_ONES, 0, SV1_REV)
+
+MOV_PC_STATUS_TEST(mov_pc_irq1,      APIO_MOV_PC_STATUS,                          STATUS_IRQ_ONES, 0, SV1)
+MOV_PC_STATUS_TEST(mov_pc_irq1_inv,  APIO_MOV_SRC_INVERT(APIO_MOV_PC_STATUS),    STATUS_IRQ_ONES, 0, SV1_INV)
+MOV_PC_STATUS_TEST(mov_pc_irq1_rev,  APIO_MOV_SRC_REVERSE(APIO_MOV_PC_STATUS),   STATUS_IRQ_ONES, 0, SV1_REV)
+
+MOV_EXEC_STATUS_TEST(mov_exec_irq1,      APIO_MOV_EXEC_STATUS,                          STATUS_IRQ_ONES, 0, SV1)
+MOV_EXEC_STATUS_TEST(mov_exec_irq1_inv,  APIO_MOV_SRC_INVERT(APIO_MOV_EXEC_STATUS),    STATUS_IRQ_ONES, 0, SV1_INV)
+MOV_EXEC_STATUS_TEST(mov_exec_irq1_rev,  APIO_MOV_SRC_REVERSE(APIO_MOV_EXEC_STATUS),   STATUS_IRQ_ONES, 0, SV1_REV)
+
+// ============================================================
+// SRC = STATUS, IRQ not raised (24 tests)
+// IRQ mode, STATUS_N=0, IRQ 0 NOT raised → 0x00000000
+// ============================================================
+
+MOV_X_STATUS_TEST(mov_x_irq0,          APIO_MOV_X_STATUS,                            STATUS_IRQ_ZEROS, -1, SV0)
+MOV_X_STATUS_TEST(mov_x_irq0_inv,      APIO_MOV_SRC_INVERT(APIO_MOV_X_STATUS),      STATUS_IRQ_ZEROS, -1, SV0_INV)
+MOV_X_STATUS_TEST(mov_x_irq0_rev,      APIO_MOV_SRC_REVERSE(APIO_MOV_X_STATUS),     STATUS_IRQ_ZEROS, -1, SV0_REV)
+
+MOV_Y_STATUS_TEST(mov_y_irq0,          APIO_MOV_Y_STATUS,                            STATUS_IRQ_ZEROS, -1, SV0)
+MOV_Y_STATUS_TEST(mov_y_irq0_inv,      APIO_MOV_SRC_INVERT(APIO_MOV_Y_STATUS),      STATUS_IRQ_ZEROS, -1, SV0_INV)
+MOV_Y_STATUS_TEST(mov_y_irq0_rev,      APIO_MOV_SRC_REVERSE(APIO_MOV_Y_STATUS),     STATUS_IRQ_ZEROS, -1, SV0_REV)
+
+MOV_ISR_STATUS_TEST(mov_isr_irq0,      APIO_MOV_ISR_STATUS,                          STATUS_IRQ_ZEROS, -1, SV0)
+MOV_ISR_STATUS_TEST(mov_isr_irq0_inv,  APIO_MOV_SRC_INVERT(APIO_MOV_ISR_STATUS),    STATUS_IRQ_ZEROS, -1, SV0_INV)
+MOV_ISR_STATUS_TEST(mov_isr_irq0_rev,  APIO_MOV_SRC_REVERSE(APIO_MOV_ISR_STATUS),   STATUS_IRQ_ZEROS, -1, SV0_REV)
+
+MOV_OSR_STATUS_TEST(mov_osr_irq0,      APIO_MOV_OSR_STATUS,                          STATUS_IRQ_ZEROS, -1, SV0)
+MOV_OSR_STATUS_TEST(mov_osr_irq0_inv,  APIO_MOV_SRC_INVERT(APIO_MOV_OSR_STATUS),    STATUS_IRQ_ZEROS, -1, SV0_INV)
+MOV_OSR_STATUS_TEST(mov_osr_irq0_rev,  APIO_MOV_SRC_REVERSE(APIO_MOV_OSR_STATUS),   STATUS_IRQ_ZEROS, -1, SV0_REV)
+
+MOV_PINS_STATUS_TEST(mov_pins_irq0,      APIO_MOV_PINS_STATUS,                          STATUS_IRQ_ZEROS, -1, SV0)
+MOV_PINS_STATUS_TEST(mov_pins_irq0_inv,  APIO_MOV_SRC_INVERT(APIO_MOV_PINS_STATUS),    STATUS_IRQ_ZEROS, -1, SV0_INV)
+MOV_PINS_STATUS_TEST(mov_pins_irq0_rev,  APIO_MOV_SRC_REVERSE(APIO_MOV_PINS_STATUS),   STATUS_IRQ_ZEROS, -1, SV0_REV)
+
+MOV_PINDIRS_STATUS_TEST(mov_pindirs_irq0,      APIO_MOV_PINDIRS_STATUS,                          STATUS_IRQ_ZEROS, -1, SV0)
+MOV_PINDIRS_STATUS_TEST(mov_pindirs_irq0_inv,  APIO_MOV_SRC_INVERT(APIO_MOV_PINDIRS_STATUS),    STATUS_IRQ_ZEROS, -1, SV0_INV)
+MOV_PINDIRS_STATUS_TEST(mov_pindirs_irq0_rev,  APIO_MOV_SRC_REVERSE(APIO_MOV_PINDIRS_STATUS),   STATUS_IRQ_ZEROS, -1, SV0_REV)
+
+MOV_PC_STATUS_TEST(mov_pc_irq0,      APIO_MOV_PC_STATUS,                          STATUS_IRQ_ZEROS, -1, SV0)
+MOV_PC_STATUS_TEST(mov_pc_irq0_inv,  APIO_MOV_SRC_INVERT(APIO_MOV_PC_STATUS),    STATUS_IRQ_ZEROS, -1, SV0_INV)
+MOV_PC_STATUS_TEST(mov_pc_irq0_rev,  APIO_MOV_SRC_REVERSE(APIO_MOV_PC_STATUS),   STATUS_IRQ_ZEROS, -1, SV0_REV)
+
+MOV_EXEC_STATUS_TEST(mov_exec_irq0,      APIO_MOV_EXEC_STATUS,                          STATUS_IRQ_ZEROS, -1, SV0)
+MOV_EXEC_STATUS_TEST(mov_exec_irq0_inv,  APIO_MOV_SRC_INVERT(APIO_MOV_EXEC_STATUS),    STATUS_IRQ_ZEROS, -1, SV0_INV)
+MOV_EXEC_STATUS_TEST(mov_exec_irq0_rev,  APIO_MOV_SRC_REVERSE(APIO_MOV_EXEC_STATUS),   STATUS_IRQ_ZEROS, -1, SV0_REV)
 
 // ============================================================
 // Targeted tests — delay, GPIOBASE, count reset
@@ -905,56 +1062,160 @@ int main(void) {
         cmocka_unit_test(mov_exec_osr_rev),
 
         // SRC = STATUS, all-ones (24)
-        cmocka_unit_test(mov_x_status1),
-        cmocka_unit_test(mov_x_status1_inv),
-        cmocka_unit_test(mov_x_status1_rev),
-        cmocka_unit_test(mov_y_status1),
-        cmocka_unit_test(mov_y_status1_inv),
-        cmocka_unit_test(mov_y_status1_rev),
-        cmocka_unit_test(mov_isr_status1),
-        cmocka_unit_test(mov_isr_status1_inv),
-        cmocka_unit_test(mov_isr_status1_rev),
-        cmocka_unit_test(mov_osr_status1),
-        cmocka_unit_test(mov_osr_status1_inv),
-        cmocka_unit_test(mov_osr_status1_rev),
-        cmocka_unit_test(mov_pins_status1),
-        cmocka_unit_test(mov_pins_status1_inv),
-        cmocka_unit_test(mov_pins_status1_rev),
-        cmocka_unit_test(mov_pindirs_status1),
-        cmocka_unit_test(mov_pindirs_status1_inv),
-        cmocka_unit_test(mov_pindirs_status1_rev),
-        cmocka_unit_test(mov_pc_status1),
-        cmocka_unit_test(mov_pc_status1_inv),
-        cmocka_unit_test(mov_pc_status1_rev),
-        cmocka_unit_test(mov_exec_status1),
-        cmocka_unit_test(mov_exec_status1_inv),
-        cmocka_unit_test(mov_exec_status1_rev),
+        cmocka_unit_test(mov_x_txlevel1),
+        cmocka_unit_test(mov_x_txlevel1_inv),
+        cmocka_unit_test(mov_x_txlevel1_rev),
+        cmocka_unit_test(mov_y_txlevel1),
+        cmocka_unit_test(mov_y_txlevel1_inv),
+        cmocka_unit_test(mov_y_txlevel1_rev),
+        cmocka_unit_test(mov_isr_txlevel1),
+        cmocka_unit_test(mov_isr_txlevel1_inv),
+        cmocka_unit_test(mov_isr_txlevel1_rev),
+        cmocka_unit_test(mov_osr_txlevel1),
+        cmocka_unit_test(mov_osr_txlevel1_inv),
+        cmocka_unit_test(mov_osr_txlevel1_rev),
+        cmocka_unit_test(mov_pins_txlevel1),
+        cmocka_unit_test(mov_pins_txlevel1_inv),
+        cmocka_unit_test(mov_pins_txlevel1_rev),
+        cmocka_unit_test(mov_pindirs_txlevel1),
+        cmocka_unit_test(mov_pindirs_txlevel1_inv),
+        cmocka_unit_test(mov_pindirs_txlevel1_rev),
+        cmocka_unit_test(mov_pc_txlevel1),
+        cmocka_unit_test(mov_pc_txlevel1_inv),
+        cmocka_unit_test(mov_pc_txlevel1_rev),
+        cmocka_unit_test(mov_exec_txlevel1),
+        cmocka_unit_test(mov_exec_txlevel1_inv),
+        cmocka_unit_test(mov_exec_txlevel1_rev),
 
         // SRC = STATUS, all-zeroes (24)
-        cmocka_unit_test(mov_x_status0),
-        cmocka_unit_test(mov_x_status0_inv),
-        cmocka_unit_test(mov_x_status0_rev),
-        cmocka_unit_test(mov_y_status0),
-        cmocka_unit_test(mov_y_status0_inv),
-        cmocka_unit_test(mov_y_status0_rev),
-        cmocka_unit_test(mov_isr_status0),
-        cmocka_unit_test(mov_isr_status0_inv),
-        cmocka_unit_test(mov_isr_status0_rev),
-        cmocka_unit_test(mov_osr_status0),
-        cmocka_unit_test(mov_osr_status0_inv),
-        cmocka_unit_test(mov_osr_status0_rev),
-        cmocka_unit_test(mov_pins_status0),
-        cmocka_unit_test(mov_pins_status0_inv),
-        cmocka_unit_test(mov_pins_status0_rev),
-        cmocka_unit_test(mov_pindirs_status0),
-        cmocka_unit_test(mov_pindirs_status0_inv),
-        cmocka_unit_test(mov_pindirs_status0_rev),
-        cmocka_unit_test(mov_pc_status0),
-        cmocka_unit_test(mov_pc_status0_inv),
-        cmocka_unit_test(mov_pc_status0_rev),
-        cmocka_unit_test(mov_exec_status0),
-        cmocka_unit_test(mov_exec_status0_inv),
-        cmocka_unit_test(mov_exec_status0_rev),
+        cmocka_unit_test(mov_x_txlevel0),
+        cmocka_unit_test(mov_x_txlevel0_inv),
+        cmocka_unit_test(mov_x_txlevel0_rev),
+        cmocka_unit_test(mov_y_txlevel0),
+        cmocka_unit_test(mov_y_txlevel0_inv),
+        cmocka_unit_test(mov_y_txlevel0_rev),
+        cmocka_unit_test(mov_isr_txlevel0),
+        cmocka_unit_test(mov_isr_txlevel0_inv),
+        cmocka_unit_test(mov_isr_txlevel0_rev),
+        cmocka_unit_test(mov_osr_txlevel0),
+        cmocka_unit_test(mov_osr_txlevel0_inv),
+        cmocka_unit_test(mov_osr_txlevel0_rev),
+        cmocka_unit_test(mov_pins_txlevel0),
+        cmocka_unit_test(mov_pins_txlevel0_inv),
+        cmocka_unit_test(mov_pins_txlevel0_rev),
+        cmocka_unit_test(mov_pindirs_txlevel0),
+        cmocka_unit_test(mov_pindirs_txlevel0_inv),
+        cmocka_unit_test(mov_pindirs_txlevel0_rev),
+        cmocka_unit_test(mov_pc_txlevel0),
+        cmocka_unit_test(mov_pc_txlevel0_inv),
+        cmocka_unit_test(mov_pc_txlevel0_rev),
+        cmocka_unit_test(mov_exec_txlevel0),
+        cmocka_unit_test(mov_exec_txlevel0_inv),
+        cmocka_unit_test(mov_exec_txlevel0_rev),
+
+        // SRC = STATUS, RXLEVEL all-ones (24)
+        cmocka_unit_test(mov_x_rxlevel1),
+        cmocka_unit_test(mov_x_rxlevel1_inv),
+        cmocka_unit_test(mov_x_rxlevel1_rev),
+        cmocka_unit_test(mov_y_rxlevel1),
+        cmocka_unit_test(mov_y_rxlevel1_inv),
+        cmocka_unit_test(mov_y_rxlevel1_rev),
+        cmocka_unit_test(mov_isr_rxlevel1),
+        cmocka_unit_test(mov_isr_rxlevel1_inv),
+        cmocka_unit_test(mov_isr_rxlevel1_rev),
+        cmocka_unit_test(mov_osr_rxlevel1),
+        cmocka_unit_test(mov_osr_rxlevel1_inv),
+        cmocka_unit_test(mov_osr_rxlevel1_rev),
+        cmocka_unit_test(mov_pins_rxlevel1),
+        cmocka_unit_test(mov_pins_rxlevel1_inv),
+        cmocka_unit_test(mov_pins_rxlevel1_rev),
+        cmocka_unit_test(mov_pindirs_rxlevel1),
+        cmocka_unit_test(mov_pindirs_rxlevel1_inv),
+        cmocka_unit_test(mov_pindirs_rxlevel1_rev),
+        cmocka_unit_test(mov_pc_rxlevel1),
+        cmocka_unit_test(mov_pc_rxlevel1_inv),
+        cmocka_unit_test(mov_pc_rxlevel1_rev),
+        cmocka_unit_test(mov_exec_rxlevel1),
+        cmocka_unit_test(mov_exec_rxlevel1_inv),
+        cmocka_unit_test(mov_exec_rxlevel1_rev),
+
+        // SRC = STATUS, RXLEVEL all-zeroes (24)
+        cmocka_unit_test(mov_x_rxlevel0),
+        cmocka_unit_test(mov_x_rxlevel0_inv),
+        cmocka_unit_test(mov_x_rxlevel0_rev),
+        cmocka_unit_test(mov_y_rxlevel0),
+        cmocka_unit_test(mov_y_rxlevel0_inv),
+        cmocka_unit_test(mov_y_rxlevel0_rev),
+        cmocka_unit_test(mov_isr_rxlevel0),
+        cmocka_unit_test(mov_isr_rxlevel0_inv),
+        cmocka_unit_test(mov_isr_rxlevel0_rev),
+        cmocka_unit_test(mov_osr_rxlevel0),
+        cmocka_unit_test(mov_osr_rxlevel0_inv),
+        cmocka_unit_test(mov_osr_rxlevel0_rev),
+        cmocka_unit_test(mov_pins_rxlevel0),
+        cmocka_unit_test(mov_pins_rxlevel0_inv),
+        cmocka_unit_test(mov_pins_rxlevel0_rev),
+        cmocka_unit_test(mov_pindirs_rxlevel0),
+        cmocka_unit_test(mov_pindirs_rxlevel0_inv),
+        cmocka_unit_test(mov_pindirs_rxlevel0_rev),
+        cmocka_unit_test(mov_pc_rxlevel0),
+        cmocka_unit_test(mov_pc_rxlevel0_inv),
+        cmocka_unit_test(mov_pc_rxlevel0_rev),
+        cmocka_unit_test(mov_exec_rxlevel0),
+        cmocka_unit_test(mov_exec_rxlevel0_inv),
+        cmocka_unit_test(mov_exec_rxlevel0_rev),
+
+        // SRC = STATUS, IRQ raised (24)
+        cmocka_unit_test(mov_x_irq1),
+        cmocka_unit_test(mov_x_irq1_inv),
+        cmocka_unit_test(mov_x_irq1_rev),
+        cmocka_unit_test(mov_y_irq1),
+        cmocka_unit_test(mov_y_irq1_inv),
+        cmocka_unit_test(mov_y_irq1_rev),
+        cmocka_unit_test(mov_isr_irq1),
+        cmocka_unit_test(mov_isr_irq1_inv),
+        cmocka_unit_test(mov_isr_irq1_rev),
+        cmocka_unit_test(mov_osr_irq1),
+        cmocka_unit_test(mov_osr_irq1_inv),
+        cmocka_unit_test(mov_osr_irq1_rev),
+        cmocka_unit_test(mov_pins_irq1),
+        cmocka_unit_test(mov_pins_irq1_inv),
+        cmocka_unit_test(mov_pins_irq1_rev),
+        cmocka_unit_test(mov_pindirs_irq1),
+        cmocka_unit_test(mov_pindirs_irq1_inv),
+        cmocka_unit_test(mov_pindirs_irq1_rev),
+        cmocka_unit_test(mov_pc_irq1),
+        cmocka_unit_test(mov_pc_irq1_inv),
+        cmocka_unit_test(mov_pc_irq1_rev),
+        cmocka_unit_test(mov_exec_irq1),
+        cmocka_unit_test(mov_exec_irq1_inv),
+        cmocka_unit_test(mov_exec_irq1_rev),
+
+        // SRC = STATUS, IRQ not raised (24)
+        cmocka_unit_test(mov_x_irq0),
+        cmocka_unit_test(mov_x_irq0_inv),
+        cmocka_unit_test(mov_x_irq0_rev),
+        cmocka_unit_test(mov_y_irq0),
+        cmocka_unit_test(mov_y_irq0_inv),
+        cmocka_unit_test(mov_y_irq0_rev),
+        cmocka_unit_test(mov_isr_irq0),
+        cmocka_unit_test(mov_isr_irq0_inv),
+        cmocka_unit_test(mov_isr_irq0_rev),
+        cmocka_unit_test(mov_osr_irq0),
+        cmocka_unit_test(mov_osr_irq0_inv),
+        cmocka_unit_test(mov_osr_irq0_rev),
+        cmocka_unit_test(mov_pins_irq0),
+        cmocka_unit_test(mov_pins_irq0_inv),
+        cmocka_unit_test(mov_pins_irq0_rev),
+        cmocka_unit_test(mov_pindirs_irq0),
+        cmocka_unit_test(mov_pindirs_irq0_inv),
+        cmocka_unit_test(mov_pindirs_irq0_rev),
+        cmocka_unit_test(mov_pc_irq0),
+        cmocka_unit_test(mov_pc_irq0_inv),
+        cmocka_unit_test(mov_pc_irq0_rev),
+        cmocka_unit_test(mov_exec_irq0),
+        cmocka_unit_test(mov_exec_irq0_inv),
+        cmocka_unit_test(mov_exec_irq0_rev),
 
         // Targeted tests (5)
         cmocka_unit_test(mov_with_delay),

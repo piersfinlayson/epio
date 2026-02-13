@@ -165,6 +165,7 @@ uint8_t epio_get_jmp_pin_state(epio_t *epio, uint8_t block, uint8_t sm);
 
 // epio_dma.c
 void epio_init_dma(epio_t *epio);
+void epio_dma_one_rom(epio_t *epio);
 
 #define SRAM_SIZE           520*1024
 #define MIN_SRAM_ADDR       0x20000000

@@ -210,7 +210,8 @@ static int setup_mov_osr_osr_count_reset(void **state) {
 // STATUS source needs no register preload — value comes from FIFO level or IRQ.
 //
 // exec_nop: if non-zero, inserts a NOP after the MOV for EXEC destination
-static int setup_mov_status(uint16_t mov_instr, uint32_t execctrl, int exec_nop) {
+static int setup_mov_status(uint16_t mov_instr, uint32_t execctrl,
+                            int exec_nop) {
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
