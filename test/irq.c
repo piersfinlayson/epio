@@ -43,6 +43,7 @@ static void clear_block_irq(void **state) {
 }
 
 int main(void) {
+    (void)disassembly_basic_pio_apio;
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(set_block_irq),
         cmocka_unit_test(clear_block_irq),
