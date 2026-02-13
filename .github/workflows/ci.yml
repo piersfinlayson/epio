@@ -61,4 +61,5 @@ jobs:
 
     - name: Check code coverage
       run: |
+        make clean
         make cov
