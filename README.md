@@ -1,4 +1,4 @@
-# epio - An cycle exact RP2350 PIO Emulator
+# epio - A cycle exact RP2350 PIO Emulator
 
 While RP2350 PIO programs are conceptually simple and easy to write, testing their precise behaviour is hard:
 
