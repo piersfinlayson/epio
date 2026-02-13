@@ -170,6 +170,11 @@ void epio_init_dma(epio_t *epio);
 #define MIN_SRAM_ADDR       0x20000000
 #define MAX_SRAM_ADDR       (MIN_SRAM_ADDR + SRAM_SIZE - 1)
 
+#define CHECK_IRQ() \
+    assert((block) < NUM_PIO_BLOCKS && "Invalid IRQ block"); \
+    assert((irq_index) < NUM_IRQS_PER_BLOCK && "Invalid IRQ index")
+#define CHECK_IRQ_MASK(MASK) \
+    assert(((MASK) & (0xFFFFFFFF << NUM_IRQS_PER_BLOCK)) == 0 && "Invalid IRQ bit(s) set")
 #define CHECK_BLOCK() \
     assert((block) < NUM_PIO_BLOCKS)
 #define CHECK_BLOCK_SM() \

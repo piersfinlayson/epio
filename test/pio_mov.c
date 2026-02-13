@@ -34,6 +34,21 @@
 #define NV_INV      0xFFFFFFFFu
 #define NV_REV      0x00000000u
 
+// STATUS source values
+// STATUS returns all-ones (0xFFFFFFFF) or all-zeroes (0x00000000)
+// All-ones: TXLEVEL with STATUS_N=1, empty FIFO → 0 < 1 → true
+#define SV1         0xFFFFFFFFu
+#define SV1_INV     0x00000000u         // ~0xFFFFFFFF
+#define SV1_REV     0xFFFFFFFFu         // bit_reverse(0xFFFFFFFF)
+// All-zeroes: TXLEVEL with STATUS_N=0, empty FIFO → 0 < 0 → false
+#define SV0         0x00000000u
+#define SV0_INV     0xFFFFFFFFu         // ~0x00000000
+#define SV0_REV     0x00000000u         // bit_reverse(0x00000000)
+
+// EXECCTRL values for STATUS tests
+#define STATUS_ONES  (APIO_STATUS_SEL_TXLEVEL | APIO_STATUS_N(1))
+#define STATUS_ZEROS (APIO_STATUS_SEL_TXLEVEL | APIO_STATUS_N(0))
+
 // ============================================================
 // Shared test infrastructure
 // ============================================================
@@ -80,6 +95,27 @@ static epio_t *mov_step(uint16_t mov_instr, int src, uint32_t src_val,
 
     // Step pre-instructions + the MOV itself
     epio_step_cycles(epio, mov_pre_cycles(src) + 1);
+
+    return epio;
+}
+
+// Build STATUS program, create epio, step through to MOV completion.
+//
+// pins_dst: set non-zero for PINS destination
+// exec_dst: set non-zero for EXEC destination
+static epio_t *mov_step_status(uint16_t mov_instr, uint32_t execctrl,
+                               int pins_dst, int exec_dst) {
+    setup_mov_status(mov_instr, execctrl, exec_dst);
+    epio_t *epio = epio_from_apio();
+    assert_non_null(epio);
+
+    if (pins_dst) {
+        for (int i = 8; i < 16; i++)
+            epio_set_gpio_output(epio, i);
+    }
+
+    // No pre-instructions for STATUS source — just step the MOV
+    epio_step_cycles(epio, 1);
 
     return epio;
 }
@@ -160,6 +196,77 @@ static epio_t *mov_step(uint16_t mov_instr, int src, uint32_t src_val,
     static void tname(void **state) { \
         (void)state; \
         epio_t *epio = mov_step(mov, src, val, 0, 1); \
+        assert_int_equal(epio_peek_sm_exec_pending(epio, 0, 0), 1); \
+        assert_int_equal(epio_peek_sm_exec_instr(epio, 0, 0), (uint32_t)(exp) & 0xFFFF); \
+        epio_free(epio); \
+    }
+
+// STATUS test macros — one per destination type, parameterized by EXECCTRL
+
+#define MOV_X_STATUS_TEST(tname, mov, ec, exp) \
+    static void tname(void **state) { \
+        (void)state; \
+        epio_t *epio = mov_step_status(mov, ec, 0, 0); \
+        assert_int_equal(epio_peek_sm_x(epio, 0, 0), (uint32_t)(exp)); \
+        epio_free(epio); \
+    }
+
+#define MOV_Y_STATUS_TEST(tname, mov, ec, exp) \
+    static void tname(void **state) { \
+        (void)state; \
+        epio_t *epio = mov_step_status(mov, ec, 0, 0); \
+        assert_int_equal(epio_peek_sm_y(epio, 0, 0), (uint32_t)(exp)); \
+        epio_free(epio); \
+    }
+
+#define MOV_ISR_STATUS_TEST(tname, mov, ec, exp) \
+    static void tname(void **state) { \
+        (void)state; \
+        epio_t *epio = mov_step_status(mov, ec, 0, 0); \
+        assert_int_equal(epio_peek_sm_isr(epio, 0, 0), (uint32_t)(exp)); \
+        assert_int_equal(epio_peek_sm_isr_count(epio, 0, 0), 0); \
+        epio_free(epio); \
+    }
+
+#define MOV_OSR_STATUS_TEST(tname, mov, ec, exp) \
+    static void tname(void **state) { \
+        (void)state; \
+        epio_t *epio = mov_step_status(mov, ec, 0, 0); \
+        assert_int_equal(epio_peek_sm_osr(epio, 0, 0), (uint32_t)(exp)); \
+        assert_int_equal(epio_peek_sm_osr_count(epio, 0, 0), 0); \
+        epio_free(epio); \
+    }
+
+#define MOV_PINS_STATUS_TEST(tname, mov, ec, exp) \
+    static void tname(void **state) { \
+        (void)state; \
+        epio_t *epio = mov_step_status(mov, ec, 1, 0); \
+        uint64_t pins = epio_read_pin_states(epio); \
+        assert_int_equal((pins >> 8) & 0xFF, (uint32_t)(exp) & 0xFF); \
+        epio_free(epio); \
+    }
+
+#define MOV_PINDIRS_STATUS_TEST(tname, mov, ec, exp) \
+    static void tname(void **state) { \
+        (void)state; \
+        epio_t *epio = mov_step_status(mov, ec, 0, 0); \
+        uint64_t driven = epio_read_driven_pins(epio); \
+        assert_int_equal((driven >> 8) & 0xFF, (uint32_t)(exp) & 0xFF); \
+        epio_free(epio); \
+    }
+
+#define MOV_PC_STATUS_TEST(tname, mov, ec, exp) \
+    static void tname(void **state) { \
+        (void)state; \
+        epio_t *epio = mov_step_status(mov, ec, 0, 0); \
+        assert_int_equal(epio_peek_sm_pc(epio, 0, 0), (uint32_t)(exp) & 0x1F); \
+        epio_free(epio); \
+    }
+
+#define MOV_EXEC_STATUS_TEST(tname, mov, ec, exp) \
+    static void tname(void **state) { \
+        (void)state; \
+        epio_t *epio = mov_step_status(mov, ec, 0, 1); \
         assert_int_equal(epio_peek_sm_exec_pending(epio, 0, 0), 1); \
         assert_int_equal(epio_peek_sm_exec_instr(epio, 0, 0), (uint32_t)(exp) & 0xFFFF); \
         epio_free(epio); \
@@ -395,6 +502,96 @@ MOV_EXEC_TEST(mov_exec_isr_rev,  APIO_MOV_SRC_REVERSE(APIO_MOV_EXEC_ISR),      M
 MOV_EXEC_TEST(mov_exec_osr,      APIO_MOV_EXEC_OSR,                             MT_SRC_OSR, TV, TV)
 MOV_EXEC_TEST(mov_exec_osr_inv,  APIO_MOV_SRC_INVERT(APIO_MOV_EXEC_OSR),       MT_SRC_OSR, TV, TV_INV)
 MOV_EXEC_TEST(mov_exec_osr_rev,  APIO_MOV_SRC_REVERSE(APIO_MOV_EXEC_OSR),      MT_SRC_OSR, TV, TV_REV)
+
+// ============================================================
+// SRC = STATUS, all-ones (48 tests: 8 dst × 3 ops × 2 values)
+// STATUS_ONES: TXLEVEL, N=1, empty FIFO → 0 < 1 → 0xFFFFFFFF
+// ============================================================
+
+// DST = X
+MOV_X_STATUS_TEST(mov_x_status1,        APIO_MOV_X_STATUS,                            STATUS_ONES, SV1)
+MOV_X_STATUS_TEST(mov_x_status1_inv,    APIO_MOV_SRC_INVERT(APIO_MOV_X_STATUS),      STATUS_ONES, SV1_INV)
+MOV_X_STATUS_TEST(mov_x_status1_rev,    APIO_MOV_SRC_REVERSE(APIO_MOV_X_STATUS),     STATUS_ONES, SV1_REV)
+
+// DST = Y
+MOV_Y_STATUS_TEST(mov_y_status1,        APIO_MOV_Y_STATUS,                            STATUS_ONES, SV1)
+MOV_Y_STATUS_TEST(mov_y_status1_inv,    APIO_MOV_SRC_INVERT(APIO_MOV_Y_STATUS),      STATUS_ONES, SV1_INV)
+MOV_Y_STATUS_TEST(mov_y_status1_rev,    APIO_MOV_SRC_REVERSE(APIO_MOV_Y_STATUS),     STATUS_ONES, SV1_REV)
+
+// DST = ISR
+MOV_ISR_STATUS_TEST(mov_isr_status1,      APIO_MOV_ISR_STATUS,                          STATUS_ONES, SV1)
+MOV_ISR_STATUS_TEST(mov_isr_status1_inv,  APIO_MOV_SRC_INVERT(APIO_MOV_ISR_STATUS),    STATUS_ONES, SV1_INV)
+MOV_ISR_STATUS_TEST(mov_isr_status1_rev,  APIO_MOV_SRC_REVERSE(APIO_MOV_ISR_STATUS),   STATUS_ONES, SV1_REV)
+
+// DST = OSR
+MOV_OSR_STATUS_TEST(mov_osr_status1,      APIO_MOV_OSR_STATUS,                          STATUS_ONES, SV1)
+MOV_OSR_STATUS_TEST(mov_osr_status1_inv,  APIO_MOV_SRC_INVERT(APIO_MOV_OSR_STATUS),    STATUS_ONES, SV1_INV)
+MOV_OSR_STATUS_TEST(mov_osr_status1_rev,  APIO_MOV_SRC_REVERSE(APIO_MOV_OSR_STATUS),   STATUS_ONES, SV1_REV)
+
+// DST = PINS
+MOV_PINS_STATUS_TEST(mov_pins_status1,      APIO_MOV_PINS_STATUS,                          STATUS_ONES, SV1)
+MOV_PINS_STATUS_TEST(mov_pins_status1_inv,  APIO_MOV_SRC_INVERT(APIO_MOV_PINS_STATUS),    STATUS_ONES, SV1_INV)
+MOV_PINS_STATUS_TEST(mov_pins_status1_rev,  APIO_MOV_SRC_REVERSE(APIO_MOV_PINS_STATUS),   STATUS_ONES, SV1_REV)
+
+// DST = PINDIRS
+MOV_PINDIRS_STATUS_TEST(mov_pindirs_status1,      APIO_MOV_PINDIRS_STATUS,                          STATUS_ONES, SV1)
+MOV_PINDIRS_STATUS_TEST(mov_pindirs_status1_inv,  APIO_MOV_SRC_INVERT(APIO_MOV_PINDIRS_STATUS),    STATUS_ONES, SV1_INV)
+MOV_PINDIRS_STATUS_TEST(mov_pindirs_status1_rev,  APIO_MOV_SRC_REVERSE(APIO_MOV_PINDIRS_STATUS),   STATUS_ONES, SV1_REV)
+
+// DST = PC
+MOV_PC_STATUS_TEST(mov_pc_status1,      APIO_MOV_PC_STATUS,                          STATUS_ONES, SV1)
+MOV_PC_STATUS_TEST(mov_pc_status1_inv,  APIO_MOV_SRC_INVERT(APIO_MOV_PC_STATUS),    STATUS_ONES, SV1_INV)
+MOV_PC_STATUS_TEST(mov_pc_status1_rev,  APIO_MOV_SRC_REVERSE(APIO_MOV_PC_STATUS),   STATUS_ONES, SV1_REV)
+
+// DST = EXEC
+MOV_EXEC_STATUS_TEST(mov_exec_status1,      APIO_MOV_EXEC_STATUS,                          STATUS_ONES, SV1)
+MOV_EXEC_STATUS_TEST(mov_exec_status1_inv,  APIO_MOV_SRC_INVERT(APIO_MOV_EXEC_STATUS),    STATUS_ONES, SV1_INV)
+MOV_EXEC_STATUS_TEST(mov_exec_status1_rev,  APIO_MOV_SRC_REVERSE(APIO_MOV_EXEC_STATUS),   STATUS_ONES, SV1_REV)
+
+// ============================================================
+// SRC = STATUS, all-zeroes
+// STATUS_ZEROS: TXLEVEL, N=0, empty FIFO → 0 < 0 → false → 0x00000000
+// ============================================================
+
+// DST = X
+MOV_X_STATUS_TEST(mov_x_status0,        APIO_MOV_X_STATUS,                            STATUS_ZEROS, SV0)
+MOV_X_STATUS_TEST(mov_x_status0_inv,    APIO_MOV_SRC_INVERT(APIO_MOV_X_STATUS),      STATUS_ZEROS, SV0_INV)
+MOV_X_STATUS_TEST(mov_x_status0_rev,    APIO_MOV_SRC_REVERSE(APIO_MOV_X_STATUS),     STATUS_ZEROS, SV0_REV)
+
+// DST = Y
+MOV_Y_STATUS_TEST(mov_y_status0,        APIO_MOV_Y_STATUS,                            STATUS_ZEROS, SV0)
+MOV_Y_STATUS_TEST(mov_y_status0_inv,    APIO_MOV_SRC_INVERT(APIO_MOV_Y_STATUS),      STATUS_ZEROS, SV0_INV)
+MOV_Y_STATUS_TEST(mov_y_status0_rev,    APIO_MOV_SRC_REVERSE(APIO_MOV_Y_STATUS),     STATUS_ZEROS, SV0_REV)
+
+// DST = ISR
+MOV_ISR_STATUS_TEST(mov_isr_status0,      APIO_MOV_ISR_STATUS,                          STATUS_ZEROS, SV0)
+MOV_ISR_STATUS_TEST(mov_isr_status0_inv,  APIO_MOV_SRC_INVERT(APIO_MOV_ISR_STATUS),    STATUS_ZEROS, SV0_INV)
+MOV_ISR_STATUS_TEST(mov_isr_status0_rev,  APIO_MOV_SRC_REVERSE(APIO_MOV_ISR_STATUS),   STATUS_ZEROS, SV0_REV)
+
+// DST = OSR
+MOV_OSR_STATUS_TEST(mov_osr_status0,      APIO_MOV_OSR_STATUS,                          STATUS_ZEROS, SV0)
+MOV_OSR_STATUS_TEST(mov_osr_status0_inv,  APIO_MOV_SRC_INVERT(APIO_MOV_OSR_STATUS),    STATUS_ZEROS, SV0_INV)
+MOV_OSR_STATUS_TEST(mov_osr_status0_rev,  APIO_MOV_SRC_REVERSE(APIO_MOV_OSR_STATUS),   STATUS_ZEROS, SV0_REV)
+
+// DST = PINS
+MOV_PINS_STATUS_TEST(mov_pins_status0,      APIO_MOV_PINS_STATUS,                          STATUS_ZEROS, SV0)
+MOV_PINS_STATUS_TEST(mov_pins_status0_inv,  APIO_MOV_SRC_INVERT(APIO_MOV_PINS_STATUS),    STATUS_ZEROS, SV0_INV)
+MOV_PINS_STATUS_TEST(mov_pins_status0_rev,  APIO_MOV_SRC_REVERSE(APIO_MOV_PINS_STATUS),   STATUS_ZEROS, SV0_REV)
+
+// DST = PINDIRS
+MOV_PINDIRS_STATUS_TEST(mov_pindirs_status0,      APIO_MOV_PINDIRS_STATUS,                          STATUS_ZEROS, SV0)
+MOV_PINDIRS_STATUS_TEST(mov_pindirs_status0_inv,  APIO_MOV_SRC_INVERT(APIO_MOV_PINDIRS_STATUS),    STATUS_ZEROS, SV0_INV)
+MOV_PINDIRS_STATUS_TEST(mov_pindirs_status0_rev,  APIO_MOV_SRC_REVERSE(APIO_MOV_PINDIRS_STATUS),   STATUS_ZEROS, SV0_REV)
+
+// DST = PC
+MOV_PC_STATUS_TEST(mov_pc_status0,      APIO_MOV_PC_STATUS,                          STATUS_ZEROS, SV0)
+MOV_PC_STATUS_TEST(mov_pc_status0_inv,  APIO_MOV_SRC_INVERT(APIO_MOV_PC_STATUS),    STATUS_ZEROS, SV0_INV)
+MOV_PC_STATUS_TEST(mov_pc_status0_rev,  APIO_MOV_SRC_REVERSE(APIO_MOV_PC_STATUS),   STATUS_ZEROS, SV0_REV)
+
+// DST = EXEC
+MOV_EXEC_STATUS_TEST(mov_exec_status0,      APIO_MOV_EXEC_STATUS,                          STATUS_ZEROS, SV0)
+MOV_EXEC_STATUS_TEST(mov_exec_status0_inv,  APIO_MOV_SRC_INVERT(APIO_MOV_EXEC_STATUS),    STATUS_ZEROS, SV0_INV)
+MOV_EXEC_STATUS_TEST(mov_exec_status0_rev,  APIO_MOV_SRC_REVERSE(APIO_MOV_EXEC_STATUS),   STATUS_ZEROS, SV0_REV)
 
 // ============================================================
 // Targeted tests — delay, GPIOBASE, count reset
@@ -706,6 +903,58 @@ int main(void) {
         cmocka_unit_test(mov_exec_osr),
         cmocka_unit_test(mov_exec_osr_inv),
         cmocka_unit_test(mov_exec_osr_rev),
+
+        // SRC = STATUS, all-ones (24)
+        cmocka_unit_test(mov_x_status1),
+        cmocka_unit_test(mov_x_status1_inv),
+        cmocka_unit_test(mov_x_status1_rev),
+        cmocka_unit_test(mov_y_status1),
+        cmocka_unit_test(mov_y_status1_inv),
+        cmocka_unit_test(mov_y_status1_rev),
+        cmocka_unit_test(mov_isr_status1),
+        cmocka_unit_test(mov_isr_status1_inv),
+        cmocka_unit_test(mov_isr_status1_rev),
+        cmocka_unit_test(mov_osr_status1),
+        cmocka_unit_test(mov_osr_status1_inv),
+        cmocka_unit_test(mov_osr_status1_rev),
+        cmocka_unit_test(mov_pins_status1),
+        cmocka_unit_test(mov_pins_status1_inv),
+        cmocka_unit_test(mov_pins_status1_rev),
+        cmocka_unit_test(mov_pindirs_status1),
+        cmocka_unit_test(mov_pindirs_status1_inv),
+        cmocka_unit_test(mov_pindirs_status1_rev),
+        cmocka_unit_test(mov_pc_status1),
+        cmocka_unit_test(mov_pc_status1_inv),
+        cmocka_unit_test(mov_pc_status1_rev),
+        cmocka_unit_test(mov_exec_status1),
+        cmocka_unit_test(mov_exec_status1_inv),
+        cmocka_unit_test(mov_exec_status1_rev),
+
+        // SRC = STATUS, all-zeroes (24)
+        cmocka_unit_test(mov_x_status0),
+        cmocka_unit_test(mov_x_status0_inv),
+        cmocka_unit_test(mov_x_status0_rev),
+        cmocka_unit_test(mov_y_status0),
+        cmocka_unit_test(mov_y_status0_inv),
+        cmocka_unit_test(mov_y_status0_rev),
+        cmocka_unit_test(mov_isr_status0),
+        cmocka_unit_test(mov_isr_status0_inv),
+        cmocka_unit_test(mov_isr_status0_rev),
+        cmocka_unit_test(mov_osr_status0),
+        cmocka_unit_test(mov_osr_status0_inv),
+        cmocka_unit_test(mov_osr_status0_rev),
+        cmocka_unit_test(mov_pins_status0),
+        cmocka_unit_test(mov_pins_status0_inv),
+        cmocka_unit_test(mov_pins_status0_rev),
+        cmocka_unit_test(mov_pindirs_status0),
+        cmocka_unit_test(mov_pindirs_status0_inv),
+        cmocka_unit_test(mov_pindirs_status0_rev),
+        cmocka_unit_test(mov_pc_status0),
+        cmocka_unit_test(mov_pc_status0_inv),
+        cmocka_unit_test(mov_pc_status0_rev),
+        cmocka_unit_test(mov_exec_status0),
+        cmocka_unit_test(mov_exec_status0_inv),
+        cmocka_unit_test(mov_exec_status0_rev),
 
         // Targeted tests (5)
         cmocka_unit_test(mov_with_delay),

@@ -33,4 +33,5 @@ EPIO_WASM_EXPORTS := \
 	"_epio_peek_sm_isr_count","_epio_peek_sm_osr_count",\
 	"_epio_peek_sm_stalled","_epio_peek_sm_delay",\
 	"_epio_peek_sm_exec_pending","_epio_peek_sm_exec_instr",\
-	"_epio_peek_block_irq","_epio_peek_sm_osr_empty"
+	"_epio_peek_block_irq","_epio_peek_sm_osr_empty",\
+	"_epio_set_block_irq","_epio_clear_block_irq"

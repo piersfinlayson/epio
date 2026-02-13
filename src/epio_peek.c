@@ -70,6 +70,9 @@ uint16_t epio_peek_sm_exec_instr(epio_t *epio, uint8_t block, uint8_t sm) {
 }
 
 uint32_t epio_peek_block_irq(epio_t *epio, uint8_t block) {
+    CHECK_BLOCK();
+    uint32_t irq_state = IRQ(block).irq;
+    CHECK_IRQ_MASK(irq_state);
     assert(block < NUM_PIO_BLOCKS && "Invalid PIO block");
     return IRQ(block).irq;
 }

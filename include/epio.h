@@ -776,6 +776,38 @@ EPIO_EXPORT uint32_t epio_peek_block_irq(epio_t *epio, uint8_t block);
 /** @} */
 
 /**
+ * @defgroup irq IRQ API
+ * @brief Functions for controlling IRQs
+ * @{
+ */
+
+ /**
+  * @brief Set an IRQ flag for a PIO block.
+  * 
+  * Sets the specified IRQ flag (0-7) for the given PIO block.  This can be used
+  * to trigger state machines waiting on that IRQ.
+  * 
+  * @param epio  The epio instance.
+  * @param block PIO block index (0 to NUM_PIO_BLOCKS-1
+  * @param irq_num IRQ number to set (0 to NUM_IRQS_PER_BLOCK-1).
+  */
+EPIO_EXPORT void epio_set_block_irq(epio_t *epio, uint8_t block, uint8_t irq_num);
+
+/**
+ * @brief Clear an IRQ flag for a PIO block.
+ * 
+ * Clears the specified IRQ flag (0-7) for the given PIO block.  State machines
+ * waiting on that IRQ will continue waiting until it is set again.
+ * 
+ * @param epio  The epio instance.
+ * @param block PIO block index (0 to NUM_PIO_BLOCKS-1
+ * @param irq_num IRQ number to clear (0 to NUM_IRQS_PER_BLOCK-1).
+ */
+EPIO_EXPORT void epio_clear_block_irq(epio_t *epio, uint8_t block, uint8_t irq_num);
+
+/** @} */
+
+/**
  * @defgroup apio apio Integration API
  * @brief Functions for creating an epio instance from apio state.
  * @{

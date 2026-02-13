@@ -203,3 +203,33 @@ static int setup_mov_osr_osr_count_reset(void **state) {
     APIO_ENABLE_SMS(0, 1);
     while (1) { APIO_ASM_WFI(); }
 }
+
+// Build a MOV STATUS test program.
+//
+// Like setup_mov but configures EXECCTRL with STATUS_SEL and STATUS_N.
+// STATUS source needs no register preload — value comes from FIFO level or IRQ.
+//
+// exec_nop: if non-zero, inserts a NOP after the MOV for EXEC destination
+static int setup_mov_status(uint16_t mov_instr, uint32_t execctrl, int exec_nop) {
+    APIO_ASM_INIT();
+    APIO_SET_BLOCK(0);
+    APIO_SET_SM(0);
+
+    APIO_ADD_INSTR(mov_instr);
+
+    if (exec_nop) {
+        APIO_ADD_INSTR(APIO_NOP);
+    }
+
+    APIO_WRAP_TOP();
+    APIO_ADD_INSTR(APIO_NOP);
+
+    APIO_SM_CLKDIV_SET(1, 0);
+    APIO_SM_EXECCTRL_SET(execctrl);
+    APIO_SM_SHIFTCTRL_SET(MOV_TEST_SC);
+    APIO_SM_PINCTRL_SET(MOV_TEST_PC);
+    APIO_SM_JMP_TO_START();
+    APIO_END_BLOCK();
+    APIO_ENABLE_SMS(0, 1);
+    while (1) { APIO_ASM_WFI(); }
+}
