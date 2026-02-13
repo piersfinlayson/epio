@@ -34,7 +34,7 @@ See [the example README](example/README.md).
 
 ```bash
 sudo apt-get update
-sudo apt-get install -y build-essential gcc-arm-none-eabi emscripten python3
+sudo apt-get install -y build-essential gcc-arm-none-eabi emscripten python3 lcov
 ```
 
 #### macOS

@@ -204,7 +204,7 @@ cov-html: test
 cov: test
 	@lcov --capture --directory . --output-file build/epio_coverage.info
 	@lcov --list build/epio_coverage.info | grep -E '^src/' || (echo "No coverage data for src/ files!" && exit 1)
-	@lcov --list /tmp/coverage.info | awk -F'|' '/^src\// && $$2 !~ /100%/ {print; exit 1}'
+	@lcov --list build/epio_coverage.info | awk -F'|' '/^src\// && $$2 !~ /100%/ {print; exit 1}'
 
 -include $(LIB_OBJS:.o=.d)
 -include $(WASM_OBJS:.o=.d)
