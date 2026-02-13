@@ -206,8 +206,8 @@ uint8_t epio_exec_instr_sm(epio_t *epio, uint8_t block, uint8_t sm, uint16_t ins
                     }
                     break;
 
-                default:
                     // LCOV_EXCL_START
+                default:
                     assert(0 && "Invalid JMP condition");
                     break;
                     // LCOV_EXCL_STOP
@@ -257,8 +257,8 @@ uint8_t epio_exec_instr_sm(epio_t *epio, uint8_t block, uint8_t sm, uint16_t ins
                             irq_block = (block + 1) % NUM_PIO_BLOCKS;
                             break;
 
-                        default:
                             // LCOV_EXCL_START
+                        default:
                             assert(0 && "Invalid IRQ block");
                             break;
                             // LCOV_EXCL_STOP
@@ -277,8 +277,8 @@ uint8_t epio_exec_instr_sm(epio_t *epio, uint8_t block, uint8_t sm, uint16_t ins
                     condition_met = (jmp_pin_state == polarity);
                     break;
                     
-                default:
                     // LCOV_EXCL_START
+                default:
                     assert(0 && "Invalid WAIT source");
                     break;
                     // LCOV_EXCL_STOP
@@ -334,8 +334,8 @@ uint8_t epio_exec_instr_sm(epio_t *epio, uint8_t block, uint8_t sm, uint16_t ins
                         in_data = SM(block, sm).osr;
                         break;
                         
-                    default:
                         // LCOV_EXCL_START
+                    default:
                         assert(0 && "Invalid IN source");
                         break;
                         // LCOV_EXCL_STOP
@@ -465,8 +465,8 @@ uint8_t epio_exec_instr_sm(epio_t *epio, uint8_t block, uint8_t sm, uint16_t ins
                     new_delay = 0; // OUT EXEC ignores delay field in instruction
                     break;
                     
-                default:
                     // LCOV_EXCL_START
+                default:
                     assert(0 && "Invalid OUT destination");
                     break;
                     // LCOV_EXCL_STOP
@@ -617,8 +617,8 @@ uint8_t epio_exec_instr_sm(epio_t *epio, uint8_t block, uint8_t sm, uint16_t ins
                             mov_value = irq_state ? 0xFFFFFFFF : 0;
                             break;
                             
-                        default:
                             // LCOV_EXCL_START
+                        default:
                             assert(0 && "Invalid STATUS_SEL");
                             break;
                             // LCOV_EXCL_STOP
@@ -632,8 +632,8 @@ uint8_t epio_exec_instr_sm(epio_t *epio, uint8_t block, uint8_t sm, uint16_t ins
                     mov_value = SM(block, sm).osr;
                     break;
                     
-                default:
                     // LCOV_EXCL_START
+                default:
                     assert(0 && "Invalid MOV source");
                     break;
                     // LCOV_EXCL_STOP
@@ -659,8 +659,8 @@ uint8_t epio_exec_instr_sm(epio_t *epio, uint8_t block, uint8_t sm, uint16_t ins
                     mov_value = reversed;
                     break;
                     
-                default:
                     // LCOV_EXCL_START
+                default:
                     assert(0 && "Invalid MOV operation");
                     break;
                     // LCOV_EXCL_STOP
@@ -721,8 +721,8 @@ uint8_t epio_exec_instr_sm(epio_t *epio, uint8_t block, uint8_t sm, uint16_t ins
                     SM(block, sm).osr_count = 0;
                     break;
                     
-                default:
                     // LCOV_EXCL_START
+                default:
                     assert(0 && "Invalid MOV destination");
                     break;
                     // LCOV_EXCL_STOP
@@ -804,16 +804,16 @@ uint8_t epio_exec_instr_sm(epio_t *epio, uint8_t block, uint8_t sm, uint16_t ins
                     }
                     break;
                     
-                default:
                     // LCOV_EXCL_START
+                default:
                     assert(0 && "Invalid SET destination");
                     break;
                     // LCOV_EXCL_STOP
             }
             break;
 
-        default:
             // LCOV_EXCL_START
+        default:
             assert(0 && "Invalid opcode");
             break;
             // LCOV_EXCL_STOP
