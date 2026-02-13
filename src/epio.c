@@ -7,7 +7,7 @@
 // To do:
 // - Not yet executing from a single PIO instruction block
 
-// Limitations
+// Limitations - See also /README.md.
 // - No side set pins support (delays _are_ supported)
 //   - Note side setting pins takes precedence over OUT/SET for same pins from
 //     same SM
@@ -21,6 +21,7 @@
 //   as each SM is scheduled
 // - Does not include/support 2 cycle GPIO input delay via flip-flops
 // - Only supports 4 word FIFOs
+// - Ingores clock dividers
 
 #include <stdlib.h>
 #include <string.h>
@@ -111,14 +112,18 @@ epio_t *epio_init(void) {
     // Allocate the epio struct, which will hold the state of the emulator
     epio_t *epio = (epio_t *)calloc(1, sizeof(epio_t));
     if (epio == NULL) {
+        // LCOV_EXCL_START
         return NULL;
+        // LCOV_EXCL_STOP
     }
 
     // Set up SRAM (can fail so do it early)
     epio_sram_init(epio);
     if (epio->sram == NULL) {
+        // LCOV_EXCL_START
         free(epio);
         return NULL;
+        // LCOV_EXCL_STOP
     }
 
     // Set up GPIOs

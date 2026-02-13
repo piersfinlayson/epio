@@ -17,8 +17,9 @@ uint8_t *epio_sram_init(epio_t *epio) {
 }
 
 void epio_sram_set(epio_t *epio, uint32_t addr, uint8_t *data, size_t len) {
+    uint32_t final_addr = addr + len - 1;
     CHECK_SRAM_ADDR(addr);
-    CHECK_SRAM_ADDR(addr + len - 1);
+    CHECK_SRAM_ADDR(final_addr);
     memcpy(epio->sram + (addr - MIN_SRAM_ADDR), data, len);
 }
 

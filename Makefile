@@ -55,7 +55,7 @@ WASM_GEN_JS_BIND := wasm/gen_js_bind.py
 WASM_EPIO_BINDINGS_JS := $(WASM_BUILD_DIR)/epio_bindings.js
 WASM_EPIO_INDEX_HTML := $(WASM_BUILD_DIR)/index.html
 
-.PHONY: all lib wasm clean clean-lib clean-docs clean-wasm docs clean-hosted-example clean-wasm-example wasm-bindings run-hosted-example run-wasm-example clean-test test cmocka clean-cmocka clean-test-lib clean-apio clean-test-bins
+.PHONY: all lib wasm clean clean-lib clean-docs clean-wasm docs clean-hosted-example clean-wasm-example wasm-bindings run-hosted-example run-wasm-example clean-test test cmocka clean-cmocka clean-test-lib clean-apio clean-test-bins cov
 
 all: lib
 
@@ -192,6 +192,19 @@ clean-cmocka:
 clean-apio:
 	@echo "Cleaning apio repo"
 	@rm -rf apio
+
+
+cov-html: test
+	@echo "Generating HTML coverage report with gcov"
+	@lcov --capture --directory . --output-file build/epio_coverage.info
+	@genhtml build/epio_coverage.info --output-directory build/epio_coverage_html
+	@echo "Coverage report generated at build/epio_coverage_html/index.html"
+	@open build/epio_coverage_html/index.html
+
+cov: test
+	@lcov --capture --directory . --output-file build/epio_coverage.info
+	@lcov --list build/epio_coverage.info | grep -E '^src/' || (echo "No coverage data for src/ files!" && exit 1)
+	@lcov --list /tmp/coverage.info | awk -F'|' '/^src\// && $$2 !~ /100%/ {print; exit 1}'
 
 -include $(LIB_OBJS:.o=.d)
 -include $(WASM_OBJS:.o=.d)

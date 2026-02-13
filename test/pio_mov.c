@@ -53,6 +53,9 @@
 #define STATUS_IRQ_ONES  (APIO_STATUS_SEL_IRQ | APIO_STATUS_N(0))
 #define STATUS_IRQ_ZEROS (APIO_STATUS_SEL_IRQ | APIO_STATUS_N(0))
 
+#define DIS_BUF_SIZE 4096
+static char dis_buf[DIS_BUF_SIZE];
+
 // ============================================================
 // Shared test infrastructure
 // ============================================================
@@ -80,6 +83,8 @@ static epio_t *mov_step(uint16_t mov_instr, int src, uint32_t src_val,
     setup_mov(mov_instr, src, exec_dst);
     epio_t *epio = epio_from_apio();
     assert_non_null(epio);
+    int32_t len = epio_disassemble_sm(epio, 0, 0, dis_buf, DIS_BUF_SIZE);
+    assert_true(len > 0 && "Disassembly failed");
 
     // Configure output GPIOs for PINS destination
     if (pins_dst) {
@@ -113,6 +118,8 @@ static epio_t *mov_step_status(uint16_t mov_instr, uint32_t execctrl,
     setup_mov_status(mov_instr, execctrl, exec_dst);
     epio_t *epio = epio_from_apio();
     assert_non_null(epio);
+    int32_t len = epio_disassemble_sm(epio, 0, 0, dis_buf, DIS_BUF_SIZE);
+    assert_true(len > 0 && "Disassembly failed");
 
     if (pins_dst) {
         for (int i = 8; i < 16; i++)
@@ -759,6 +766,8 @@ static void mov_with_delay(void **state) {
     setup_mov_with_delay(state);
     epio_t *epio = epio_from_apio();
     assert_non_null(epio);
+    int32_t len = epio_disassemble_sm(epio, 0, 0, dis_buf, DIS_BUF_SIZE);
+    assert_true(len > 0 && "Disassembly failed");
 
     // Cycle 1: MOV X, Y [3] → X = 15, delay loaded
     epio_step_cycles(epio, 1);
@@ -786,6 +795,8 @@ static void mov_exec_delay_ignored(void **state) {
     setup_mov_exec_delay_ignored(state);
     epio_t *epio = epio_from_apio();
     assert_non_null(epio);
+    int32_t len = epio_disassemble_sm(epio, 0, 0, dis_buf, DIS_BUF_SIZE);
+    assert_true(len > 0 && "Disassembly failed");
 
     // Push SET Y, 17 as the instruction to load into X then execute
     epio_push_tx_fifo(epio, 0, 0, APIO_SET_Y(17));
@@ -820,6 +831,8 @@ static void mov_exec_executee_delay(void **state) {
     setup_mov_exec_executee_delay(state);
     epio_t *epio = epio_from_apio();
     assert_non_null(epio);
+    int32_t len = epio_disassemble_sm(epio, 0, 0, dis_buf, DIS_BUF_SIZE);
+    assert_true(len > 0 && "Disassembly failed");
 
     // Push SET Y, 17 [2] — exec'd instruction with 2 delay cycles
     epio_push_tx_fifo(epio, 0, 0, APIO_ADD_DELAY(APIO_SET_Y(17), 2));
@@ -858,6 +871,8 @@ static void mov_pins_gpiobase16(void **state) {
     setup_mov_pins_gpiobase16(state);
     epio_t *epio = epio_from_apio();
     assert_non_null(epio);
+    int32_t len = epio_disassemble_sm(epio, 0, 0, dis_buf, DIS_BUF_SIZE);
+    assert_true(len > 0 && "Disassembly failed");
 
     epio_set_gpio_output(epio, 21);
     epio_set_gpio_output(epio, 22);
@@ -876,6 +891,8 @@ static void mov_osr_osr_count_reset(void **state) {
     setup_mov_osr_osr_count_reset(state);
     epio_t *epio = epio_from_apio();
     assert_non_null(epio);
+    int32_t len = epio_disassemble_sm(epio, 0, 0, dis_buf, DIS_BUF_SIZE);
+    assert_true(len > 0 && "Disassembly failed");
 
     epio_push_tx_fifo(epio, 0, 0, 0xDEADBEEF);
 

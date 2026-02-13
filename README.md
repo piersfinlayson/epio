@@ -9,7 +9,9 @@ While RP2350 PIO programs are conceptually simple and easy to write, testing the
 
 It provides a [`wasm` build](#wasm), allowing you to run and visualise PIO programs in the browser, with a simple JavaScript API. 
 
-To make it easy to setup, `epio` integrates with [`apio`](https://github.com/piersfinlayson/apio), a runtime PIO assembler and disassembler.  `apio` allows you to write your PIO programs with C macros directly in your RP2350 firmware (avoding the need for a separate `pioasm` step), and run them both on real RP2350 hardware and emulated using `epio` on non-RP2350 hosts. 
+To make it easy to setup, `epio` integrates with [`apio`](https://github.com/piersfinlayson/apio), a runtime PIO assembler and disassembler.  `apio` allows you to write your PIO programs with C macros directly in your RP2350 firmware (avoding the need for a separate `pioasm` step), and run them both on real RP2350 hardware and emulated using `epio` on non-RP2350 hosts.
+
+`epio` includes comprehensive unit tests.
 
 ## Live Demo
 
@@ -47,6 +49,7 @@ uint64_t gpio_states = epio_read_pin_states(epio);
 - Supports GPIOBASE=0 and 16, and up to 48 GPIOs to support both RP2350A and B.
 - Provides an SRAM API, so tests can simulate reading and writing to the RP2350's SRAM, based on PIO RX/TX FIFOs.
 - WASM build, allowing you to run emulated firmware and visualise PIO programs and GPIO states in the browser.
+- Comprehensive unit testing, with 100% of reachable code branches tested.
 
 ## Documentation
 
@@ -64,9 +67,18 @@ You must stub out any RP2350-specific non-PIO functionality that your program re
 
 ## Limitations
 
-There are currently some limitations in `epio`'s PIO emulation.  See the comment at the top of [`epio.c`](src/epio.c) for details.
+There are currently some limitations in `epio`'s PIO emulation.  If you need a feature that isn't implemented yet, please raise an issue or submit a PR.
 
-If you need a feature that isn't implemented yet, please raise an issue or submit a PR.
+Current limitations:
+- No side step pin support (delays are supported).
+- MOVs to/from the RX FIFO are not supported.
+- No support for hardware inverted GPIOs, or those forced to 0/1.
+- Doesn't honour GPIO FUNC settings - any PIO block can control any output GPIO.
+- Doesn't collate GPIO output settings across all SMs - just applies them in scheduling order.
+- Does not suport 2 cycle GPIO input delay via flip-flops to avoid meta-stability.
+- Only supports 4 word FIFOs.
+- Ignores clock divider settings.
+- Very limited DMA support, specific to [One ROM](https://onerom.org).
 
 ## WASM
 

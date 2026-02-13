@@ -58,3 +58,7 @@ jobs:
       run: |
         make clean
         make test
+
+    - name: Check code coverage
+      run: |
+        make cov

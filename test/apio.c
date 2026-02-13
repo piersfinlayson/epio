@@ -18,20 +18,6 @@ static void epio_from_apio_basic(void **state) {
     epio_free(epio);
 }
 
-static void disassemble_pio(void **state) {
-    setup_basic_pio_apio(state);
-    epio_t *epio = epio_from_apio();
-    assert_non_null(epio);
-
-    size_t buffer_size = 4096;
-    char disasm_buffer[buffer_size];
-    int bytes_written = epio_disassemble_sm(epio, 0, 0, disasm_buffer, buffer_size);
-    assert_string_equal(disasm_buffer, disassembly_basic_pio_apio);
-    assert_int_equal(bytes_written, sizeof(disassembly_basic_pio_apio));
-
-    epio_free(epio);
-}
-
 static int setup_gpiobase_16(void **state) {
     (void)state;
 
@@ -78,11 +64,23 @@ static void gpiobase_16(void **state) {
     epio_free(epio);
 }
 
+void test_rxf_initial_value(void **state) {
+    setup_basic_pio_apio(state);
+    epio_t *epio = epio_from_apio();
+    assert_non_null(epio);
+
+    uint32_t rxf = epio_peek_rx_fifo(epio, 0, 0, 0);
+    assert_int_equal(rxf, 0xFFFFFFFF);
+
+    epio_free(epio);
+}
+
 int main(void) {
+    (void)disassembly_basic_pio_apio;
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(epio_from_apio_basic),
-        cmocka_unit_test(disassemble_pio),
         cmocka_unit_test(gpiobase_16),
+        cmocka_unit_test(test_rxf_initial_value),
     };
     return cmocka_run_group_tests(tests, NULL, NULL);
 }

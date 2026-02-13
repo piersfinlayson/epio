@@ -37,6 +37,8 @@ static int setup_basic_pio_apio(void **state) {
 
     APIO_ENABLE_SMS(0, (1 << 0));
 
+    APIO_RXF = 0xFFFFFFFF;
+
     while (1) {
         APIO_ASM_WFI();
     }

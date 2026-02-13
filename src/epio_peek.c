@@ -76,3 +76,21 @@ uint32_t epio_peek_block_irq(epio_t *epio, uint8_t block) {
     assert(block < NUM_PIO_BLOCKS && "Invalid PIO block");
     return IRQ(block).irq;
 }
+
+uint8_t epio_peek_block_irq_num(epio_t *epio, uint8_t block, uint8_t irq_num) {
+    CHECK_BLOCK();
+    CHECK_IRQ();
+    return (IRQ(block).irq >> irq_num) & 0b1;
+}
+
+uint32_t epio_peek_rx_fifo(epio_t *epio, uint8_t block, uint8_t sm, uint8_t entry) {
+    CHECK_BLOCK_SM();
+    assert(entry < epio_rx_fifo_depth(epio, block, sm) && "Invalid RX FIFO entry index");
+    return FIFO(block, sm).rx_fifo[entry];
+}
+
+uint32_t epio_peek_tx_fifo(epio_t *epio, uint8_t block, uint8_t sm, uint8_t entry) {
+    CHECK_BLOCK_SM();
+    assert(entry < epio_tx_fifo_depth(epio, block, sm) && "Invalid TX FIFO entry index");
+    return FIFO(block, sm).tx_fifo[entry];
+}

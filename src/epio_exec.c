@@ -59,6 +59,7 @@ static void epio_finish_step(epio_t *epio) {
     for (int block = 0; block < NUM_PIO_BLOCKS; block++) {
         // The datasheet is unclear on whether clears or sets take priority if
         // both are triggered in the same cycle.
+        // See https://github.com/raspberrypi/documentation/issues/4281
         assert((IRQ(block).irq_to_set & IRQ(block).irq_to_clear) == 0 && "IRQ set/clear conflict");
         IRQ(block).irq |= IRQ(block).irq_to_set;
         IRQ(block).irq &= ~IRQ(block).irq_to_clear;
@@ -262,7 +263,7 @@ uint8_t epio_exec_instr_sm(epio_t *epio, uint8_t block, uint8_t sm, uint16_t ins
                             break;
                             // LCOV_EXCL_STOP
                     }
-                    uint8_t irq_state = (IRQ(irq_block).irq >> irq_index) & 0x1;
+                    uint8_t irq_state = epio_peek_block_irq_num(epio, irq_block, irq_index);
                     condition_met = (irq_state == polarity);
                     if (condition_met && polarity) {
                         // If we were waiting for an IRQ to be set, we will clear it
@@ -612,7 +613,7 @@ uint8_t epio_exec_instr_sm(epio_t *epio, uint8_t block, uint8_t sm, uint16_t ins
                             uint8_t idx_mode = (status_n >> 3) & 0b11;
                             uint8_t index = status_n & 0b111;
                             HANDLE_IRQ_MODE(block, sm, idx_mode, index, irq_block, irq_index);
-                            uint8_t irq_state = (IRQ(irq_block).irq >> irq_index) & 0b1;
+                            uint8_t irq_state = epio_peek_block_irq_num(epio, irq_block, irq_index);
                             mov_value = irq_state ? 0xFFFFFFFF : 0;
                             break;
                             
@@ -748,7 +749,7 @@ uint8_t epio_exec_instr_sm(epio_t *epio, uint8_t block, uint8_t sm, uint16_t ins
                 if (wait) {
                     if (SM(block, sm).stalled) {
                         // Re-execution: check if cleared
-                        uint8_t irq_state = (epio->block[irq_block].irq.irq >> irq_index) & 0b1;
+                        uint8_t irq_state = epio_peek_block_irq_num(epio, irq_block, irq_index);
                         if (!irq_state) {
                             SM(block, sm).stalled = 0;
                         } else {

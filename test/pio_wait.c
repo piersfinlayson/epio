@@ -10,10 +10,15 @@
 #include "test.h"
 #include "pio_wait_programs.h"
 
+#define DIS_BUF_SIZE 4096
+static char dis_buf[DIS_BUF_SIZE];
+
 static void wait_gpio_high(void **state) {
     setup_wait_gpio_high(state);
     epio_t *epio = epio_from_apio();
     assert_non_null(epio);
+    int32_t len = epio_disassemble_sm(epio, 0, 0, dis_buf, DIS_BUF_SIZE);
+    assert_true(len > 0 && "Disassembly failed");
     
     // Set GPIO7 high before stepping
     epio_set_gpio_input_level(epio, 7, 1);
@@ -36,6 +41,8 @@ static void wait_gpio_low(void **state) {
     setup_wait_gpio_low(state);
     epio_t *epio = epio_from_apio();
     assert_non_null(epio);
+    int32_t len = epio_disassemble_sm(epio, 0, 0, dis_buf, DIS_BUF_SIZE);
+    assert_true(len > 0 && "Disassembly failed");
     
     // Set GPIO7 low before stepping
     epio_set_gpio_input_level(epio, 7, 0);
@@ -58,6 +65,8 @@ static void wait_gpio_stall_then_release(void **state) {
     setup_wait_gpio_stall_then_release(state);
     epio_t *epio = epio_from_apio();
     assert_non_null(epio);
+    int32_t len = epio_disassemble_sm(epio, 0, 0, dis_buf, DIS_BUF_SIZE);
+    assert_true(len > 0 && "Disassembly failed");
     
     // GPIO7 defaults to high, WAIT for low - should stall
     epio_set_gpio_input_level(epio, 7, 1);
@@ -91,6 +100,8 @@ static void wait_pin_high(void **state) {
     setup_wait_pin_high(state);
     epio_t *epio = epio_from_apio();
     assert_non_null(epio);
+    int32_t len = epio_disassemble_sm(epio, 0, 0, dis_buf, DIS_BUF_SIZE);
+    assert_true(len > 0 && "Disassembly failed");
     
     // WAIT PIN 3 with IN_BASE=10 → GPIO13
     epio_set_gpio_input_level(epio, 13, 1);
@@ -110,6 +121,8 @@ static void wait_pin_low(void **state) {
     setup_wait_pin_low(state);
     epio_t *epio = epio_from_apio();
     assert_non_null(epio);
+    int32_t len = epio_disassemble_sm(epio, 0, 0, dis_buf, DIS_BUF_SIZE);
+    assert_true(len > 0 && "Disassembly failed");
     
     // WAIT PIN 3 with IN_BASE=10 → GPIO13
     epio_set_gpio_input_level(epio, 13, 0);
@@ -129,6 +142,8 @@ static void wait_irq_high_same_block(void **state) {
     setup_wait_irq_high_same_block(state);
     epio_t *epio = epio_from_apio();
     assert_non_null(epio);
+    int32_t len = epio_disassemble_sm(epio, 0, 0, dis_buf, DIS_BUF_SIZE);
+    assert_true(len > 0 && "Disassembly failed");
     
     // Cycle 1: SM0 stalls, SM1 executes NOP
     epio_step_cycles(epio, 1);
@@ -149,6 +164,8 @@ static void wait_irq_low_same_block(void **state) {
     setup_wait_irq_low_same_block(state);
     epio_t *epio = epio_from_apio();
     assert_non_null(epio);
+    int32_t len = epio_disassemble_sm(epio, 0, 0, dis_buf, DIS_BUF_SIZE);
+    assert_true(len > 0 && "Disassembly failed");
     
     // IRQ3 defaults to 0 (low)
     epio_step_cycles(epio, 1);
@@ -166,6 +183,8 @@ static void wait_irq_high_prev_block(void **state) {
     setup_wait_irq_high_prev_block(state);
     epio_t *epio = epio_from_apio();
     assert_non_null(epio);
+    int32_t len = epio_disassemble_sm(epio, 0, 0, dis_buf, DIS_BUF_SIZE);
+    assert_true(len > 0 && "Disassembly failed");
     
     // Cycle 1: PIO0 SM0 stalls, PIO2 SM0 executes NOP
     epio_step_cycles(epio, 1);
@@ -189,6 +208,8 @@ static void wait_irq_high_next_block(void **state) {
     setup_wait_irq_high_next_block(state);
     epio_t *epio = epio_from_apio();
     assert_non_null(epio);
+    int32_t len = epio_disassemble_sm(epio, 0, 0, dis_buf, DIS_BUF_SIZE);
+    assert_true(len > 0 && "Disassembly failed");
     
     // Cycle 1: PIO0 SM0 stalls, PIO1 SM0 executes NOP
     epio_step_cycles(epio, 1);
@@ -212,6 +233,8 @@ static void wait_irq_relative(void **state) {
     setup_wait_irq_relative(state);
     epio_t *epio = epio_from_apio();
     assert_non_null(epio);
+    int32_t len = epio_disassemble_sm(epio, 0, 0, dis_buf, DIS_BUF_SIZE);
+    assert_true(len > 0 && "Disassembly failed");
     
     // First step - SM2 should be stalled
     epio_step_cycles(epio, 1);
@@ -243,6 +266,8 @@ static void wait_irq_with_clear(void **state) {
     setup_wait_irq_with_clear(state);
     epio_t *epio = epio_from_apio();
     assert_non_null(epio);
+    int32_t len = epio_disassemble_sm(epio, 0, 0, dis_buf, DIS_BUF_SIZE);
+    assert_true(len > 0 && "Disassembly failed");
     
     epio_step_cycles(epio, 1);
     
@@ -270,6 +295,8 @@ static void wait_jmp_pin(void **state) {
     setup_wait_jmp_pin(state);
     epio_t *epio = epio_from_apio();
     assert_non_null(epio);
+    int32_t len = epio_disassemble_sm(epio, 0, 0, dis_buf, DIS_BUF_SIZE);
+    assert_true(len > 0 && "Disassembly failed");
     
     // JMP_PIN = GPIO8, set it high
     epio_set_gpio_input_level(epio, 8, 1);
@@ -289,6 +316,8 @@ static void wait_gpio_high_with_delay(void **state) {
     setup_wait_gpio_high_with_delay(state);
     epio_t *epio = epio_from_apio();
     assert_non_null(epio);
+    int32_t len = epio_disassemble_sm(epio, 0, 0, dis_buf, DIS_BUF_SIZE);
+    assert_true(len > 0 && "Disassembly failed");
     
     // GPIO7 low - should stall
     epio_set_gpio_input_level(epio, 7, 0);
@@ -344,6 +373,8 @@ static void wait_gpio_high_with_delay_no_stall(void **state) {
     setup_wait_gpio_high_with_delay(state);
     epio_t *epio = epio_from_apio();
     assert_non_null(epio);
+    int32_t len = epio_disassemble_sm(epio, 0, 0, dis_buf, DIS_BUF_SIZE);
+    assert_true(len > 0 && "Disassembly failed");
     
     // GPIO7 already high - no stall, delay starts immediately
     epio_set_gpio_input_level(epio, 7, 1);
@@ -371,6 +402,8 @@ static void wait_irq_stall_then_release(void **state) {
     setup_wait_irq_stall_then_release(state);
     epio_t *epio = epio_from_apio();
     assert_non_null(epio);
+    int32_t len = epio_disassemble_sm(epio, 0, 0, dis_buf, DIS_BUF_SIZE);
+    assert_true(len > 0 && "Disassembly failed");
     
     // SM0: WAIT IRQ(3) at offset 0, SET X at offset 1
     // SM1: NOP at 2, NOP at 3, NOP at 4, IRQ_SET(3) at 5, NOP at 6
@@ -405,6 +438,8 @@ static void wait_irq_low_when_high(void **state) {
     setup_wait_irq_low_when_high(state);
     epio_t *epio = epio_from_apio();
     assert_non_null(epio);
+    int32_t len = epio_disassemble_sm(epio, 0, 0, dis_buf, DIS_BUF_SIZE);
+    assert_true(len > 0 && "Disassembly failed");
     
     // SM1 built first: IRQ_SET(3) at 0, NOP at 1, NOP at 2, IRQ_CLEAR(3) at 3, NOP at 4
     // SM0 built second: NOP at 5, WAIT IRQ LOW(3) at 6, SET X at 7
@@ -441,6 +476,8 @@ static void wait_irq_two_sms_same_irq(void **state) {
     setup_wait_irq_two_sms_same_irq(state);
     epio_t *epio = epio_from_apio();
     assert_non_null(epio);
+    int32_t len = epio_disassemble_sm(epio, 0, 0, dis_buf, DIS_BUF_SIZE);
+    assert_true(len > 0 && "Disassembly failed");
     
     // SM0: WAIT IRQ(3) at 0, SET X at 1
     // SM1: WAIT IRQ(3) at 2, SET Y at 3
@@ -478,6 +515,8 @@ static void wait_pin_stall_then_release(void **state) {
     setup_wait_pin_stall_then_release(state);
     epio_t *epio = epio_from_apio();
     assert_non_null(epio);
+    int32_t len = epio_disassemble_sm(epio, 0, 0, dis_buf, DIS_BUF_SIZE);
+    assert_true(len > 0 && "Disassembly failed");
     
     // GPIO13 low - should stall
     epio_set_gpio_input_level(epio, 13, 0);
@@ -508,6 +547,8 @@ static void wait_jmp_pin_low(void **state) {
     setup_wait_jmp_pin_low(state);
     epio_t *epio = epio_from_apio();
     assert_non_null(epio);
+    int32_t len = epio_disassemble_sm(epio, 0, 0, dis_buf, DIS_BUF_SIZE);
+    assert_true(len > 0 && "Disassembly failed");
     
     // GPIO8 low - WAIT JMP_PIN LOW passes
     epio_set_gpio_input_level(epio, 8, 0);
@@ -526,6 +567,8 @@ static void wait_jmp_pin_stall_then_release(void **state) {
     setup_wait_jmp_pin_stall_then_release(state);
     epio_t *epio = epio_from_apio();
     assert_non_null(epio);
+    int32_t len = epio_disassemble_sm(epio, 0, 0, dis_buf, DIS_BUF_SIZE);
+    assert_true(len > 0 && "Disassembly failed");
     
     // GPIO8 low - WAIT JMP_PIN HIGH should stall
     epio_set_gpio_input_level(epio, 8, 0);
@@ -554,6 +597,8 @@ static void wait_irq_relative_wrap(void **state) {
     setup_wait_irq_relative_wrap(state);
     epio_t *epio = epio_from_apio();
     assert_non_null(epio);
+    int32_t len = epio_disassemble_sm(epio, 0, 0, dis_buf, DIS_BUF_SIZE);
+    assert_true(len > 0 && "Disassembly failed");
     
     // SM0: NOP at 0, IRQ_SET(1) at 1, NOP at 2
     // SM3: WAIT IRQ REL(2) at 3, SET X at 4
@@ -585,6 +630,8 @@ static void wait_gpio_high_gpiobase16(void **state) {
     setup_wait_gpio_high_gpiobase16(state);
     epio_t *epio = epio_from_apio();
     assert_non_null(epio);
+    int32_t len = epio_disassemble_sm(epio, 0, 0, dis_buf, DIS_BUF_SIZE);
+    assert_true(len > 0 && "Disassembly failed");
     
     // WAIT GPIO(7) with GPIOBASE=16 means actual GPIO 23
     // Set GPIO 7 (without base) - should NOT satisfy wait
@@ -610,6 +657,8 @@ static void wait_pin_high_gpiobase16(void **state) {
     setup_wait_pin_high_gpiobase16(state);
     epio_t *epio = epio_from_apio();
     assert_non_null(epio);
+    int32_t len = epio_disassemble_sm(epio, 0, 0, dis_buf, DIS_BUF_SIZE);
+    assert_true(len > 0 && "Disassembly failed");
     
     // WAIT PIN(3) with IN_BASE=10, GPIOBASE=16 -> GPIO 10+3+16=29
     // Set GPIO 13 (without base) - should NOT satisfy

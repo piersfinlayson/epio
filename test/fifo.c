@@ -28,6 +28,10 @@ static void tx_fifo_push_one(void **state) {
     epio_push_tx_fifo(epio, 0, 0, 0xDEADBEEF);
     assert_int_equal(epio_tx_fifo_depth(epio, 0, 0), 1);
 
+    // Check epio_wait_tx_fifo returns 0 (steps until an entry is available)
+    int32_t steps = epio_wait_tx_fifo(epio, 0, 0, 1);
+    assert_int_equal(steps, 0);
+
     epio_free(epio);
 }
 
@@ -37,7 +41,10 @@ static void tx_fifo_push_pop_one(void **state) {
     assert_non_null(epio);
 
     epio_push_tx_fifo(epio, 0, 0, 0xDEADBEEF);
-    uint32_t val = epio_pop_tx_fifo(epio, 0, 0);
+    uint32_t val = epio_peek_tx_fifo(epio, 0, 0, 0);
+    assert_int_equal(epio_tx_fifo_depth(epio, 0, 0), 1);
+    assert_int_equal(val, 0xDEADBEEF);
+    val = epio_pop_tx_fifo(epio, 0, 0);
     assert_int_equal(val, 0xDEADBEEF);
     assert_int_equal(epio_tx_fifo_depth(epio, 0, 0), 0);
 
@@ -98,6 +105,7 @@ static void tx_fifo_pop_empty_asserts(void **state) {
     epio_t *epio = epio_init();
     assert_non_null(epio);
 
+    expect_assert_failure(epio_peek_tx_fifo(epio, 0, 0, 0));
     expect_assert_failure(epio_pop_tx_fifo(epio, 0, 0));
 
     epio_free(epio);
@@ -132,7 +140,10 @@ static void rx_fifo_push_pop_one(void **state) {
     assert_non_null(epio);
 
     epio_push_rx_fifo(epio, 0, 0, 0xCAFEBABE);
-    uint32_t val = epio_pop_rx_fifo(epio, 0, 0);
+    uint32_t val = epio_peek_rx_fifo(epio, 0, 0, 0);
+    assert_int_equal(epio_rx_fifo_depth(epio, 0, 0), 1);
+    assert_int_equal(val, 0xCAFEBABE);
+    val = epio_pop_rx_fifo(epio, 0, 0);
     assert_int_equal(val, 0xCAFEBABE);
     assert_int_equal(epio_rx_fifo_depth(epio, 0, 0), 0);
 
@@ -193,6 +204,7 @@ static void rx_fifo_pop_empty_asserts(void **state) {
     epio_t *epio = epio_init();
     assert_non_null(epio);
 
+    expect_assert_failure(epio_peek_rx_fifo(epio, 0, 0, 0));
     expect_assert_failure(epio_pop_rx_fifo(epio, 0, 0));
 
     epio_free(epio);

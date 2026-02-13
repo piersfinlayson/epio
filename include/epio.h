@@ -773,6 +773,52 @@ EPIO_EXPORT uint16_t epio_peek_sm_exec_instr(epio_t *epio, uint8_t block, uint8_
  */
 EPIO_EXPORT uint32_t epio_peek_block_irq(epio_t *epio, uint8_t block);
 
+/**
+ * @brief Check if a specific IRQ flag is set for a PIO block.
+ * 
+ * Convenience function equivalent to checking the bit in epio_peek_block_irq().
+ * 
+ * @param epio  The epio instance.
+ * @param block PIO block index (0 to NUM_PIO_BLOCKS-1).
+ * @param irq_num IRQ number to check (0 to NUM_IRQS_PER_BLOCK-1).
+ * @return      1 if the specified IRQ flag is set, 0 otherwise.
+ */
+EPIO_EXPORT uint8_t epio_peek_block_irq_num(epio_t *epio, uint8_t block, uint8_t irq_num);
+
+/**
+ * @brief Peek at an entry in the RX FIFO of a state machine without popping it.
+ *
+ * Allows inspection of the contents of the RX FIFO without modifying it.  The
+ * entry parameter specifies how far back in the FIFO to peek, with 0 being
+ * the next entry to be popped.
+ *
+ * Asserts if @p entry is greater than or equal to the current RX FIFO depth.
+ *
+ * @param epio  The epio instance.
+ * @param block PIO block index (0 to NUM_PIO_BLOCKS-1).
+ * @param sm    State machine index within the block (0 to NUM_SMS_PER_BLOCK-1).
+ * @param entry FIFO entry index to peek (0 = next to pop, up to depth-1).
+ * @return      The 32-bit value at that position in the RX FIFO.
+ */
+EPIO_EXPORT uint32_t epio_peek_rx_fifo(epio_t *epio, uint8_t block, uint8_t sm, uint8_t entry);
+
+/**
+ * @brief Peek at an entry in the TX FIFO of a state machine without popping it.
+ *
+ * Allows inspection of the contents of the TX FIFO without modifying it.  The
+ * entry parameter specifies how far back in the FIFO to peek, with 0 being
+ * the next entry to be popped by the SM.
+ *
+ * Asserts if @p entry is greater than or equal to the current TX FIFO depth.
+ *
+ * @param epio  The epio instance.
+ * @param block PIO block index (0 to NUM_PIO_BLOCKS-1).
+ * @param sm    State machine index within the block (0 to NUM_SMS_PER_BLOCK-1).
+ * @param entry FIFO entry index to peek (0 = next to pop, up to depth-1).
+ * @return      The 32-bit value at that position in the TX FIFO.
+ */
+EPIO_EXPORT uint32_t epio_peek_tx_fifo(epio_t *epio, uint8_t block, uint8_t sm, uint8_t entry);
+
 /** @} */
 
 /**

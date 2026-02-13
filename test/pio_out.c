@@ -10,10 +10,15 @@
 #include "test.h"
 #include "pio_out_programs.h"
 
+#define DIS_BUF_SIZE 4096
+static char dis_buf[DIS_BUF_SIZE];
+
 static void out_x_shift_right(void **state) {
     setup_out_x_shift_right(state);
     epio_t *epio = epio_from_apio();
     assert_non_null(epio);
+    int32_t len = epio_disassemble_sm(epio, 0, 0, dis_buf, DIS_BUF_SIZE);
+    assert_true(len > 0 && "Disassembly failed");
 
     epio_push_tx_fifo(epio, 0, 0, 0xDEADBEEF);
 
@@ -39,6 +44,8 @@ static void out_y_shift_right(void **state) {
     setup_out_y_shift_right(state);
     epio_t *epio = epio_from_apio();
     assert_non_null(epio);
+    int32_t len = epio_disassemble_sm(epio, 0, 0, dis_buf, DIS_BUF_SIZE);
+    assert_true(len > 0 && "Disassembly failed");
 
     epio_push_tx_fifo(epio, 0, 0, 0xDEADBEEF);
 
@@ -61,6 +68,8 @@ static void out_null_shift_right(void **state) {
     setup_out_null_shift_right(state);
     epio_t *epio = epio_from_apio();
     assert_non_null(epio);
+    int32_t len = epio_disassemble_sm(epio, 0, 0, dis_buf, DIS_BUF_SIZE);
+    assert_true(len > 0 && "Disassembly failed");
 
     epio_push_tx_fifo(epio, 0, 0, 0xDEADBEEF);
 
@@ -80,6 +89,8 @@ static void out_pins_shift_right(void **state) {
     setup_out_pins_shift_right(state);
     epio_t *epio = epio_from_apio();
     assert_non_null(epio);
+    int32_t len = epio_disassemble_sm(epio, 0, 0, dis_buf, DIS_BUF_SIZE);
+    assert_true(len > 0 && "Disassembly failed");
 
     // Configure GPIOs 5-7 as outputs so PIO can drive them
     epio_set_gpio_output(epio, 5);
@@ -105,6 +116,8 @@ static void out_pc(void **state) {
     setup_out_pc(state);
     epio_t *epio = epio_from_apio();
     assert_non_null(epio);
+    int32_t len = epio_disassemble_sm(epio, 0, 0, dis_buf, DIS_BUF_SIZE);
+    assert_true(len > 0 && "Disassembly failed");
 
     // Push target address 3
     epio_push_tx_fifo(epio, 0, 0, 0x00000003);
@@ -130,6 +143,8 @@ static void out_isr(void **state) {
     setup_out_isr(state);
     epio_t *epio = epio_from_apio();
     assert_non_null(epio);
+    int32_t len = epio_disassemble_sm(epio, 0, 0, dis_buf, DIS_BUF_SIZE);
+    assert_true(len > 0 && "Disassembly failed");
 
     epio_push_tx_fifo(epio, 0, 0, 0xDEADBEEF);
 
@@ -154,6 +169,8 @@ static void out_exec(void **state) {
     setup_out_exec(state);
     epio_t *epio = epio_from_apio();
     assert_non_null(epio);
+    int32_t len = epio_disassemble_sm(epio, 0, 0, dis_buf, DIS_BUF_SIZE);
+    assert_true(len > 0 && "Disassembly failed");
 
     // Push SET X, 17 (0xE031) as the instruction to execute
     epio_push_tx_fifo(epio, 0, 0, 0x0000E031);
@@ -186,6 +203,8 @@ static void out_x_shift_left(void **state) {
     setup_out_x_shift_left(state);
     epio_t *epio = epio_from_apio();
     assert_non_null(epio);
+    int32_t len = epio_disassemble_sm(epio, 0, 0, dis_buf, DIS_BUF_SIZE);
+    assert_true(len > 0 && "Disassembly failed");
 
     epio_push_tx_fifo(epio, 0, 0, 0xDEADBEEF);
 
@@ -209,6 +228,8 @@ static void out_shift_count_saturates(void **state) {
     setup_out_shift_count_saturates(state);
     epio_t *epio = epio_from_apio();
     assert_non_null(epio);
+    int32_t len = epio_disassemble_sm(epio, 0, 0, dis_buf, DIS_BUF_SIZE);
+    assert_true(len > 0 && "Disassembly failed");
 
     epio_push_tx_fifo(epio, 0, 0, 0xDEADBEEF);
 
@@ -231,6 +252,8 @@ static void out_autopull(void **state) {
     setup_out_autopull(state);
     epio_t *epio = epio_from_apio();
     assert_non_null(epio);
+    int32_t len = epio_disassemble_sm(epio, 0, 0, dis_buf, DIS_BUF_SIZE);
+    assert_true(len > 0 && "Disassembly failed");
 
     epio_push_tx_fifo(epio, 0, 0, 0xDEADBEEF);
     epio_push_tx_fifo(epio, 0, 0, 0x12345678);
@@ -254,6 +277,8 @@ static void out_autopull_stall(void **state) {
     setup_out_autopull_stall(state);
     epio_t *epio = epio_from_apio();
     assert_non_null(epio);
+    int32_t len = epio_disassemble_sm(epio, 0, 0, dis_buf, DIS_BUF_SIZE);
+    assert_true(len > 0 && "Disassembly failed");
 
     // Only one value — PULL will consume it, autopull will find TX empty
     epio_push_tx_fifo(epio, 0, 0, 0xDEADBEEF);
@@ -292,6 +317,8 @@ static void out_pins_gpiobase16(void **state) {
     setup_out_pins_gpiobase16(state);
     epio_t *epio = epio_from_apio();
     assert_non_null(epio);
+    int32_t len = epio_disassemble_sm(epio, 0, 0, dis_buf, DIS_BUF_SIZE);
+    assert_true(len > 0 && "Disassembly failed");
 
     // OUT_BASE=5, GPIOBASE=16 → actual GPIO 21,22,23
     epio_set_gpio_output(epio, 21);
@@ -318,6 +345,8 @@ static void out_with_delay(void **state) {
     setup_out_with_delay(state);
     epio_t *epio = epio_from_apio();
     assert_non_null(epio);
+    int32_t len = epio_disassemble_sm(epio, 0, 0, dis_buf, DIS_BUF_SIZE);
+    assert_true(len > 0 && "Disassembly failed");
 
     epio_push_tx_fifo(epio, 0, 0, 0xDEADBEEF);
 
@@ -349,6 +378,8 @@ static void out_exec_delay_ignored(void **state) {
     setup_out_exec_delay_ignored(state);
     epio_t *epio = epio_from_apio();
     assert_non_null(epio);
+    int32_t len = epio_disassemble_sm(epio, 0, 0, dis_buf, DIS_BUF_SIZE);
+    assert_true(len > 0 && "Disassembly failed");
 
     // Push SET X, 17 (0xE031)
     epio_push_tx_fifo(epio, 0, 0, 0x0000E031);
@@ -380,6 +411,8 @@ static void out_bit_count_32(void **state) {
     setup_out_bit_count_32(state);
     epio_t *epio = epio_from_apio();
     assert_non_null(epio);
+    int32_t len = epio_disassemble_sm(epio, 0, 0, dis_buf, DIS_BUF_SIZE);
+    assert_true(len > 0 && "Disassembly failed");
 
     epio_push_tx_fifo(epio, 0, 0, 0xDEADBEEF);
 
@@ -401,6 +434,8 @@ static void out_bit_count_32_shift_left(void **state) {
     setup_out_bit_count_32_shift_left(state);
     epio_t *epio = epio_from_apio();
     assert_non_null(epio);
+    int32_t len = epio_disassemble_sm(epio, 0, 0, dis_buf, DIS_BUF_SIZE);
+    assert_true(len > 0 && "Disassembly failed");
 
     epio_push_tx_fifo(epio, 0, 0, 0xDEADBEEF);
 
@@ -423,6 +458,8 @@ static void out_autopull_threshold_crossing(void **state) {
     setup_out_autopull_threshold_crossing(state);
     epio_t *epio = epio_from_apio();
     assert_non_null(epio);
+    int32_t len = epio_disassemble_sm(epio, 0, 0, dis_buf, DIS_BUF_SIZE);
+    assert_true(len > 0 && "Disassembly failed");
 
     // PULL_THRESH=6, OUT shifts 8 — crosses threshold
     epio_push_tx_fifo(epio, 0, 0, 0xDEADBEEF);
@@ -446,6 +483,8 @@ static void out_autopull_thresh_0_means_32(void **state) {
     setup_out_autopull_thresh_0_means_32(state);
     epio_t *epio = epio_from_apio();
     assert_non_null(epio);
+    int32_t len = epio_disassemble_sm(epio, 0, 0, dis_buf, DIS_BUF_SIZE);
+    assert_true(len > 0 && "Disassembly failed");
 
     // PULL_THRESH=0 encodes 32
     epio_push_tx_fifo(epio, 0, 0, 0xDEADBEEF);
@@ -470,6 +509,8 @@ static void out_pindirs_shift_right(void **state) {
     setup_out_pindirs_shift_right(state);
     epio_t *epio = epio_from_apio();
     assert_non_null(epio);
+    int32_t len = epio_disassemble_sm(epio, 0, 0, dis_buf, DIS_BUF_SIZE);
+    assert_true(len > 0 && "Disassembly failed");
 
     // Push 0b101 = 5: pin 5 output, pin 6 input, pin 7 output
     epio_push_tx_fifo(epio, 0, 0, 0x00000005);
@@ -495,6 +536,8 @@ static void out_exec_with_executee_delay(void **state) {
     setup_out_exec_with_executee_delay(state);
     epio_t *epio = epio_from_apio();
     assert_non_null(epio);
+    int32_t len = epio_disassemble_sm(epio, 0, 0, dis_buf, DIS_BUF_SIZE);
+    assert_true(len > 0 && "Disassembly failed");
 
     // Push SET X, 17 [2] — SET X with 2 delay cycles
     // SET X, 17 = 0xE031, add delay 2 = 0xE031 | (2 << 8) = 0xE231
@@ -546,6 +589,8 @@ static void out_pins_wraps_around(void **state) {
     setup_out_pins_wraps_around(state);
     epio_t *epio = epio_from_apio();
     assert_non_null(epio);
+    int32_t len = epio_disassemble_sm(epio, 0, 0, dis_buf, DIS_BUF_SIZE);
+    assert_true(len > 0 && "Disassembly failed");
 
     epio_set_gpio_output(epio, 30);
     epio_set_gpio_output(epio, 31);
@@ -578,6 +623,8 @@ static void out_pins_wraps_around_gpiobase16(void **state) {
     setup_out_pins_wraps_around_gpiobase16(state);
     epio_t *epio = epio_from_apio();
     assert_non_null(epio);
+    int32_t len = epio_disassemble_sm(epio, 0, 0, dis_buf, DIS_BUF_SIZE);
+    assert_true(len > 0 && "Disassembly failed");
 
     epio_set_gpio_output(epio, 46);
     epio_set_gpio_output(epio, 47);

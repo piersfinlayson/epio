@@ -173,7 +173,7 @@ void epio_dma_one_rom(epio_t *epio);
 
 #define CHECK_IRQ() \
     assert((block) < NUM_PIO_BLOCKS && "Invalid IRQ block"); \
-    assert((irq_index) < NUM_IRQS_PER_BLOCK && "Invalid IRQ index")
+    assert((irq_num) < NUM_IRQS_PER_BLOCK && "Invalid IRQ index")
 #define CHECK_IRQ_MASK(MASK) \
     assert(((MASK) & (0xFFFFFFFF << NUM_IRQS_PER_BLOCK)) == 0 && "Invalid IRQ bit(s) set")
 #define CHECK_BLOCK() \
@@ -182,10 +182,10 @@ void epio_dma_one_rom(epio_t *epio);
     assert((block) < NUM_PIO_BLOCKS); \
     assert((sm) < NUM_SMS_PER_BLOCK)
 #define CHECK_SRAM_ADDR(ADDR) \
-    assert((addr >= MIN_SRAM_ADDR) && "Address below minimum SRAM address"); \
-    assert((addr <= MAX_SRAM_ADDR) && "Address above maximum SRAM address")
+    assert((ADDR >= MIN_SRAM_ADDR) && "Address below minimum SRAM address"); \
+    assert((ADDR <= MAX_SRAM_ADDR) && "Address above maximum SRAM address")
 #define CHECK_SRAM_ALIGN(ADDR, ALIGN) \
-    assert(((addr - MIN_SRAM_ADDR) % (ALIGN)) == 0 && "Address not aligned to required boundary")
+    assert(((ADDR - MIN_SRAM_ADDR) % (ALIGN)) == 0 && "Address not aligned to required boundary")
 #define CHECK_GPIO(PIN) \
     assert((PIN) < NUM_GPIOS && "Invalid GPIO pin")
 #define CHECK_GPIO_MASK(GPIO) \

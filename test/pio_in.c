@@ -10,10 +10,15 @@
 #include "test.h"
 #include "pio_in_programs.h"
 
+#define DIS_BUF_SIZE 4096
+static char dis_buf[DIS_BUF_SIZE];
+
 static void in_pins_shift_left(void **state) {
     setup_in_pins_shift_left(state);
     epio_t *epio = epio_from_apio();
     assert_non_null(epio);
+    int32_t len = epio_disassemble_sm(epio, 0, 0, dis_buf, DIS_BUF_SIZE);
+    assert_true(len > 0 && "Disassembly failed");
 
     // IN_BASE=5, IN PINS 3 reads GPIO 5,6,7
     // Set GPIO5=1, GPIO6=0, GPIO7=1 → source = 0b101 = 5
@@ -38,6 +43,8 @@ static void in_x_shift_left(void **state) {
     setup_in_x_shift_left(state);
     epio_t *epio = epio_from_apio();
     assert_non_null(epio);
+    int32_t len = epio_disassemble_sm(epio, 0, 0, dis_buf, DIS_BUF_SIZE);
+    assert_true(len > 0 && "Disassembly failed");
 
     // Cycle 1: SET X, 27
     epio_step_cycles(epio, 1);
@@ -59,6 +66,8 @@ static void in_y_shift_left(void **state) {
     setup_in_y_shift_left(state);
     epio_t *epio = epio_from_apio();
     assert_non_null(epio);
+    int32_t len = epio_disassemble_sm(epio, 0, 0, dis_buf, DIS_BUF_SIZE);
+    assert_true(len > 0 && "Disassembly failed");
 
     // Cycle 1: SET Y, 13
     epio_step_cycles(epio, 1);
@@ -80,6 +89,8 @@ static void in_null_shift_left(void **state) {
     setup_in_null_shift_left(state);
     epio_t *epio = epio_from_apio();
     assert_non_null(epio);
+    int32_t len = epio_disassemble_sm(epio, 0, 0, dis_buf, DIS_BUF_SIZE);
+    assert_true(len > 0 && "Disassembly failed");
 
     // Cycle 1: SET X, 31
     epio_step_cycles(epio, 1);
@@ -106,6 +117,8 @@ static void in_pins_shift_right(void **state) {
     setup_in_pins_shift_right(state);
     epio_t *epio = epio_from_apio();
     assert_non_null(epio);
+    int32_t len = epio_disassemble_sm(epio, 0, 0, dis_buf, DIS_BUF_SIZE);
+    assert_true(len > 0 && "Disassembly failed");
 
     // IN_BASE=5, IN PINS 3, shift right
     // GPIO5=1, GPIO6=0, GPIO7=1 → source = 0b101 = 5
@@ -130,6 +143,8 @@ static void in_accumulate_shift_left(void **state) {
     setup_in_accumulate_shift_left(state);
     epio_t *epio = epio_from_apio();
     assert_non_null(epio);
+    int32_t len = epio_disassemble_sm(epio, 0, 0, dis_buf, DIS_BUF_SIZE);
+    assert_true(len > 0 && "Disassembly failed");
 
     // Cycle 1: SET X, 7
     epio_step_cycles(epio, 1);
@@ -155,6 +170,8 @@ static void in_shift_count_saturates(void **state) {
     setup_in_shift_count_saturates(state);
     epio_t *epio = epio_from_apio();
     assert_non_null(epio);
+    int32_t len = epio_disassemble_sm(epio, 0, 0, dis_buf, DIS_BUF_SIZE);
+    assert_true(len > 0 && "Disassembly failed");
 
     // Cycle 1: SET X, 31
     epio_step_cycles(epio, 1);
@@ -179,6 +196,8 @@ static void in_autopush(void **state) {
     setup_in_autopush(state);
     epio_t *epio = epio_from_apio();
     assert_non_null(epio);
+    int32_t len = epio_disassemble_sm(epio, 0, 0, dis_buf, DIS_BUF_SIZE);
+    assert_true(len > 0 && "Disassembly failed");
 
     // Cycle 1: SET X, 25 (0x19)
     epio_step_cycles(epio, 1);
@@ -204,6 +223,8 @@ static void in_autopush_stall(void **state) {
     setup_in_autopush_stall(state);
     epio_t *epio = epio_from_apio();
     assert_non_null(epio);
+    int32_t len = epio_disassemble_sm(epio, 0, 0, dis_buf, DIS_BUF_SIZE);
+    assert_true(len > 0 && "Disassembly failed");
 
     // Pre-fill RX FIFO to 3 entries (epio_push_rx_fifo reserves one slot)
     epio_push_rx_fifo(epio, 0, 0, 0xAAAAAAAA);
@@ -254,6 +275,8 @@ static void in_pins_in_base(void **state) {
     setup_in_pins_in_base(state);
     epio_t *epio = epio_from_apio();
     assert_non_null(epio);
+    int32_t len = epio_disassemble_sm(epio, 0, 0, dis_buf, DIS_BUF_SIZE);
+    assert_true(len > 0 && "Disassembly failed");
 
     // IN_BASE=10, IN PINS 5 reads GPIO 10-14
     // Set pattern: GPIO10=1, 11=0, 12=1, 13=1, 14=0 → 0b01101 = 0x0D
@@ -279,6 +302,8 @@ static void in_pins_gpiobase16(void **state) {
     setup_in_pins_gpiobase16(state);
     epio_t *epio = epio_from_apio();
     assert_non_null(epio);
+    int32_t len = epio_disassemble_sm(epio, 0, 0, dis_buf, DIS_BUF_SIZE);
+    assert_true(len > 0 && "Disassembly failed");
 
     // IN_BASE=5 with GPIOBASE=16 → reads GPIO 21,22,23
     // Set GPIO 5,6,7 (without base) — should NOT be read
@@ -308,6 +333,8 @@ static void in_with_delay(void **state) {
     setup_in_with_delay(state);
     epio_t *epio = epio_from_apio();
     assert_non_null(epio);
+    int32_t len = epio_disassemble_sm(epio, 0, 0, dis_buf, DIS_BUF_SIZE);
+    assert_true(len > 0 && "Disassembly failed");
 
     // Cycle 1: SET X, 31
     epio_step_cycles(epio, 1);
@@ -339,6 +366,8 @@ static void in_isr_source(void **state) {
     setup_in_isr_source(state);
     epio_t *epio = epio_from_apio();
     assert_non_null(epio);
+    int32_t len = epio_disassemble_sm(epio, 0, 0, dis_buf, DIS_BUF_SIZE);
+    assert_true(len > 0 && "Disassembly failed");
 
     // Cycle 1: SET X, 31
     epio_step_cycles(epio, 1);
@@ -365,6 +394,8 @@ static void in_osr_source(void **state) {
     setup_in_osr_source(state);
     epio_t *epio = epio_from_apio();
     assert_non_null(epio);
+    int32_t len = epio_disassemble_sm(epio, 0, 0, dis_buf, DIS_BUF_SIZE);
+    assert_true(len > 0 && "Disassembly failed");
 
     // Push known value to TX FIFO before stepping
     epio_push_tx_fifo(epio, 0, 0, 0xDEADBEEF);
@@ -389,6 +420,8 @@ static void in_bit_count_32(void **state) {
     setup_in_bit_count_32(state);
     epio_t *epio = epio_from_apio();
     assert_non_null(epio);
+    int32_t len = epio_disassemble_sm(epio, 0, 0, dis_buf, DIS_BUF_SIZE);
+    assert_true(len > 0 && "Disassembly failed");
 
     // Cycle 1: SET X, 31
     epio_step_cycles(epio, 1);
@@ -409,6 +442,8 @@ static void in_bit_count_32_shift_right(void **state) {
     setup_in_bit_count_32_shift_right(state);
     epio_t *epio = epio_from_apio();
     assert_non_null(epio);
+    int32_t len = epio_disassemble_sm(epio, 0, 0, dis_buf, DIS_BUF_SIZE);
+    assert_true(len > 0 && "Disassembly failed");
 
     // Cycle 1: SET X, 31
     epio_step_cycles(epio, 1);
@@ -430,6 +465,8 @@ static void in_autopush_threshold_crossing(void **state) {
     setup_in_autopush_threshold_crossing(state);
     epio_t *epio = epio_from_apio();
     assert_non_null(epio);
+    int32_t len = epio_disassemble_sm(epio, 0, 0, dis_buf, DIS_BUF_SIZE);
+    assert_true(len > 0 && "Disassembly failed");
 
     // PUSH_THRESH=6, IN X 8 — count goes to 8 which exceeds 6
 
@@ -455,6 +492,8 @@ static void in_autopush_thresh_0_means_32(void **state) {
     setup_in_autopush_thresh_0_means_32(state);
     epio_t *epio = epio_from_apio();
     assert_non_null(epio);
+    int32_t len = epio_disassemble_sm(epio, 0, 0, dis_buf, DIS_BUF_SIZE);
+    assert_true(len > 0 && "Disassembly failed");
 
     // PUSH_THRESH=0 encodes 32
 
@@ -488,6 +527,8 @@ static void in_pins_wraps_around(void **state) {
     setup_in_pins_wraps_around(state);
     epio_t *epio = epio_from_apio();
     assert_non_null(epio);
+    int32_t len = epio_disassemble_sm(epio, 0, 0, dis_buf, DIS_BUF_SIZE);
+    assert_true(len > 0 && "Disassembly failed");
 
     // IN_BASE=30, 3 bits → reads GPIOs 30, 31, 0
     // Drive: GPIO30=1, GPIO31=0, GPIO0=1
@@ -506,6 +547,8 @@ static void in_pins_wraps_around_gpiobase16(void **state) {
     setup_in_pins_wraps_around_gpiobase16(state);
     epio_t *epio = epio_from_apio();
     assert_non_null(epio);
+    int32_t len = epio_disassemble_sm(epio, 0, 0, dis_buf, DIS_BUF_SIZE);
+    assert_true(len > 0 && "Disassembly failed");
 
     // IN_BASE=30, GPIOBASE=16 → reads GPIOs 46, 47, 16
     // Drive: GPIO46=1, GPIO47=0, GPIO16=1
