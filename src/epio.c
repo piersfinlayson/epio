@@ -14,7 +14,7 @@
 //   - For clashes between SMs, highest numbered is preferred (easy to deal
 //     with just using incrementing scheduling order).  This is handled
 //     separately for direction and levels. 
-// - Special MOV instructions for RX FIFO access aren't supported
+// - MOV instructions for RX FIFO access aren't supported
 // - No support for hardware inverted GPIOs, or those forced to 0/1
 // - Doesn't honour GPIO FUNC settings - any PIO block can control any GPIO
 // - Doesn't collate GPIO output settings across all SMs - just applies them
