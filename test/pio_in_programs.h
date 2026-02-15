@@ -491,3 +491,109 @@ static int setup_in_pins_wraps_around_gpiobase16(void **state) {
 
     while (1) { APIO_ASM_WFI(); }
 }
+
+// IN PINS with inverted GPIO - GPIO5 driven low but inverted
+static int setup_in_pins_inverted_low(void **state) {
+    (void)state;
+    APIO_ASM_INIT();
+    APIO_GPIO_INIT();
+    APIO_SET_BLOCK(0);
+    APIO_SET_SM(0);
+    
+    // Invert GPIO 5
+    APIO_GPIO_INVERT(5);
+    
+    APIO_ADD_INSTR(APIO_IN_PINS(3));  // Read GPIO 5,6,7
+    APIO_WRAP_TOP();
+    APIO_ADD_INSTR(APIO_SET_X(20));
+    
+    APIO_SM_CLKDIV_SET(1, 0);
+    APIO_SM_EXECCTRL_SET(0);
+    APIO_SM_SHIFTCTRL_SET(0);
+    APIO_SM_PINCTRL_SET(APIO_IN_BASE(5));
+    APIO_SM_JMP_TO_START();
+    APIO_END_BLOCK();
+    APIO_ENABLE_SMS(0, 1);
+    
+    while (1) { APIO_ASM_WFI(); }
+}
+
+// IN PINS with inverted GPIO - GPIO6 driven high but inverted
+static int setup_in_pins_inverted_high(void **state) {
+    (void)state;
+    APIO_ASM_INIT();
+    APIO_GPIO_INIT();
+    APIO_SET_BLOCK(0);
+    APIO_SET_SM(0);
+    
+    // Invert GPIO 6
+    APIO_GPIO_INVERT(6);
+    
+    APIO_ADD_INSTR(APIO_IN_PINS(3));  // Read GPIO 5,6,7
+    APIO_WRAP_TOP();
+    APIO_ADD_INSTR(APIO_SET_X(20));
+    
+    APIO_SM_CLKDIV_SET(1, 0);
+    APIO_SM_EXECCTRL_SET(0);
+    APIO_SM_SHIFTCTRL_SET(0);
+    APIO_SM_PINCTRL_SET(APIO_IN_BASE(5));
+    APIO_SM_JMP_TO_START();
+    APIO_END_BLOCK();
+    APIO_ENABLE_SMS(0, 1);
+    
+    while (1) { APIO_ASM_WFI(); }
+}
+
+// IN PINS with multiple inverted GPIOs
+static int setup_in_pins_multiple_inverted(void **state) {
+    (void)state;
+    APIO_ASM_INIT();
+    APIO_GPIO_INIT();
+    APIO_SET_BLOCK(0);
+    APIO_SET_SM(0);
+    
+    // Invert GPIO 5 and 7
+    APIO_GPIO_INVERT(5);
+    APIO_GPIO_INVERT(7);
+    
+    APIO_ADD_INSTR(APIO_IN_PINS(3));  // Read GPIO 5,6,7
+    APIO_WRAP_TOP();
+    APIO_ADD_INSTR(APIO_SET_X(20));
+    
+    APIO_SM_CLKDIV_SET(1, 0);
+    APIO_SM_EXECCTRL_SET(0);
+    APIO_SM_SHIFTCTRL_SET(0);
+    APIO_SM_PINCTRL_SET(APIO_IN_BASE(5));
+    APIO_SM_JMP_TO_START();
+    APIO_END_BLOCK();
+    APIO_ENABLE_SMS(0, 1);
+    
+    while (1) { APIO_ASM_WFI(); }
+}
+
+// IN PINS with inverted GPIO and GPIOBASE=16
+static int setup_in_pins_inverted_gpiobase16(void **state) {
+    (void)state;
+    APIO_ASM_INIT();
+    APIO_GPIO_INIT();
+    APIO_SET_BLOCK(0);
+    APIO_GPIOBASE_16();
+    APIO_SET_SM(0);
+    
+    // Invert GPIO 21 (5+16)
+    APIO_GPIO_INVERT(21);
+    
+    APIO_ADD_INSTR(APIO_IN_PINS(3));  // Read GPIO 21,22,23
+    APIO_WRAP_TOP();
+    APIO_ADD_INSTR(APIO_SET_X(20));
+    
+    APIO_SM_CLKDIV_SET(1, 0);
+    APIO_SM_EXECCTRL_SET(0);
+    APIO_SM_SHIFTCTRL_SET(0);
+    APIO_SM_PINCTRL_SET(APIO_IN_BASE(5));
+    APIO_SM_JMP_TO_START();
+    APIO_END_BLOCK();
+    APIO_ENABLE_SMS(0, 1);
+    
+    while (1) { APIO_ASM_WFI(); }
+}

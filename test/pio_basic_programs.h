@@ -6,11 +6,15 @@
 //
 // Sample PIO programs for unit testing
 
+#define APIO_LOG_IMPL
 #include "test.h"
 
 // A typically PIO setup using APIO
 static int setup_basic_pio_apio(void **state) {
     (void)state;
+
+    APIO_GPIO_INIT();
+    APIO_GPIO_OUTPUT(0, 0);  // GPIO 0 controlled by PIO block 0
 
     APIO_ASM_INIT();
     APIO_CLEAR_ALL_IRQS();

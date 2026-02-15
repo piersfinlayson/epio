@@ -19,6 +19,9 @@
 #include <epio.h>
 
 #if defined(EPIO_DEBUG)
+#include <stdio.h>
+#undef APIO_LOG_ENABLE
+#define APIO_LOG_ENABLE EPIO_DBG
 #define EPIO_DBG(...)   do { \
                             printf(__VA_ARGS__); \
                             printf("\n"); \
@@ -87,9 +90,21 @@ typedef struct {
 } epio_sm_state_t;
 
 // DMA state for a single DMA channel
+//
+// Strictly this a pair of channels.
 typedef struct {
-    uint8_t delay;
+    uint8_t setup;
+    uint8_t read_block;
+    uint8_t read_sm;
+    uint8_t read_cycles;
+    uint8_t write_block;
+    uint8_t write_sm;
+    uint8_t write_cycles;
+    uint8_t read_delay;
+    uint8_t write_delay;
+    uint8_t bit_mode;
     uint32_t read_addr;
+    uint32_t read_value;
 } epio_dma_state_t;
 
 // GPIO states on the emulated RP2350
@@ -105,6 +120,12 @@ typedef struct {
 
     // Which GPIOs are being externally driven
     uint64_t ext_driven;
+
+    // Which GPIOs are inverted
+    uint64_t inverted;
+
+    // Which output GPIOs are controlled by which block
+    uint64_t output_control[NUM_PIO_BLOCKS];
 } epio_gpio_state_t;
 
 // IRQ state for a single PIO block
@@ -165,7 +186,7 @@ uint8_t epio_get_jmp_pin_state(epio_t *epio, uint8_t block, uint8_t sm);
 
 // epio_dma.c
 void epio_init_dma(epio_t *epio);
-void epio_dma_one_rom(epio_t *epio);
+void epio_dma_step(epio_t *epio);
 
 #define SRAM_SIZE           520*1024
 #define MIN_SRAM_ADDR       0x20000000

@@ -35,4 +35,8 @@ EPIO_WASM_EXPORTS := \
 	"_epio_peek_sm_exec_pending","_epio_peek_sm_exec_instr",\
 	"_epio_peek_block_irq","_epio_peek_sm_osr_empty",\
 	"_epio_set_block_irq","_epio_clear_block_irq","_epio_peek_block_irq_num", \
-	"_epio_peek_rx_fifo","_epio_peek_tx_fifo"
+	"_epio_peek_rx_fifo","_epio_peek_tx_fifo",\
+	"_epio_set_gpio_inverted","_epio_get_gpio_inverted",\
+	"_epio_set_gpio_output_control","_epio_get_gpio_output_control",\
+	"_epio_clear_gpio_output_control","_epio_disable_sm",\
+	"_epio_block_can_control_gpio_output"

@@ -595,3 +595,86 @@ static int setup_jmp_not_osre_threshold_below(void **state) {
     
     while (1) { APIO_ASM_WFI(); }
 }
+
+// JMP PIN with inverted GPIO - pin driven low but inverted, so reads high
+static int setup_jmp_pin_inverted_low(void **state) {
+    (void)state;
+    APIO_ASM_INIT();
+    APIO_GPIO_INIT();
+    APIO_SET_BLOCK(0);
+    APIO_SET_SM(0);
+    
+    // Invert GPIO 5
+    APIO_GPIO_INVERT(5);
+    
+    APIO_LABEL_NEW_OFFSET(target, 2);
+    APIO_ADD_INSTR(APIO_JMP_PIN(APIO_LABEL(target)));
+    APIO_ADD_INSTR(APIO_SET_X(10));  // Should not execute
+    APIO_ADD_INSTR(APIO_SET_X(20));  // Target
+    
+    APIO_SM_CLKDIV_SET(1, 0);
+    APIO_SM_EXECCTRL_SET(APIO_EXECCTRL_JMP_PIN(5));
+    APIO_SM_SHIFTCTRL_SET(0);
+    APIO_SM_PINCTRL_SET(0);
+    APIO_SM_JMP_TO_START();
+    APIO_END_BLOCK();
+    APIO_ENABLE_SMS(0, 1);
+    
+    while (1) { APIO_ASM_WFI(); }
+}
+
+// JMP PIN with inverted GPIO - pin driven high but inverted, so reads low
+static int setup_jmp_pin_inverted_high(void **state) {
+    (void)state;
+    APIO_ASM_INIT();
+    APIO_GPIO_INIT();
+    APIO_SET_BLOCK(0);
+    APIO_SET_SM(0);
+    
+    // Invert GPIO 5
+    APIO_GPIO_INVERT(5);
+    
+    APIO_LABEL_NEW_OFFSET(target, 2);
+    APIO_ADD_INSTR(APIO_JMP_PIN(APIO_LABEL(target)));
+    APIO_ADD_INSTR(APIO_SET_X(20));  // Should execute
+    APIO_WRAP_TOP();
+    APIO_ADD_INSTR(APIO_SET_X(10));  // Target - should not execute
+    
+    APIO_SM_CLKDIV_SET(1, 0);
+    APIO_SM_EXECCTRL_SET(APIO_EXECCTRL_JMP_PIN(5));
+    APIO_SM_SHIFTCTRL_SET(0);
+    APIO_SM_PINCTRL_SET(0);
+    APIO_SM_JMP_TO_START();
+    APIO_END_BLOCK();
+    APIO_ENABLE_SMS(0, 1);
+    
+    while (1) { APIO_ASM_WFI(); }
+}
+
+// JMP PIN with inverted GPIO and GPIOBASE=16
+static int setup_jmp_pin_inverted_gpiobase16(void **state) {
+    (void)state;
+    APIO_ASM_INIT();
+    APIO_GPIO_INIT();
+    APIO_SET_BLOCK(0);
+    APIO_GPIOBASE_16();
+    APIO_SET_SM(0);
+    
+    // Invert GPIO 21 (5+16)
+    APIO_GPIO_INVERT(21);
+    
+    APIO_LABEL_NEW_OFFSET(target, 2);
+    APIO_ADD_INSTR(APIO_JMP_PIN(APIO_LABEL(target)));
+    APIO_ADD_INSTR(APIO_SET_X(10));  // Should not execute
+    APIO_ADD_INSTR(APIO_SET_X(20));  // Target
+    
+    APIO_SM_CLKDIV_SET(1, 0);
+    APIO_SM_EXECCTRL_SET(APIO_EXECCTRL_JMP_PIN(5));  // JMP pin is GPIO 5+16=21
+    APIO_SM_SHIFTCTRL_SET(0);
+    APIO_SM_PINCTRL_SET(0);
+    APIO_SM_JMP_TO_START();
+    APIO_END_BLOCK();
+    APIO_ENABLE_SMS(0, 1);
+    
+    while (1) { APIO_ASM_WFI(); }
+}

@@ -6,6 +6,7 @@
 //
 // Unit tests for FIFO functions from epio.c
 
+#define APIO_LOG_IMPL
 #include "test.h"
 
 // --- TX FIFO tests ---

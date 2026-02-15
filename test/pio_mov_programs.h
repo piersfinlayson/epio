@@ -36,6 +36,11 @@ enum mov_test_src {
 // exec_nop: if non-zero, inserts a NOP after the MOV for EXEC destination
 //           (the exec'd instruction replaces this NOP)
 static int setup_mov(uint16_t mov_instr, int src, int exec_nop) {
+    APIO_GPIO_INIT();
+    for (int ii = 0; ii < 8; ii++) {
+        APIO_GPIO_OUTPUT(ii+8, 0);
+    }
+
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -157,6 +162,11 @@ static int setup_mov_exec_executee_delay(void **state) {
 // MOV PINS, X with GPIOBASE=16
 // OUT_BASE=5, OUT_COUNT=3 → actual GPIO 21,22,23
 static int setup_mov_pins_gpiobase16(void **state) {
+    APIO_GPIO_INIT();
+    for (int ii = 0; ii < 3; ii++) {
+        APIO_GPIO_OUTPUT(ii+5+16, 0);
+    }
+
     (void)state;
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
@@ -212,6 +222,11 @@ static int setup_mov_osr_osr_count_reset(void **state) {
 // exec_nop: if non-zero, inserts a NOP after the MOV for EXEC destination
 static int setup_mov_status(uint16_t mov_instr, uint32_t execctrl,
                             int exec_nop) {
+    APIO_GPIO_INIT();
+    for (int ii = 0; ii < 8; ii++) {
+        APIO_GPIO_OUTPUT(ii+8, 0);
+    }
+
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);

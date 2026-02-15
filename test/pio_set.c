@@ -267,6 +267,60 @@ static void set_pindirs_gpiobase16(void **state) {
     epio_free(epio);
 }
 
+static void set_pins_with_control(void **state) {
+    setup_set_pins_with_control(state);
+    epio_t *epio = epio_from_apio();
+    assert_non_null(epio);
+
+    // Set GPIOs as outputs
+    epio_set_gpio_output(epio, 5);
+    epio_set_gpio_output(epio, 6);
+    epio_set_gpio_output(epio, 7);
+
+    // Cycle 1: SET PINS, 5 (0b101) → should work because control granted
+    epio_step_cycles(epio, 1);
+    uint64_t pins = epio_read_pin_states(epio);
+    assert_int_equal((pins >> 5) & 0x7, 0x5);
+
+    epio_free(epio);
+}
+
+static void set_pins_without_control(void **state) {
+    setup_set_pins_without_control(state);
+    epio_t *epio = epio_from_apio();
+    assert_non_null(epio);
+
+    // Set GPIOs as outputs
+    epio_set_gpio_output(epio, 5);
+    epio_set_gpio_output(epio, 6);
+    epio_set_gpio_output(epio, 7);
+
+    // Cycle 1: SET PINS, 5 (0b101) → should NOT work, pins stay at init state (0b111)
+    epio_step_cycles(epio, 1);
+    uint64_t pins = epio_read_pin_states(epio);
+    assert_int_equal((pins >> 5) & 0x7, 0x7);  // Unchanged from init
+
+    epio_free(epio);
+}
+
+static void set_pins_block1(void **state) {
+    setup_set_pins_block1(state);
+    epio_t *epio = epio_from_apio();
+    assert_non_null(epio);
+
+    // Set GPIOs as outputs
+    epio_set_gpio_output(epio, 10);
+    epio_set_gpio_output(epio, 11);
+    epio_set_gpio_output(epio, 12);
+
+    // Cycle 1: SET PINS, 5 (0b101) → block 1 controls GPIOs 10-12
+    epio_step_cycles(epio, 1);
+    uint64_t pins = epio_read_pin_states(epio);
+    assert_int_equal((pins >> 10) & 0x7, 0x5);
+
+    epio_free(epio);
+}
+
 int main(void) {
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(set_x),
@@ -281,6 +335,9 @@ int main(void) {
         cmocka_unit_test(set_pins_wraps_around),
         cmocka_unit_test(set_pins_wraps_around_gpiobase16),
         cmocka_unit_test(set_pindirs_gpiobase16),
+        cmocka_unit_test(set_pins_with_control),
+        cmocka_unit_test(set_pins_without_control),
+        cmocka_unit_test(set_pins_block1),
     };
     return cmocka_run_group_tests(tests, NULL, NULL);
 }

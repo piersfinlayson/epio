@@ -71,7 +71,7 @@ static void epio_finish_step(epio_t *epio) {
 // Handles any non-PIO work that needs to be done after each step, like
 // DMA chains
 static void epio_after_step(epio_t *epio) {
-    epio_dma_one_rom(epio);
+    epio_dma_step(epio);
 }
 
 static void epio_sm_step(epio_t *epio, uint8_t block, uint8_t sm) {
@@ -93,7 +93,11 @@ static void epio_sm_step(epio_t *epio, uint8_t block, uint8_t sm) {
     uint8_t was_exec_pending = SM(block, sm).exec_pending;
     if (SM(block, sm).delay > 0) {
         SM(block, sm).delay--;
-        EPIO_DBG("           Delayed: %d cycles remaining", SM(block, sm).delay);
+#if defined(EPIO_DEBUG)
+        char instr_str[64];
+        apio_instruction_decoder(instr, instr_str, 0);
+        EPIO_DBG("  PIO%d SM%d PC=%d 0x%04X %-20s Delayed: %d cycles remaining", block, sm, PC(block, sm), instr, instr_str, SM(block, sm).delay);
+#endif // EPIO_DEBUG
         dont_update_pc = 1; // PC already points to the next instruction
     } else {
         dont_update_pc = epio_exec_instr_sm(epio, block, sm, instr);
@@ -421,7 +425,9 @@ uint8_t epio_exec_instr_sm(epio_t *epio, uint8_t block, uint8_t sm, uint16_t ins
                     uint8_t out_base = OUT_BASE_GET(block, sm);
                     for (int ii = 0; ii < out_count; ii++) {
                         uint8_t pin = ((out_base + ii) % 32) + GPIOBASE(block);
-                        epio_set_gpio_output_level(epio, pin, (out_data >> ii) & 0x1);
+                        if (epio_block_can_control_gpio_output(epio, block, pin)) {
+                            epio_set_gpio_output_level(epio, pin, (out_data >> ii) & 0x1);
+                        }
                     }
                     break;
                     
@@ -442,7 +448,9 @@ uint8_t epio_exec_instr_sm(epio_t *epio, uint8_t block, uint8_t sm, uint16_t ins
                     for (int ii = 0; ii < out_count; ii++) {
                         uint8_t pin = ((pindirs_base + ii) % 32) + GPIOBASE(block);
                         if ((out_data >> ii) & 0x1) {
-                            epio_set_gpio_output(epio, pin);
+                            if (epio_block_can_control_gpio_output(epio, block, pin)) {
+                                epio_set_gpio_output(epio, pin);
+                            }
                         } else {
                             epio_set_gpio_input(epio, pin);
                         }
@@ -674,7 +682,9 @@ uint8_t epio_exec_instr_sm(epio_t *epio, uint8_t block, uint8_t sm, uint16_t ins
                     uint8_t out_count = OUT_COUNT_GET(block, sm);
                     for (int ii = 0; ii < out_count; ii++) {
                         uint8_t pin = ((out_base + ii) % 32) + GPIOBASE(block);
-                        epio_set_gpio_output_level(epio, pin, (mov_value >> ii) & 0b1);
+                        if (epio_block_can_control_gpio_output(epio, block, pin)) {
+                            epio_set_gpio_output_level(epio, pin, (mov_value >> ii) & 0b1);
+                        }
                     }
                     break;
                     
@@ -693,7 +703,9 @@ uint8_t epio_exec_instr_sm(epio_t *epio, uint8_t block, uint8_t sm, uint16_t ins
                     for (int ii = 0; ii < pindirs_count; ii++) {
                         uint8_t pin = ((pindirs_base + ii) % 32) + GPIOBASE(block);
                         if ((mov_value >> ii) & 0b1) {
-                            epio_set_gpio_output(epio, pin);
+                            if (epio_block_can_control_gpio_output(epio, block, pin)) {
+                                epio_set_gpio_output(epio, pin);
+                            }
                         } else {
                             epio_set_gpio_input(epio, pin);
                         }
@@ -778,7 +790,9 @@ uint8_t epio_exec_instr_sm(epio_t *epio, uint8_t block, uint8_t sm, uint16_t ins
                     uint8_t set_count = SET_COUNT_GET(block, sm);
                     for (int ii = 0; ii < set_count; ii++) {
                         uint8_t pin = ((set_base + ii) % 32) + GPIOBASE(block);
-                        epio_set_gpio_output_level(epio, pin, (set_data >> ii) & 0b1);
+                        if (epio_block_can_control_gpio_output(epio, block, pin)) {
+                            epio_set_gpio_output_level(epio, pin, (set_data >> ii) & 0b1);
+                        }
                     }
                     break;
                     
@@ -797,9 +811,13 @@ uint8_t epio_exec_instr_sm(epio_t *epio, uint8_t block, uint8_t sm, uint16_t ins
                     for (int ii = 0; ii < pindirs_count; ii++) {
                         uint8_t pin = ((pindirs_base + ii) % 32) + GPIOBASE(block);
                         if ((set_data >> ii) & 0b1) {
-                            epio_set_gpio_output(epio, pin);
+                            if (epio_block_can_control_gpio_output(epio, block, pin)) {
+                                epio_set_gpio_output(epio, pin);
+                            }
                         } else {
-                            epio_set_gpio_input(epio, pin);
+                            if (epio_block_can_control_gpio_output(epio, block, pin)) {
+                                epio_set_gpio_input(epio, pin);
+                            }
                         }
                     }
                     break;

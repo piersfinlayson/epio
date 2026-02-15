@@ -80,6 +80,12 @@ static int setup_out_null_shift_right(void **state) {
 // OUT PINS shift right - OUT_BASE=5, OUT_COUNT=3
 static int setup_out_pins_shift_right(void **state) {
     (void)state;
+
+    APIO_GPIO_INIT();
+    for (int ii = 0; ii < 3; ii++) {
+        APIO_GPIO_OUTPUT(ii+5, 0);
+    }
+
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -282,6 +288,12 @@ static int setup_out_autopull_stall(void **state) {
 // OUT PINS with GPIOBASE=16
 static int setup_out_pins_gpiobase16(void **state) {
     (void)state;
+
+    APIO_GPIO_INIT();
+    for (int ii = 0; ii < 3; ii++) {
+        APIO_GPIO_OUTPUT(ii+5+16, 0);
+    }
+
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_GPIOBASE_16();
@@ -459,6 +471,12 @@ static int setup_out_autopull_thresh_0_means_32(void **state) {
 // OUT PINDIRS shift right - OUT_BASE=5, OUT_COUNT=3
 static int setup_out_pindirs_shift_right(void **state) {
     (void)state;
+
+    APIO_GPIO_INIT();
+    for (int ii = 0; ii < 3; ii++) {
+        APIO_GPIO_OUTPUT(ii+5, 0);
+    }
+
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -510,6 +528,12 @@ static int setup_out_exec_with_executee_delay(void **state) {
 // OUT PINS wrap around — OUT_BASE=30, OUT_COUNT=3
 static int setup_out_pins_wraps_around(void **state) {
     (void)state;
+
+    APIO_GPIO_INIT();
+    APIO_GPIO_OUTPUT(0, 0);
+    APIO_GPIO_OUTPUT(30, 0);
+    APIO_GPIO_OUTPUT(31, 0);
+
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -537,6 +561,12 @@ static int setup_out_pins_wraps_around(void **state) {
 // Window pins 30, 31, 0 → actual GPIOs 46, 47, 16
 static int setup_out_pins_wraps_around_gpiobase16(void **state) {
     (void)state;
+
+    APIO_GPIO_INIT();
+    APIO_GPIO_OUTPUT(16, 0);
+    APIO_GPIO_OUTPUT(46, 0);
+    APIO_GPIO_OUTPUT(47, 0);
+
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_GPIOBASE_16();

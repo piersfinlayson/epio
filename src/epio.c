@@ -170,3 +170,8 @@ uint8_t epio_is_sm_enabled(epio_t *epio, uint8_t block, uint8_t sm) {
     CHECK_BLOCK_SM();
     return SM(block, sm).enabled;
 }
+
+void epio_disable_sm(epio_t *epio, uint8_t block, uint8_t sm) {
+    CHECK_BLOCK_SM();
+    SM(block, sm).enabled = 0;
+}

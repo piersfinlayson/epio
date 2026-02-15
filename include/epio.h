@@ -197,6 +197,19 @@ EPIO_EXPORT void epio_enable_sm(epio_t *epio, uint8_t block, uint8_t sm);
  */
 EPIO_EXPORT uint8_t epio_is_sm_enabled(epio_t *epio, uint8_t block, uint8_t sm);
 
+/**
+ * @brief Disable a state machine.
+ * 
+ * Marks the specified SM as disabled.  Disabled SMs are not advanced by
+ * epio_step_cycles() and do not execute instructions until re-enabled.
+ * 
+ * @param epio  The epio instance.
+ * @param block PIO block index (0 to NUM_PIO_BLOCKS-1).
+ * @param sm    State machine index within the block (0 to NUM_SMS_PER_BLOCK-
+ * 1).
+ */
+EPIO_EXPORT void epio_disable_sm(epio_t *epio, uint8_t block, uint8_t sm);
+
 /** @} */
 
 /**
@@ -399,6 +412,79 @@ EPIO_EXPORT void epio_drive_gpios_ext(epio_t *epio, uint64_t gpios, uint64_t lev
 EPIO_EXPORT uint64_t epio_read_gpios_ext(epio_t *epio);
 
 /**
+ * @brief Set a GPIO pin as inverted or non-inverted.
+ * 
+ * When a GPIO pin is inverted, the PIO state machines see the opposite level
+ * on that pin.  For example, if GPIO5 is inverted and externally driven low,
+ * the SMs will see it as high.  This allows testing of PIO programs that
+ * use the INVERT pin configuration to invert GPIO inputs.
+ * 
+ * @param epio  The epio instance.
+ * @param pin   GPIO pin number (0 to NUM_GPIOS-1).
+ * @param inverted 1 to set the pin as inverted, 0 to set it as non-inverted.
+ */
+void epio_set_gpio_inverted(epio_t *epio, uint8_t pin, uint8_t inverted);
+
+/**
+ * @brief Get the inversion state of a GPIO pin.
+ * 
+ * @param epio  The epio instance.
+ * @param pin   GPIO pin number (0 to NUM_GPIOS-1).
+ * @return      1 if the pin is inverted, 0 if it is non-inverted.
+ */
+uint8_t epio_get_gpio_inverted(epio_t *epio, uint8_t pin);
+
+/**
+ * @brief Set GPIO output control for a pin to a specific block.
+ * 
+ * This configures a GPIO pin to be driven by the specified PIO block when it
+ * is configured as an output.  Only a PIO block with output control for that
+ * GPIO can drive it as an output.
+ * 
+ * @param epio  The epio instance.
+ * @param pin   GPIO pin number (0 to NUM_GPIOS-1).
+ * @param block PIO block index (0 to NUM_PIO_BLOCKS-1).
+ */
+void epio_set_gpio_output_control(epio_t *epio, uint8_t pin, uint8_t block);
+
+/**
+ * @brief Clear GPIO output control for a pin.
+ * 
+ * This configures a GPIO pin to not to be able to be driven by the block.
+ * 
+ * @param epio  The epio instance.
+ * @param pin   GPIO pin number (0 to NUM_GPIOS-1).
+ * @param block PIO block index (0 to NUM_PIO_BLOCKS-1).
+ */
+void epio_clear_gpio_output_control(epio_t *epio, uint8_t pin, uint8_t block);
+
+/**
+ * @brief Check if a block can control the output of a GPIO pin.
+ * 
+ * Returns 1 if the specified block has output control for the specified GPIO
+ * pin, meaning it can drive that pin as an output when configured to do so.
+ * Returns 0 otherwise.
+ * 
+ * @param epio  The epio instance.
+ * @param block PIO block index (0 to NUM_PIO_BLOCKS-1).
+ * @param pin   GPIO pin number (0 to NUM_GPIOS-1).
+ * @return      1 if the block can control the GPIO pin's output, 0
+ */
+uint8_t epio_block_can_control_gpio_output(epio_t *epio, uint8_t block, uint8_t pin);
+
+/**
+ * @brief Get the GPIO output control for a block.
+ * 
+ * Returns a bitmask of which GPIO pins are configured to be driven by the
+ * specified block when they are configured as outputs.
+ * 
+ * @param epio  The epio instance.
+ * @param block PIO block index (0 to NUM_PIO_BLOCKS-1).
+ * @return      Bitmask of GPIO pins controlled by this block (bit N = GPIO N).
+ */
+uint64_t epio_get_gpio_output_control(epio_t *epio, uint8_t block);
+
+/**
  * @brief Read the current input level of a single GPIO pin.
  *
  * Returns the level that the specified pin presents as an input to the PIO
@@ -493,6 +579,41 @@ EPIO_EXPORT uint64_t epio_read_pin_states(epio_t *epio);
 EPIO_EXPORT uint64_t epio_read_driven_pins(epio_t *epio);
 
 /** @} */
+
+/**
+ * @defgroup dma DMA API
+ * @brief Functions for simulating DMA access to SRAM from PIO programs.
+ */
+
+/**
+ * @brief Configure a DMA channel (pair) for PIO read access to SRAM.
+ * 
+ * This sets up the specified DMA channel for use by PIO programs that read from
+ * SRAM.
+ * 
+ * @param epio          The epio instance.
+ * @param dma_chan      DMA channel number (0 to NUM_DMA_CHANNELS-1).
+ * @param read_block     PIO block index for the read side of the channel (0 to NUM_PIO_BLOCKS-1).
+ * @param read_sm        State machine index for the read side of the channel (0 to NUM_SMS_PER_BLOCK-1).
+ * @param read_cycles     Number of cycles for the read side of the channel (1 to 255).
+ * @param write_block    PIO block index for the write side of the channel (0 to NUM_PIO_BLOCKS-1).
+ * @param write_sm       State machine index for the write side of the channel (0 to NUM_SMS_PER_BLOCK-1).
+ * @param write_cycles    Number of cycles for the write side of the channel (1 to 255).
+ * @param bit_mode       Bit mode for the channel: 8, 16 or 32.
+ */
+EPIO_EXPORT void epio_dma_setup_read_pio_chain(
+    epio_t *epio,
+    uint8_t dma_chan,
+    uint8_t read_block,
+    uint8_t read_sm,
+    uint8_t read_cycles,
+    uint8_t write_block,
+    uint8_t write_sm,
+    uint8_t write_cycles,
+    uint8_t bit_mode
+);
+
+ /** @} */
 
 /**
  * @defgroup sram SRAM API
@@ -900,6 +1021,7 @@ EPIO_EXPORT int epio_disassemble_sm(epio_t *epio, uint8_t block, uint8_t sm, cha
 /** @brief Maximum number of supported GPIOs. */
 #define NUM_GPIOS 48
 _Static_assert(NUM_GPIOS <= 64, "NUM_GPIOS must be <= 64 to fit in uint64_t");
+_Static_assert(NUM_GPIOS == APIO_MAX_GPIOS, "NUM_GPIOS must match APIO_MAX_GPIOS");
 
 /** @brief Number of PIO blocks on the RP2350. */
 #define NUM_PIO_BLOCKS          3

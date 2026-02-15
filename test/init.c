@@ -6,6 +6,7 @@
 //
 // Unit tests for init and related functions from epio.c
 
+#define APIO_LOG_IMPL
 #include "test.h"
 
 static void init_returns_valid_instance(void **state) {

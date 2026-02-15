@@ -527,6 +527,81 @@ static void jmp_not_osre_threshold_below(void **state) {
     epio_free(epio);
 }
 
+static void jmp_pin_inverted_low(void **state) {
+    setup_jmp_pin_inverted_low(state);
+    epio_t *epio = epio_from_apio();
+    assert_non_null(epio);
+    
+    // GPIO 5 is inverted
+    assert_int_equal(epio_get_gpio_inverted(epio, 5), 1);
+    
+    // Drive GPIO5 LOW externally
+    epio_set_gpio_input_level(epio, 5, 0);
+    
+    // But due to inversion, PIO reads it as HIGH
+    assert_int_equal(epio_get_gpio_input(epio, 5), 1);
+    
+    epio_step_cycles(epio, 1);
+    
+    // Should jump because inverted pin reads high
+    assert_int_equal(epio_peek_sm_pc(epio, 0, 0), 2);
+    
+    epio_step_cycles(epio, 1);
+    assert_int_equal(epio_peek_sm_x(epio, 0, 0), 20);
+    
+    epio_free(epio);
+}
+
+static void jmp_pin_inverted_high(void **state) {
+    setup_jmp_pin_inverted_high(state);
+    epio_t *epio = epio_from_apio();
+    assert_non_null(epio);
+    
+    // GPIO 5 is inverted
+    assert_int_equal(epio_get_gpio_inverted(epio, 5), 1);
+    
+    // Drive GPIO5 HIGH externally
+    epio_set_gpio_input_level(epio, 5, 1);
+    
+    // But due to inversion, PIO reads it as LOW
+    assert_int_equal(epio_get_gpio_input(epio, 5), 0);
+    
+    epio_step_cycles(epio, 1);
+    
+    // Should not jump because inverted pin reads low
+    assert_int_equal(epio_peek_sm_pc(epio, 0, 0), 1);
+    
+    epio_step_cycles(epio, 1);
+    assert_int_equal(epio_peek_sm_x(epio, 0, 0), 20);
+    
+    epio_free(epio);
+}
+
+static void jmp_pin_inverted_gpiobase16(void **state) {
+    setup_jmp_pin_inverted_gpiobase16(state);
+    epio_t *epio = epio_from_apio();
+    assert_non_null(epio);
+    
+    // GPIO 21 is inverted
+    assert_int_equal(epio_get_gpio_inverted(epio, 21), 1);
+    
+    // Drive GPIO21 LOW externally
+    epio_drive_gpios_ext(epio, 1ULL << 21, 0ULL << 21);
+    
+    // But due to inversion, PIO reads it as HIGH
+    assert_int_equal(epio_get_gpio_input(epio, 21), 1);
+    
+    epio_step_cycles(epio, 1);
+    
+    // Should jump because inverted pin reads high
+    assert_int_equal(epio_peek_sm_pc(epio, 0, 0), 2);
+    
+    epio_step_cycles(epio, 1);
+    assert_int_equal(epio_peek_sm_x(epio, 0, 0), 20);
+    
+    epio_free(epio);
+}
+
 int main(void) {
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(jmp_unconditional),
@@ -552,6 +627,9 @@ int main(void) {
         cmocka_unit_test(jmp_not_osre_when_not_empty),
         cmocka_unit_test(jmp_not_osre_threshold_at),
         cmocka_unit_test(jmp_not_osre_threshold_below),
+        cmocka_unit_test(jmp_pin_inverted_low),
+        cmocka_unit_test(jmp_pin_inverted_high),
+        cmocka_unit_test(jmp_pin_inverted_gpiobase16),
     };
     return cmocka_run_group_tests(tests, NULL, NULL);
 }

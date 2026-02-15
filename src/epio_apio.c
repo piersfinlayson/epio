@@ -83,6 +83,18 @@ epio_t *epio_from_apio(void) {
         }
     }
 
+    // Configure GPIOs
+    for (int pin = 0; pin < NUM_GPIOS; pin++) {
+        // Set inversion state
+        uint8_t inverted = _apio_emulated_gpios.inverted[pin];
+        epio_set_gpio_inverted(epio, pin, inverted);
+
+        // Set output control
+        if (_apio_emulated_gpios.output_block[pin] != -1) {
+            epio_set_gpio_output_control(epio, pin, _apio_emulated_gpios.output_block[pin]);
+        }
+    }
+
     return epio;
 }
 

@@ -563,6 +563,116 @@ static void in_pins_wraps_around_gpiobase16(void **state) {
     epio_free(epio);
 }
 
+static void in_pins_inverted_low(void **state) {
+    setup_in_pins_inverted_low(state);
+    epio_t *epio = epio_from_apio();
+    assert_non_null(epio);
+    
+    // GPIO 5 is inverted
+    assert_int_equal(epio_get_gpio_inverted(epio, 5), 1);
+    
+    // Drive GPIO5=LOW, GPIO6=HIGH, GPIO7=HIGH externally
+    // Pattern: 0b110
+    epio_set_gpio_input_level(epio, 5, 0);
+    epio_set_gpio_input_level(epio, 6, 1);
+    epio_set_gpio_input_level(epio, 7, 1);
+    
+    // Due to inversion, PIO reads GPIO5 as HIGH
+    // So PIO sees: 0b111 = 7
+    assert_int_equal(epio_get_gpio_input(epio, 5), 1);
+    
+    epio_step_cycles(epio, 1);
+    
+    // Shift left: ISR = 7
+    assert_int_equal(epio_peek_sm_isr(epio, 0, 0), 7);
+    assert_int_equal(epio_peek_sm_isr_count(epio, 0, 0), 3);
+    
+    epio_free(epio);
+}
+
+static void in_pins_inverted_high(void **state) {
+    setup_in_pins_inverted_high(state);
+    epio_t *epio = epio_from_apio();
+    assert_non_null(epio);
+    
+    // GPIO 6 is inverted
+    assert_int_equal(epio_get_gpio_inverted(epio, 6), 1);
+    
+    // Drive GPIO5=HIGH, GPIO6=HIGH, GPIO7=HIGH externally
+    // Pattern: 0b111
+    epio_set_gpio_input_level(epio, 5, 1);
+    epio_set_gpio_input_level(epio, 6, 1);
+    epio_set_gpio_input_level(epio, 7, 1);
+    
+    // Due to inversion, PIO reads GPIO6 as LOW
+    // So PIO sees: 0b101 = 5
+    assert_int_equal(epio_get_gpio_input(epio, 6), 0);
+    
+    epio_step_cycles(epio, 1);
+    
+    // Shift left: ISR = 5
+    assert_int_equal(epio_peek_sm_isr(epio, 0, 0), 5);
+    assert_int_equal(epio_peek_sm_isr_count(epio, 0, 0), 3);
+    
+    epio_free(epio);
+}
+
+static void in_pins_multiple_inverted(void **state) {
+    setup_in_pins_multiple_inverted(state);
+    epio_t *epio = epio_from_apio();
+    assert_non_null(epio);
+    
+    // GPIO 5 and 7 are inverted
+    assert_int_equal(epio_get_gpio_inverted(epio, 5), 1);
+    assert_int_equal(epio_get_gpio_inverted(epio, 7), 1);
+    
+    // Drive all HIGH externally: 0b111
+    epio_set_gpio_input_level(epio, 5, 1);
+    epio_set_gpio_input_level(epio, 6, 1);
+    epio_set_gpio_input_level(epio, 7, 1);
+    
+    // GPIO5 and GPIO7 inverted: read as LOW
+    // PIO sees: 0b010 = 2
+    assert_int_equal(epio_get_gpio_input(epio, 5), 0);
+    assert_int_equal(epio_get_gpio_input(epio, 6), 1);
+    assert_int_equal(epio_get_gpio_input(epio, 7), 0);
+    
+    epio_step_cycles(epio, 1);
+    
+    // Shift left: ISR = 2
+    assert_int_equal(epio_peek_sm_isr(epio, 0, 0), 2);
+    assert_int_equal(epio_peek_sm_isr_count(epio, 0, 0), 3);
+    
+    epio_free(epio);
+}
+
+static void in_pins_inverted_gpiobase16(void **state) {
+    setup_in_pins_inverted_gpiobase16(state);
+    epio_t *epio = epio_from_apio();
+    assert_non_null(epio);
+    
+    // GPIO 21 is inverted
+    assert_int_equal(epio_get_gpio_inverted(epio, 21), 1);
+    
+    // Drive GPIO21=LOW, GPIO22=HIGH, GPIO23=HIGH
+    // Pattern: 0b110
+    epio_drive_gpios_ext(epio, 
+        (1ULL << 21) | (1ULL << 22) | (1ULL << 23),
+        (0ULL << 21) | (1ULL << 22) | (1ULL << 23));
+    
+    // Due to inversion, PIO reads GPIO21 as HIGH
+    // PIO sees: 0b111 = 7
+    assert_int_equal(epio_get_gpio_input(epio, 21), 1);
+    
+    epio_step_cycles(epio, 1);
+    
+    // Shift left: ISR = 7
+    assert_int_equal(epio_peek_sm_isr(epio, 0, 0), 7);
+    assert_int_equal(epio_peek_sm_isr_count(epio, 0, 0), 3);
+    
+    epio_free(epio);
+}
+
 int main(void) {
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(in_pins_shift_left),
@@ -585,6 +695,10 @@ int main(void) {
         cmocka_unit_test(in_autopush_thresh_0_means_32),
         cmocka_unit_test(in_pins_wraps_around),
         cmocka_unit_test(in_pins_wraps_around_gpiobase16),
+        cmocka_unit_test(in_pins_inverted_low),
+        cmocka_unit_test(in_pins_inverted_high),
+        cmocka_unit_test(in_pins_multiple_inverted),
+        cmocka_unit_test(in_pins_inverted_gpiobase16),
     };
     return cmocka_run_group_tests(tests, NULL, NULL);
 }
