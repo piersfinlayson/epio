@@ -555,6 +555,8 @@ EPIO_EXPORT void epio_set_gpio_output_level(epio_t *epio, uint8_t pin, uint8_t l
  * Returns the logical level of all GPIO pins as currently observed,
  * reflecting both PIO-driven outputs and externally driven inputs.
  * Bit N corresponds to GPIO N, with GPIO0 being the LSB.
+ * 
+ * This function returns _inverted_ states, if the pin is configured as such
  *
  * @param epio  The epio instance.
  * @return      Bitmask of GPIO pin states (bit N = GPIO N).

@@ -47,8 +47,6 @@ void epio_dma_setup_read_pio_chain(
     assert(read_sm < NUM_SMS_PER_BLOCK && "Invalid read SM");
     assert(write_sm < NUM_SMS_PER_BLOCK && "Invalid write SM");
     assert(bit_mode == 8 || bit_mode == 16 || bit_mode == 32);
-    assert(read_cycles > 0 && read_cycles <= 255);
-    assert(write_cycles > 0 && write_cycles <= 255);
 
     epio_dma_state_t *dma = &DMA(dma_chan);
 
