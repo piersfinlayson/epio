@@ -12,8 +12,6 @@ make test
 
 ## To Do
 
-Test epio_wait_tx_fifo() - won't be triggered by a PIO, would be triggered by some other program (or DMA channel) pushing to the TX FIFO.  But there's an argument for a bunch of integration testing.
-
 Validate autopush and autopull 11.5.4.1 and 11.5.4.2 from the datasheet again tests and behaviour.
 
 Fix the behaviour and then uncomment the IRQ test that require knowledge of what happens when set/clear for the same IRQ are issues in the same cycle.  See https://github.com/raspberrypi/documentation/issues/4281

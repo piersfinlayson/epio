@@ -15,10 +15,6 @@
 //     with just using incrementing scheduling order).  This is handled
 //     separately for direction and levels. 
 // - MOV instructions for RX FIFO access aren't supported
-// - No support for hardware inverted GPIOs, or those forced to 0/1
-// - Doesn't honour GPIO FUNC settings - any PIO block can control any GPIO
-// - Doesn't collate GPIO output settings across all SMs - just applies them
-//   as each SM is scheduled
 // - Does not include/support 2 cycle GPIO input delay via flip-flops
 // - Only supports 4 word FIFOs
 // - Ingores clock dividers

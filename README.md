@@ -72,13 +72,10 @@ There are currently some limitations in `epio`'s PIO emulation.  If you need a f
 Current limitations:
 - No side step pin support (delays are supported).
 - MOVs to/from the RX FIFO are not supported.
-- No support for hardware inverted GPIOs, or those forced to 0/1.
-- Doesn't honour GPIO FUNC settings - any PIO block can control any output GPIO.
-- Doesn't collate GPIO output settings across all SMs - just applies them in scheduling order.
 - Does not suport 2 cycle GPIO input delay via flip-flops to avoid meta-stability.
 - Only supports 4 word FIFOs.
 - Ignores clock divider settings.
-- Very limited DMA support, specific to [One ROM](https://onerom.org).
+- Limited DMA support - implements a pair of DMA channels doing a read from the address in one PIO SM's TX FIFO, and writing to another SM's RX FIFO.
 
 ## WASM
 

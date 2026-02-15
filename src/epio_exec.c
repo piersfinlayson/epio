@@ -32,6 +32,15 @@ void epio_step_cycles(epio_t *epio, uint32_t cycles) {
     assert(cycles > 0 && "Must step at least one cycle");
     for (uint32_t ii = 0; ii < cycles; ii++) {
         EPIO_DBG("Step...");
+
+        // !!!
+        //
+        // It is important that SMs be stepped in ascending order, as in this
+        // way any GPIO output setting clashes between SMs will be resolved in
+        // the correct way - that is highest numbered SM takes precedence, as
+        // per the datasheet.
+        //
+        // !!!
         for (int block = 0; block < NUM_PIO_BLOCKS; block++) {
             for (int sm = 0; sm < NUM_SMS_PER_BLOCK; sm++) {
                 if (SM(block, sm).enabled) {
