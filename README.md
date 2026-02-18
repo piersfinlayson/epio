@@ -13,9 +13,17 @@ To make it easy to setup, `epio` integrates with [`apio`](https://github.com/pie
 
 `epio` includes comprehensive automated testing to ensure correct, cycle exact PIO emulation behaviour, and to avoid regressions.
 
-## Live Demo
+## Video
 
-Try the [live demo](https://piers.rocks/epio/wasm-example/index.html) of the WASM example.
+This video shows what is possible with `epio`:
+
+https://youtu.be/eNu0JAY1Dvc?si=N3-KCYJ04APH3RlB
+
+[![Video Title](https://img.youtube.com/vi/eNu0JAY1Dvc/maxresdefault.jpg)](https://youtu.be/eNu0JAY1Dvc)
+
+## Interactive Demo
+
+Try the [interactive demo](https://piers.rocks/epio/wasm-example/index.html) of the [WASM example](https://github.com/piersfinlayson/epio/blob/main/example/README.md).
 
 ## Usage
 
