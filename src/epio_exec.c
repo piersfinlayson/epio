@@ -66,14 +66,13 @@ void epio_reset_cycle_count(epio_t *epio) {
 // from multiple SMs, deactivating IRQs if they were waited on, etc.
 static void epio_finish_step(epio_t *epio) {
     for (int block = 0; block < NUM_PIO_BLOCKS; block++) {
-        // The datasheet is unclear on whether clears or sets take priority if
-        // both are triggered in the same cycle.
-        // See https://github.com/raspberrypi/documentation/issues/4281
-        assert((IRQ(block).irq_to_set & IRQ(block).irq_to_clear) == 0 && "IRQ set/clear conflict");
-        IRQ(block).irq |= IRQ(block).irq_to_set;
+        // https://github.com/raspberrypi/pico-feedback/issues/490 indicates
+        // that when a set and clear are applied on the same cycle, the set
+        // takes priority, so apply clears first, then sets.
         IRQ(block).irq &= ~IRQ(block).irq_to_clear;
-        IRQ(block).irq_to_set = 0;
         IRQ(block).irq_to_clear = 0;
+        IRQ(block).irq |= IRQ(block).irq_to_set;
+        IRQ(block).irq_to_set = 0;
     }
 }
 
@@ -765,8 +764,6 @@ uint8_t epio_exec_instr_sm(epio_t *epio, uint8_t block, uint8_t sm, uint16_t ins
             if (clr) {
                 IRQ(irq_block).irq_to_clear |= (1 << irq_index);
             } else {
-                IRQ(irq_block).irq_to_set |= (1 << irq_index);
-                
                 if (wait) {
                     if (SM(block, sm).stalled) {
                         // Re-execution: check if cleared
@@ -778,11 +775,16 @@ uint8_t epio_exec_instr_sm(epio_t *epio, uint8_t block, uint8_t sm, uint16_t ins
                             process_new_delay = 0;
                         }
                     } else {
-                        // First execution: always stall
+                        // First execution: set and stall - only set the first
+                        // time through this instruction.
+                        IRQ(irq_block).irq_to_set |= (1 << irq_index);
                         SM(block, sm).stalled = 1;
                         dont_update_pc = 1;
                         process_new_delay = 0;
                     }
+                } else {
+                    // Not stalling, so set the IRQ
+                    IRQ(irq_block).irq_to_set |= (1 << irq_index);
                 }
             }
             break;

@@ -496,12 +496,15 @@ static void irq_set_clear_same_cycle(void **state) {
     // Cycle 1: SM0 IRQ_SET(3) and SM1 IRQ_CLEAR(3) execute simultaneously
     epio_step_cycles(epio, 1);
 
-    // We don't assert the flag value — datasheet doesn't specify.
-    // Just verify both SMs advanced past their first instruction.
+    // Verify both SMs advanced past their first instruction.
     assert_int_equal(epio_peek_sm_stalled(epio, 0, 0), 0);
     assert_int_equal(epio_peek_sm_stalled(epio, 0, 1), 0);
     assert_int_equal(epio_peek_sm_pc(epio, 0, 0), 1);
     assert_int_equal(epio_peek_sm_pc(epio, 0, 1), 3);
+
+    // And verify the clash behaviour is as specified (sets take priority over
+    // clears)
+    assert_int_equal(epio_peek_block_irq(epio, 0) & (1 << 3), (1 << 3));
 
     // Cycle 2: sentinels
     epio_step_cycles(epio, 1);
@@ -821,19 +824,12 @@ int main(void) {
         cmocka_unit_test(irq_flag6_direct),
         cmocka_unit_test(irq_clear_with_delay),
         cmocka_unit_test(irq_set_wait_host_clear),
-    };
-    // See https://github.com/raspberrypi/documentation/issues/4281
-    // The code currently asserts if simultaneous SET and CLEAR of the same
-    // flag occurs, pending confirmation from Raspberry Pi on the correct
-    // behaviour.
-    const struct CMUnitTest irq_simultaneous_set_clear_tests[] = {
+        cmocka_unit_test(irq_set_clear_same_cycle),
         cmocka_unit_test(irq_set_wait_stalls),
         cmocka_unit_test(irq_set_wait_delay_after_wait),
-        cmocka_unit_test(irq_set_clear_same_cycle),
         cmocka_unit_test(irq_set_wait_next),
         cmocka_unit_test(irq_set_wait_prev),
         cmocka_unit_test(irq_set_wait_rel),
     };
-    (void)irq_simultaneous_set_clear_tests;
     return cmocka_run_group_tests(tests, NULL, NULL);
 }

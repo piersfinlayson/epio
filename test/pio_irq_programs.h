@@ -67,6 +67,12 @@ static int setup_irq_set_already_set(void **state) {
     APIO_WRAP_TOP();
     APIO_ADD_INSTR(APIO_JMP(1));             // 1  self-loop
 
+    APIO_SM_CLKDIV_SET(1, 0);
+    APIO_SM_EXECCTRL_SET(0);
+    APIO_SM_SHIFTCTRL_SET(0);
+    APIO_SM_PINCTRL_SET(0);
+    APIO_SM_JMP_TO_START();
+
     // SM0: NOP, NOP, then SET again, sentinel
     APIO_SET_SM(0);
     APIO_ADD_INSTR(APIO_NOP);               // 2
@@ -144,6 +150,12 @@ static int setup_irq_set_wait_stalls(void **state) {
     APIO_ADD_INSTR(APIO_IRQ_SET_WAIT(3));    // 0
     APIO_WRAP_TOP();
     APIO_ADD_INSTR(APIO_SET_X(20));          // 1
+
+    APIO_SM_CLKDIV_SET(1, 0);
+    APIO_SM_EXECCTRL_SET(0);
+    APIO_SM_SHIFTCTRL_SET(0);
+    APIO_SM_PINCTRL_SET(0);
+    APIO_SM_JMP_TO_START();
 
     // SM1: NOP, NOP, clear IRQ3, NOP
     APIO_SET_SM(1);
@@ -538,6 +550,12 @@ static int setup_irq_set_wait_delay_after_wait(void **state) {
     APIO_WRAP_TOP();
     APIO_ADD_INSTR(APIO_SET_X(20));                            // 1
 
+    APIO_SM_CLKDIV_SET(1, 0);
+    APIO_SM_EXECCTRL_SET(0);
+    APIO_SM_SHIFTCTRL_SET(0);
+    APIO_SM_PINCTRL_SET(0);
+    APIO_SM_JMP_TO_START();
+
     // SM1: NOP, clear IRQ3, then self-loop
     APIO_SET_SM(1);
     APIO_ADD_INSTR(APIO_NOP);               // 2
@@ -594,6 +612,12 @@ static int setup_irq_set_clear_same_cycle(void **state) {
     APIO_ADD_INSTR(APIO_IRQ_SET(3));         // 0
     APIO_WRAP_TOP();
     APIO_ADD_INSTR(APIO_SET_X(20));          // 1
+
+    APIO_SM_CLKDIV_SET(1, 0);
+    APIO_SM_EXECCTRL_SET(0);
+    APIO_SM_SHIFTCTRL_SET(0);
+    APIO_SM_PINCTRL_SET(0);
+    APIO_SM_JMP_TO_START();
 
     // SM1: clears IRQ3, sentinel
     APIO_SET_SM(1);
@@ -702,6 +726,12 @@ static int setup_irq_set_wait_rel(void **state) {
     APIO_ADD_INSTR(APIO_IRQ_SET_WAIT_REL(1));   // 0
     APIO_WRAP_TOP();
     APIO_ADD_INSTR(APIO_SET_X(20));              // 1
+
+    APIO_SM_CLKDIV_SET(1, 0);
+    APIO_SM_EXECCTRL_SET(0);
+    APIO_SM_SHIFTCTRL_SET(0);
+    APIO_SM_PINCTRL_SET(0);
+    APIO_SM_JMP_TO_START();
 
     // SM0: NOP, NOP, CLEAR(3), self-loop
     APIO_SET_SM(0);

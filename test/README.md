@@ -14,8 +14,6 @@ make test
 
 Validate autopush and autopull 11.5.4.1 and 11.5.4.2 from the datasheet again tests and behaviour.
 
-Fix the behaviour and then uncomment the IRQ test that require knowledge of what happens when set/clear for the same IRQ are issues in the same cycle.  See https://github.com/raspberrypi/documentation/issues/4281
-
 ## Code Coverage
 
 To generate code coverage reports for the tests, you can use the following commands after running `make test`:
