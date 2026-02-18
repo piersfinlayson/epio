@@ -13,6 +13,10 @@ To make it easy to setup, `epio` integrates with [`apio`](https://github.com/pie
 
 `epio` includes comprehensive automated testing to ensure correct, cycle exact PIO emulation behaviour, and to avoid regressions.
 
+## Why epio?
+
+Existing PIO emulators lack comprehensive support for RP2350 PIOs, which are more advanced than RP2040 PIOs and support additional instructions. A fully tested implementation is essential to ensure the emulation can be relied upon. Being C-based allows integration with existing bare-metal RP2350 firmware, and the design targets portability across a wide range of hosts, including WASM.
+
 ## Video
 
 This video shows what is possible with `epio`:
