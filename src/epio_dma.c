@@ -112,7 +112,7 @@ void epio_dma_step(epio_t *epio) {
                 } else {
                     uint32_t read_value;
                     if (dma->bit_mode == 8) {
-                        uint8_t byte = epio_sram_read_halfword(epio, dma->read_addr);
+                        uint8_t byte = epio_sram_read_byte(epio, dma->read_addr);
                         // Byte replication across the word
                         read_value = byte | (byte << 8) | (byte << 16) | (byte << 24);
                     } else if (dma->bit_mode == 16) {
