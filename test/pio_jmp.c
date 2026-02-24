@@ -533,7 +533,7 @@ static void jmp_pin_inverted_low(void **state) {
     assert_non_null(epio);
     
     // GPIO 5 is inverted
-    assert_int_equal(epio_get_gpio_inverted(epio, 5), 1);
+    assert_int_equal(epio_get_gpio_input_inverted(epio, 5), 1);
     
     // Drive GPIO5 LOW externally
     epio_set_gpio_input_level(epio, 5, 0);
@@ -558,7 +558,7 @@ static void jmp_pin_inverted_high(void **state) {
     assert_non_null(epio);
     
     // GPIO 5 is inverted
-    assert_int_equal(epio_get_gpio_inverted(epio, 5), 1);
+    assert_int_equal(epio_get_gpio_input_inverted(epio, 5), 1);
     
     // Drive GPIO5 HIGH externally
     epio_set_gpio_input_level(epio, 5, 1);
@@ -583,7 +583,7 @@ static void jmp_pin_inverted_gpiobase16(void **state) {
     assert_non_null(epio);
     
     // GPIO 21 is inverted
-    assert_int_equal(epio_get_gpio_inverted(epio, 21), 1);
+    assert_int_equal(epio_get_gpio_input_inverted(epio, 21), 1);
     
     // Drive GPIO21 LOW externally
     epio_drive_gpios_ext(epio, 1ULL << 21, 0ULL << 21);

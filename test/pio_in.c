@@ -569,7 +569,7 @@ static void in_pins_inverted_low(void **state) {
     assert_non_null(epio);
     
     // GPIO 5 is inverted
-    assert_int_equal(epio_get_gpio_inverted(epio, 5), 1);
+    assert_int_equal(epio_get_gpio_input_inverted(epio, 5), 1);
     
     // Drive GPIO5=LOW, GPIO6=HIGH, GPIO7=HIGH externally
     // Pattern: 0b110
@@ -596,7 +596,7 @@ static void in_pins_inverted_high(void **state) {
     assert_non_null(epio);
     
     // GPIO 6 is inverted
-    assert_int_equal(epio_get_gpio_inverted(epio, 6), 1);
+    assert_int_equal(epio_get_gpio_input_inverted(epio, 6), 1);
     
     // Drive GPIO5=HIGH, GPIO6=HIGH, GPIO7=HIGH externally
     // Pattern: 0b111
@@ -623,8 +623,8 @@ static void in_pins_multiple_inverted(void **state) {
     assert_non_null(epio);
     
     // GPIO 5 and 7 are inverted
-    assert_int_equal(epio_get_gpio_inverted(epio, 5), 1);
-    assert_int_equal(epio_get_gpio_inverted(epio, 7), 1);
+    assert_int_equal(epio_get_gpio_input_inverted(epio, 5), 1);
+    assert_int_equal(epio_get_gpio_input_inverted(epio, 7), 1);
     
     // Drive all HIGH externally: 0b111
     epio_set_gpio_input_level(epio, 5, 1);
@@ -652,7 +652,7 @@ static void in_pins_inverted_gpiobase16(void **state) {
     assert_non_null(epio);
     
     // GPIO 21 is inverted
-    assert_int_equal(epio_get_gpio_inverted(epio, 21), 1);
+    assert_int_equal(epio_get_gpio_input_inverted(epio, 21), 1);
     
     // Drive GPIO21=LOW, GPIO22=HIGH, GPIO23=HIGH
     // Pattern: 0b110

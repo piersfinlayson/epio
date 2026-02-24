@@ -501,7 +501,7 @@ static int setup_in_pins_inverted_low(void **state) {
     APIO_SET_SM(0);
     
     // Invert GPIO 5
-    APIO_GPIO_INVERT(5);
+    APIO_GPIO_INPUT_INVERT(5);
     
     APIO_ADD_INSTR(APIO_IN_PINS(3));  // Read GPIO 5,6,7
     APIO_WRAP_TOP();
@@ -527,7 +527,7 @@ static int setup_in_pins_inverted_high(void **state) {
     APIO_SET_SM(0);
     
     // Invert GPIO 6
-    APIO_GPIO_INVERT(6);
+    APIO_GPIO_INPUT_INVERT(6);
     
     APIO_ADD_INSTR(APIO_IN_PINS(3));  // Read GPIO 5,6,7
     APIO_WRAP_TOP();
@@ -553,8 +553,8 @@ static int setup_in_pins_multiple_inverted(void **state) {
     APIO_SET_SM(0);
     
     // Invert GPIO 5 and 7
-    APIO_GPIO_INVERT(5);
-    APIO_GPIO_INVERT(7);
+    APIO_GPIO_INPUT_INVERT(5);
+    APIO_GPIO_INPUT_INVERT(7);
     
     APIO_ADD_INSTR(APIO_IN_PINS(3));  // Read GPIO 5,6,7
     APIO_WRAP_TOP();
@@ -581,7 +581,7 @@ static int setup_in_pins_inverted_gpiobase16(void **state) {
     APIO_SET_SM(0);
     
     // Invert GPIO 21 (5+16)
-    APIO_GPIO_INVERT(21);
+    APIO_GPIO_INPUT_INVERT(21);
     
     APIO_ADD_INSTR(APIO_IN_PINS(3));  // Read GPIO 21,22,23
     APIO_WRAP_TOP();

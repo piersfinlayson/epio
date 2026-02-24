@@ -87,7 +87,19 @@ epio_t *epio_from_apio(void) {
     for (int pin = 0; pin < NUM_GPIOS; pin++) {
         // Set inversion state
         uint8_t inverted = _apio_emulated_gpios.inverted[pin];
-        epio_set_gpio_inverted(epio, pin, inverted);
+        epio_set_gpio_input_inverted(epio, pin, inverted);
+
+        // Set force low
+        uint8_t force_low = _apio_emulated_gpios.force_input_low[pin];
+        if (force_low) {
+            epio_set_gpio_force_input_low(epio, pin, 1);
+        }
+
+        // Set force high
+        uint8_t force_high = _apio_emulated_gpios.force_input_high[pin];
+        if (force_high) {
+            epio_set_gpio_force_input_high(epio, pin, 1);
+        }
 
         // Set output control
         if (_apio_emulated_gpios.output_block[pin] != -1) {

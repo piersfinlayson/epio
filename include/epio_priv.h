@@ -121,8 +121,14 @@ typedef struct {
     // Which GPIOs are being externally driven
     uint64_t ext_driven;
 
-    // Which GPIOs are inverted
-    uint64_t inverted;
+    // Which GPIOs are input_inverted
+    uint64_t input_inverted;
+
+    // Which GPIOs are forced input low
+    uint64_t force_input_low;
+
+    // Which GPIOs are forced input high
+    uint64_t force_input_high;
 
     // Which output GPIOs are controlled by which block
     uint64_t output_control[NUM_PIO_BLOCKS];

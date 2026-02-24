@@ -9,6 +9,14 @@
 #include <string.h>
 #include <epio_priv.h>
 
+static void epio_set_gpio_input_level_internal(epio_t *epio, uint8_t pin, uint8_t level) {
+    if (level) {
+        epio->gpio.gpio_input_state |= (1ULL << pin);
+    } else {
+        epio->gpio.gpio_input_state &= ~(1ULL << pin);
+    }
+}
+
 void epio_init_gpios(epio_t *epio) {
     // Zero out GPIO state
     memset(&epio->gpio, 0, sizeof(epio->gpio));
@@ -17,22 +25,63 @@ void epio_init_gpios(epio_t *epio) {
     for (int ii = 0; ii < NUM_GPIOS; ii++) {
         epio_set_gpio_input(epio, ii);
         epio_set_gpio_input_level(epio, ii, 1);
-        epio_set_gpio_inverted(epio, ii, 0);
+        epio_set_gpio_input_inverted(epio, ii, 0);
     }
 }
 
-void epio_set_gpio_inverted(epio_t *epio, uint8_t pin, uint8_t inverted) {
+void epio_set_gpio_force_input_low(epio_t *epio, uint8_t pin, uint8_t force_low) {
     CHECK_GPIO(pin);
+    assert(force_low < 2 && "force_low must be 0 or 1");
+    if (force_low) {
+        assert((epio->gpio.force_input_high & (1ULL << pin)) == 0 && "Pin cannot be forced both low and high");
+        assert((epio->gpio.input_inverted & (1ULL << pin)) == 0 && "Pin cannot be both inverted and forced low");
+    }
+    epio->gpio.force_input_low = (epio->gpio.force_input_low & ~(1ULL << pin)) | ((uint64_t)(force_low & 0x1) << pin);
+
+    // Set level to 0 when forcing low, restore pull-up when clearing
+    epio_set_gpio_input_level_internal(epio, pin, !force_low);
+}
+
+void epio_set_gpio_force_input_high(epio_t *epio, uint8_t pin, uint8_t force_high) {
+    CHECK_GPIO(pin);
+    assert(force_high < 2 && "force_high must be 0 or 1");
+    if (force_high) {
+        assert((epio->gpio.force_input_low & (1ULL << pin)) == 0 && "Pin cannot be forced both low and high");
+        assert((epio->gpio.input_inverted & (1ULL << pin)) == 0 && "Pin cannot be both inverted and forced high");
+    }
+    epio->gpio.force_input_high = (epio->gpio.force_input_high & ~(1ULL << pin)) | ((uint64_t)(force_high & 0x1) << pin);
+
+    // Set level to 1 whether forcing high or clearing (pull-up is also high)
+    epio_set_gpio_input_level_internal(epio, pin, 1);
+}
+
+uint8_t epio_get_gpio_force_input_low(epio_t *epio, uint8_t pin) {
+    CHECK_GPIO(pin);
+    return (epio->gpio.force_input_low >> pin) & 0x1;
+}
+
+uint8_t epio_get_gpio_force_input_high(epio_t *epio, uint8_t pin) {
+    CHECK_GPIO(pin);
+    return (epio->gpio.force_input_high >> pin) & 0x1;
+}
+
+void epio_set_gpio_input_inverted(epio_t *epio, uint8_t pin, uint8_t inverted) {
+    CHECK_GPIO(pin);
+    assert(inverted < 2 && "inverted must be 0 or 1");
     if (inverted) {
-        epio->gpio.inverted |= (1ULL << pin);
+        assert((epio->gpio.force_input_low & (1ULL << pin)) == 0 && "Pin cannot be both inverted and forced low");
+        assert((epio->gpio.force_input_high & (1ULL << pin)) == 0 && "Pin cannot be both inverted and forced high");
+    }
+    if (inverted) {
+        epio->gpio.input_inverted |= (1ULL << pin);
     } else {
-        epio->gpio.inverted &= ~(1ULL << pin);
+        epio->gpio.input_inverted &= ~(1ULL << pin);
     }
 }
 
-uint8_t epio_get_gpio_inverted(epio_t *epio, uint8_t pin) {
+uint8_t epio_get_gpio_input_inverted(epio_t *epio, uint8_t pin) {
     CHECK_GPIO(pin);
-    return (epio->gpio.inverted >> pin) & 0x1;
+    return (epio->gpio.input_inverted >> pin) & 0x1;
 }
 
 void epio_set_gpio_output_control(epio_t *epio, uint8_t pin, uint8_t block) {
@@ -72,7 +121,7 @@ uint8_t epio_block_can_control_gpio_output(epio_t *epio, uint8_t block, uint8_t 
 uint8_t epio_get_gpio_input(epio_t *epio, uint8_t pin) {
     CHECK_GPIO(pin);
     uint8_t level = (epio->gpio.gpio_input_state >> pin) & 0x1;
-    if (epio_get_gpio_inverted(epio, pin)) {
+    if (epio_get_gpio_input_inverted(epio, pin)) {
         level = !level;
     }
     return level;
@@ -91,11 +140,15 @@ void epio_set_gpio_input(epio_t *epio, uint8_t pin) {
 
 void epio_set_gpio_input_level(epio_t *epio, uint8_t pin, uint8_t level) {
     CHECK_GPIO(pin);
-    if (level) {
-        epio->gpio.gpio_input_state |= (1ULL << pin);
-    } else {
-        epio->gpio.gpio_input_state &= ~(1ULL << pin);
+    if (epio_get_gpio_force_input_low(epio, pin)) {
+        EPIO_DBG("Pin %d is forced low, ignoring attempt to set level to %d", pin, level);
+        level = 0;
     }
+    if (epio_get_gpio_force_input_high(epio, pin)) {
+        EPIO_DBG("Pin %d is forced high, ignoring attempt to set level to %d", pin, level);
+        level = 1;
+    }
+    epio_set_gpio_input_level_internal(epio, pin, level);
 }
 
 void epio_set_gpio_output_level(epio_t *epio, uint8_t pin, uint8_t level) {
@@ -133,15 +186,6 @@ void epio_drive_gpios_ext(epio_t *epio, uint64_t gpios, uint64_t level) {
     epio->gpio.ext_driven = gpios;
 }
 
-// Used to read the GPIOs as if externally.  Any undriven GPIOs are assumed to
-// be pulled up.
-uint64_t epio_read_gpios_ext(epio_t *epio) {
-    uint64_t result = epio->gpio.gpio_output_state;
-    result ^= (epio->gpio.inverted & epio->gpio.gpio_direction);
-    CHECK_GPIO_MASK(result);
-    return result;
-}
-
 // Read the actual observable pin states
 // For each pin: if output, return output state; if input, return input state
 uint64_t epio_read_pin_states(epio_t *epio) {
@@ -158,7 +202,7 @@ uint64_t epio_read_pin_states(epio_t *epio) {
         }
         
         // Apply inversion if configured
-        if (epio->gpio.inverted & (1ULL << ii)) {
+        if (epio->gpio.input_inverted & (1ULL << ii)) {
             pin_level = !pin_level;
         }
         

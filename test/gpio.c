@@ -203,22 +203,6 @@ static void drive_gpios_ext_shows_in_driven(void **state) {
     epio_free(epio);
 }
 
-// --- read_gpios_ext ---
-
-static void read_gpios_ext_returns_output_state(void **state) {
-    (void)state;
-    epio_t *epio = epio_init();
-    assert_non_null(epio);
-
-    epio_set_gpio_output(epio, 0);
-    epio_set_gpio_output_level(epio, 0, 0);
-
-    uint64_t ext = epio_read_gpios_ext(epio);
-    assert_false(ext & (1ULL << 0));
-
-    epio_free(epio);
-}
-
 // --- init_gpios resets state ---
 
 static void init_gpios_resets(void **state) {
@@ -302,7 +286,7 @@ static void inverted_input_flips_read_value(void **state) {
     assert_non_null(epio);
 
     // Pin starts high, invert it
-    epio_set_gpio_inverted(epio, 5, 1);
+    epio_set_gpio_input_inverted(epio, 5, 1);
     assert_int_equal(epio_get_gpio_input(epio, 5), 0);  // Reads as low
 
     // Set input low, should read high
@@ -319,7 +303,7 @@ static void inverted_output_flips_external_read(void **state) {
 
     epio_set_gpio_output(epio, 7);
     epio_set_gpio_output_level(epio, 7, 1);
-    epio_set_gpio_inverted(epio, 7, 1);
+    epio_set_gpio_input_inverted(epio, 7, 1);
 
     // Internal state is high, but externally reads low
     uint64_t pins = epio_read_pin_states(epio);
@@ -333,31 +317,16 @@ static void inverted_output_flips_external_read(void **state) {
     epio_free(epio);
 }
 
-static void inversion_affects_read_gpios_ext(void **state) {
-    (void)state;
-    epio_t *epio = epio_init();
-    assert_non_null(epio);
-
-    epio_set_gpio_output(epio, 3);
-    epio_set_gpio_output_level(epio, 3, 1);
-    epio_set_gpio_inverted(epio, 3, 1);
-
-    uint64_t ext = epio_read_gpios_ext(epio);
-    assert_false(ext & (1ULL << 3));  // Reads as low
-
-    epio_free(epio);
-}
-
 static void clear_inversion(void **state) {
     (void)state;
     epio_t *epio = epio_init();
     assert_non_null(epio);
 
-    epio_set_gpio_inverted(epio, 4, 1);
-    assert_int_equal(epio_get_gpio_inverted(epio, 4), 1);
+    epio_set_gpio_input_inverted(epio, 4, 1);
+    assert_int_equal(epio_get_gpio_input_inverted(epio, 4), 1);
     
-    epio_set_gpio_inverted(epio, 4, 0);
-    assert_int_equal(epio_get_gpio_inverted(epio, 4), 0);
+    epio_set_gpio_input_inverted(epio, 4, 0);
+    assert_int_equal(epio_get_gpio_input_inverted(epio, 4), 0);
 
     // Behaviour back to normal
     assert_int_equal(epio_get_gpio_input(epio, 4), 1);
@@ -557,6 +526,276 @@ static void init_clears_output_control(void **state) {
     epio_free(epio);
 }
 
+// --- Force Input Low ---
+
+static void force_input_low_reads_low(void **state) {
+    (void)state;
+    epio_t *epio = epio_init();
+    assert_non_null(epio);
+
+    // Pin starts high by default
+    assert_int_equal(epio_get_gpio_input(epio, 3), 1);
+
+    epio_set_gpio_force_input_low(epio, 3, 1);
+    assert_int_equal(epio_get_gpio_input(epio, 3), 0);
+    assert_int_equal(epio_get_gpio_force_input_low(epio, 3), 1);
+    assert_int_equal(epio_get_gpio_force_input_high(epio, 3), 0);
+
+    epio_free(epio);
+}
+
+static void force_input_low_ignores_set_level(void **state) {
+    (void)state;
+    epio_t *epio = epio_init();
+    assert_non_null(epio);
+
+    epio_set_gpio_force_input_low(epio, 5, 1);
+
+    // Attempt to set high - should be ignored
+    epio_set_gpio_input_level(epio, 5, 1);
+    assert_int_equal(epio_get_gpio_input(epio, 5), 0);
+
+    epio_free(epio);
+}
+
+static void force_input_low_ignores_ext_drive(void **state) {
+    (void)state;
+    epio_t *epio = epio_init();
+    assert_non_null(epio);
+
+    epio_set_gpio_force_input_low(epio, 4, 1);
+
+    // External drive high should be ignored
+    epio_drive_gpios_ext(epio, 1ULL << 4, 1ULL << 4);
+    assert_int_equal(epio_get_gpio_input(epio, 4), 0);
+
+    epio_free(epio);
+}
+
+static void clear_force_input_low(void **state) {
+    (void)state;
+    epio_t *epio = epio_init();
+    assert_non_null(epio);
+
+    epio_set_gpio_force_input_low(epio, 6, 1);
+    assert_int_equal(epio_get_gpio_force_input_low(epio, 6), 1);
+
+    epio_set_gpio_force_input_low(epio, 6, 0);
+    assert_int_equal(epio_get_gpio_force_input_low(epio, 6), 0);
+
+    // Level can now be changed freely
+    epio_set_gpio_input_level(epio, 6, 1);
+    assert_int_equal(epio_get_gpio_input(epio, 6), 1);
+
+    epio_free(epio);
+}
+
+// --- Force Input High ---
+
+static void force_input_high_reads_high(void **state) {
+    (void)state;
+    epio_t *epio = epio_init();
+    assert_non_null(epio);
+
+    // Set pin low first
+    epio_set_gpio_input_level(epio, 3, 0);
+    assert_int_equal(epio_get_gpio_input(epio, 3), 0);
+
+    epio_set_gpio_force_input_high(epio, 3, 1);
+    assert_int_equal(epio_get_gpio_input(epio, 3), 1);
+    assert_int_equal(epio_get_gpio_force_input_high(epio, 3), 1);
+    assert_int_equal(epio_get_gpio_force_input_low(epio, 3), 0);
+
+    epio_free(epio);
+}
+
+static void force_input_high_ignores_set_level(void **state) {
+    (void)state;
+    epio_t *epio = epio_init();
+    assert_non_null(epio);
+
+    epio_set_gpio_force_input_high(epio, 5, 1);
+
+    // Attempt to set low - should be ignored
+    epio_set_gpio_input_level(epio, 5, 0);
+    assert_int_equal(epio_get_gpio_input(epio, 5), 1);
+
+    epio_free(epio);
+}
+
+static void force_input_high_ignores_ext_drive(void **state) {
+    (void)state;
+    epio_t *epio = epio_init();
+    assert_non_null(epio);
+
+    epio_set_gpio_force_input_high(epio, 4, 1);
+
+    // External drive low should be ignored
+    epio_drive_gpios_ext(epio, 1ULL << 4, 0);
+    assert_int_equal(epio_get_gpio_input(epio, 4), 1);
+
+    epio_free(epio);
+}
+
+static void clear_force_input_high(void **state) {
+    (void)state;
+    epio_t *epio = epio_init();
+    assert_non_null(epio);
+
+    epio_set_gpio_force_input_high(epio, 6, 1);
+    assert_int_equal(epio_get_gpio_force_input_high(epio, 6), 1);
+
+    epio_set_gpio_force_input_high(epio, 6, 0);
+    assert_int_equal(epio_get_gpio_force_input_high(epio, 6), 0);
+
+    // Level can now be changed freely
+    epio_set_gpio_input_level(epio, 6, 0);
+    assert_int_equal(epio_get_gpio_input(epio, 6), 0);
+
+    epio_free(epio);
+}
+
+// --- Force conflicts and asserts ---
+
+static void force_low_conflicts_with_force_high_asserts(void **state) {
+    (void)state;
+    epio_t *epio = epio_init();
+    assert_non_null(epio);
+
+    epio_set_gpio_force_input_high(epio, 7, 1);
+    expect_assert_failure(epio_set_gpio_force_input_low(epio, 7, 1));
+
+    epio_free(epio);
+}
+
+static void force_high_conflicts_with_force_low_asserts(void **state) {
+    (void)state;
+    epio_t *epio = epio_init();
+    assert_non_null(epio);
+
+    epio_set_gpio_force_input_low(epio, 7, 1);
+    expect_assert_failure(epio_set_gpio_force_input_high(epio, 7, 1));
+
+    epio_free(epio);
+}
+
+static void force_low_conflicts_with_inverted_asserts(void **state) {
+    (void)state;
+    epio_t *epio = epio_init();
+    assert_non_null(epio);
+
+    epio_set_gpio_input_inverted(epio, 8, 1);
+    expect_assert_failure(epio_set_gpio_force_input_low(epio, 8, 1));
+
+    epio_free(epio);
+}
+
+static void force_high_conflicts_with_inverted_asserts(void **state) {
+    (void)state;
+    epio_t *epio = epio_init();
+    assert_non_null(epio);
+
+    epio_set_gpio_input_inverted(epio, 8, 1);
+    expect_assert_failure(epio_set_gpio_force_input_high(epio, 8, 1));
+
+    epio_free(epio);
+}
+
+static void invert_conflicts_with_force_low_asserts(void **state) {
+    (void)state;
+    epio_t *epio = epio_init();
+    assert_non_null(epio);
+
+    epio_set_gpio_force_input_low(epio, 9, 1);
+    expect_assert_failure(epio_set_gpio_input_inverted(epio, 9, 1));
+
+    epio_free(epio);
+}
+
+static void invert_conflicts_with_force_high_asserts(void **state) {
+    (void)state;
+    epio_t *epio = epio_init();
+    assert_non_null(epio);
+
+    epio_set_gpio_force_input_high(epio, 9, 1);
+    expect_assert_failure(epio_set_gpio_input_inverted(epio, 9, 1));
+
+    epio_free(epio);
+}
+
+static void force_low_invalid_value_asserts(void **state) {
+    (void)state;
+    epio_t *epio = epio_init();
+    assert_non_null(epio);
+
+    expect_assert_failure(epio_set_gpio_force_input_low(epio, 3, 2));
+
+    epio_free(epio);
+}
+
+static void force_high_invalid_value_asserts(void **state) {
+    (void)state;
+    epio_t *epio = epio_init();
+    assert_non_null(epio);
+
+    expect_assert_failure(epio_set_gpio_force_input_high(epio, 3, 2));
+
+    epio_free(epio);
+}
+
+static void force_low_invalid_pin_asserts(void **state) {
+    (void)state;
+    epio_t *epio = epio_init();
+    assert_non_null(epio);
+
+    expect_assert_failure(epio_set_gpio_force_input_low(epio, NUM_GPIOS, 1));
+    expect_assert_failure(epio_get_gpio_force_input_low(epio, NUM_GPIOS));
+
+    epio_free(epio);
+}
+
+static void force_high_invalid_pin_asserts(void **state) {
+    (void)state;
+    epio_t *epio = epio_init();
+    assert_non_null(epio);
+
+    expect_assert_failure(epio_set_gpio_force_input_high(epio, NUM_GPIOS, 1));
+    expect_assert_failure(epio_get_gpio_force_input_high(epio, NUM_GPIOS));
+
+    epio_free(epio);
+}
+
+// --- Force survives init_gpios reset ---
+
+static void init_gpios_clears_force_low(void **state) {
+    (void)state;
+    epio_t *epio = epio_init();
+    assert_non_null(epio);
+
+    epio_set_gpio_force_input_low(epio, 5, 1);
+    epio_init_gpios(epio);
+
+    assert_int_equal(epio_get_gpio_force_input_low(epio, 5), 0);
+    assert_int_equal(epio_get_gpio_input(epio, 5), 1); // Back to default high
+
+    epio_free(epio);
+}
+
+static void init_gpios_clears_force_high(void **state) {
+    (void)state;
+    epio_t *epio = epio_init();
+    assert_non_null(epio);
+
+    epio_set_gpio_input_level(epio, 5, 0);
+    epio_set_gpio_force_input_high(epio, 5, 1);
+    epio_init_gpios(epio);
+
+    assert_int_equal(epio_get_gpio_force_input_high(epio, 5), 0);
+    assert_int_equal(epio_get_gpio_input(epio, 5), 1); // Back to default high
+
+    epio_free(epio);
+}
+
 int main(void) {
     const struct CMUnitTest tests[] = {
         // Initial state
@@ -578,7 +817,6 @@ int main(void) {
         cmocka_unit_test(drive_gpios_ext_undriven_pulled_up),
         cmocka_unit_test(drive_gpios_ext_shows_in_driven),
         // Read external
-        cmocka_unit_test(read_gpios_ext_returns_output_state),
         // Reset
         cmocka_unit_test(init_gpios_resets),
         // High pins
@@ -589,7 +827,6 @@ int main(void) {
         // Inversion
         cmocka_unit_test(inverted_input_flips_read_value),
         cmocka_unit_test(inverted_output_flips_external_read),
-        cmocka_unit_test(inversion_affects_read_gpios_ext),
         cmocka_unit_test(clear_inversion),
         // Output control
         cmocka_unit_test(set_output_control),
@@ -605,6 +842,31 @@ int main(void) {
         cmocka_unit_test(block_cannot_control_without_grant),
         cmocka_unit_test(different_blocks_control_different_gpios),
         cmocka_unit_test(init_clears_output_control),
+        // Force input low
+        cmocka_unit_test(force_input_low_reads_low),
+        cmocka_unit_test(force_input_low_ignores_set_level),
+        cmocka_unit_test(force_input_low_ignores_ext_drive),
+        cmocka_unit_test(clear_force_input_low),
+        // Force input high
+        cmocka_unit_test(force_input_high_reads_high),
+        cmocka_unit_test(force_input_high_ignores_set_level),
+        cmocka_unit_test(force_input_high_ignores_ext_drive),
+        cmocka_unit_test(clear_force_input_high),
+        // Force conflicts
+        cmocka_unit_test(force_low_conflicts_with_force_high_asserts),
+        cmocka_unit_test(force_high_conflicts_with_force_low_asserts),
+        cmocka_unit_test(force_low_conflicts_with_inverted_asserts),
+        cmocka_unit_test(force_high_conflicts_with_inverted_asserts),
+        cmocka_unit_test(invert_conflicts_with_force_low_asserts),
+        cmocka_unit_test(invert_conflicts_with_force_high_asserts),
+        // Force invalid args
+        cmocka_unit_test(force_low_invalid_value_asserts),
+        cmocka_unit_test(force_high_invalid_value_asserts),
+        cmocka_unit_test(force_low_invalid_pin_asserts),
+        cmocka_unit_test(force_high_invalid_pin_asserts),
+        // Force reset behaviour
+        cmocka_unit_test(init_gpios_clears_force_low),
+        cmocka_unit_test(init_gpios_clears_force_high),
     };
     return cmocka_run_group_tests(tests, NULL, NULL);
 }

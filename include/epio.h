@@ -397,21 +397,6 @@ EPIO_EXPORT void epio_push_rx_fifo(epio_t *epio, uint8_t block, uint8_t sm, uint
 EPIO_EXPORT void epio_drive_gpios_ext(epio_t *epio, uint64_t gpios, uint64_t level);
 
 /**
- * @brief Read the externally driven GPIO levels.
- *
- * Returns the bitmask of GPIO levels as driven by external sources
- * (i.e. via epio_drive_gpios_ext()), not including PIO-driven outputs.
- *
- * This reflects the driving state by the RP2350, and any undriven pins are
- * pulled up.
- *
- * @param epio  The epio instance.
- * @return      Bitmask of externally driven GPIO levels (bit N = GPIO N).
- * @see epio_read_pin_states(), epio_read_driven_pins()
- */
-EPIO_EXPORT uint64_t epio_read_gpios_ext(epio_t *epio);
-
-/**
  * @brief Set a GPIO pin as inverted or non-inverted.
  * 
  * When a GPIO pin is inverted, the PIO state machines see the opposite level
@@ -423,7 +408,7 @@ EPIO_EXPORT uint64_t epio_read_gpios_ext(epio_t *epio);
  * @param pin   GPIO pin number (0 to NUM_GPIOS-1).
  * @param inverted 1 to set the pin as inverted, 0 to set it as non-inverted.
  */
-void epio_set_gpio_inverted(epio_t *epio, uint8_t pin, uint8_t inverted);
+void epio_set_gpio_input_inverted(epio_t *epio, uint8_t pin, uint8_t inverted);
 
 /**
  * @brief Get the inversion state of a GPIO pin.
@@ -432,7 +417,7 @@ void epio_set_gpio_inverted(epio_t *epio, uint8_t pin, uint8_t inverted);
  * @param pin   GPIO pin number (0 to NUM_GPIOS-1).
  * @return      1 if the pin is inverted, 0 if it is non-inverted.
  */
-uint8_t epio_get_gpio_inverted(epio_t *epio, uint8_t pin);
+uint8_t epio_get_gpio_input_inverted(epio_t *epio, uint8_t pin);
 
 /**
  * @brief Set GPIO output control for a pin to a specific block.
@@ -507,6 +492,54 @@ EPIO_EXPORT uint8_t epio_get_gpio_input(epio_t *epio, uint8_t pin);
 EPIO_EXPORT void epio_init_gpios(epio_t *epio);
 
 /**
+ * @brief Force a GPIO pin configured as an input to present a low level.
+ * 
+ * This sets the emulated hardware INOVER state to always read inputs as
+ * low.
+ * 
+ * @param epio  The epio instance.
+ * @param pin   GPIO pin number (0 to NUM_GPIOS-1).
+ * @param force_low 1 to force the pin to read as low, 0 to clear the forced state.
+ */
+EPIO_EXPORT void epio_set_gpio_force_input_low(epio_t *epio, uint8_t pin, uint8_t force_low);
+
+/**
+ * @brief Force a GPIO pin configured as an input to present a high level.
+ * 
+ * This sets the emulated hardware INOVER state to always read inputs as
+ * high.
+ * 
+ * @param epio  The epio instance.
+ * @param pin   GPIO pin number (0 to NUM_GPIOS-1).
+ * @param force_high 1 to force the pin to read as high, 0 to clear the forced state.
+ */
+EPIO_EXPORT void epio_set_gpio_force_input_high(epio_t *epio, uint8_t pin, uint8_t force_high);
+
+/**
+ * @brief Get whether a GPIO pin configured as an input has a forced input
+ * level low.
+ * 
+ * Returns 1 if the specified pin is configured to force input low, 0
+ * otherwise.
+ * 
+ * @param epio  The epio instance.
+ * @param pin   GPIO pin number (0 to NUM_GPIOS-1).
+ */
+EPIO_EXPORT uint8_t epio_get_gpio_force_input_low(epio_t *epio, uint8_t pin);
+
+/**
+ * @brief Get whether a GPIO pin configured as an input has a forced input
+ * level high.
+ * 
+ * Returns 1 if the specified pin is configured to force input high, 0
+ * otherwise.
+ * 
+ * @param epio  The epio instance.
+ * @param pin   GPIO pin number (0 to NUM_GPIOS-1).
+ */
+EPIO_EXPORT uint8_t epio_get_gpio_force_input_high(epio_t *epio, uint8_t pin);
+
+/**
  * @brief Configure a GPIO pin as an input.
  *
  * Pull-ups are assumed on all input pins.
@@ -560,7 +593,7 @@ EPIO_EXPORT void epio_set_gpio_output_level(epio_t *epio, uint8_t pin, uint8_t l
  *
  * @param epio  The epio instance.
  * @return      Bitmask of GPIO pin states (bit N = GPIO N).
- * @see epio_read_driven_pins(), epio_read_gpios_ext()
+ * @see epio_read_driven_pins()
  */
 EPIO_EXPORT uint64_t epio_read_pin_states(epio_t *epio);
 

@@ -605,7 +605,7 @@ static int setup_jmp_pin_inverted_low(void **state) {
     APIO_SET_SM(0);
     
     // Invert GPIO 5
-    APIO_GPIO_INVERT(5);
+    APIO_GPIO_INPUT_INVERT(5);
     
     APIO_LABEL_NEW_OFFSET(target, 2);
     APIO_ADD_INSTR(APIO_JMP_PIN(APIO_LABEL(target)));
@@ -632,7 +632,7 @@ static int setup_jmp_pin_inverted_high(void **state) {
     APIO_SET_SM(0);
     
     // Invert GPIO 5
-    APIO_GPIO_INVERT(5);
+    APIO_GPIO_INPUT_INVERT(5);
     
     APIO_LABEL_NEW_OFFSET(target, 2);
     APIO_ADD_INSTR(APIO_JMP_PIN(APIO_LABEL(target)));
@@ -661,7 +661,7 @@ static int setup_jmp_pin_inverted_gpiobase16(void **state) {
     APIO_SET_SM(0);
     
     // Invert GPIO 21 (5+16)
-    APIO_GPIO_INVERT(21);
+    APIO_GPIO_INPUT_INVERT(21);
     
     APIO_LABEL_NEW_OFFSET(target, 2);
     APIO_ADD_INSTR(APIO_JMP_PIN(APIO_LABEL(target)));
