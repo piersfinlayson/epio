@@ -37,7 +37,7 @@ epio_t *epio_from_apio(void) {
         for (int sm = 0; sm < NUM_SMS_PER_BLOCK; sm++) {
             // APIO always initializes the start instruction and it should
             // never be set to an invalid one.
-            assert(_apio_emulated_pio.start[block][sm] <= MAX_PRE_INSTRS && "APIO internal error");
+            assert(_apio_emulated_pio.start[block][sm] <= APIO_MAX_PIO_INSTRS - 1 && "APIO internal error");
 
             // Set up debug info for this SM
             epio_sm_debug_t debug = {

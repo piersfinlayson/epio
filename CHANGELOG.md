@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-05-09
+
+- Fixed invalid assertion in `epio_apio.c` related to the maximum number of PIO instructions. The assertion now correctly checks against `APIO_MAX_PIO_INSTRS - 1` instead of the previously incorrect `MAX_PRE_INSTRS`.
+
 ## 2026-02-24
 
 - Changed `epio_set_gpio_inverted` to `epio_set_gpio_input_inverted` and `epio_get_gpio_inverted` to `epio_get_gpio_input_inverted` for clarity.
