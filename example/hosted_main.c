@@ -31,25 +31,25 @@ int main(int argc, char *argv[]) {
     firmware_main();
     printf("Testing PIOs\n");
 
-    //The firmware has done its thing, so create an epio instance from the
+    // The firmware has done its thing, so create an epio instance from the
     // apio state.
     epio_t *epio = epio_from_apio();
 
     // Before running the PIOs for any cycle, check GPIO0 state.  It should be
-    // an input, in high-Z state.  This is represented by undriven, high (as
-    // epio assumes pull-ups on undriven pins).
+    // an input, in its default pull-down state (low).
     driven_pins = epio_read_driven_pins(epio);
     assert((driven_pins & EPIO_GPIO0) == 0 && "GPIO0 should be an input");
     pin_states = epio_read_pin_states(epio);
-    assert((pin_states & EPIO_GPIO0) == 1 && "GPIO0 should be high");
+    assert((pin_states & EPIO_GPIO0) == 0 && "GPIO0 should be low");
 
     // Now step the PIO one cycle.  The first instruction will execute, which
-    // sets GPIO0 as an output, and by default high.
+    // sets GPIO0 as an output.  The output data register defaults to 0 so
+    // GPIO0 is low until SET PINS drives it explicitly.
     epio_step_cycles(epio, 1);
     driven_pins = epio_read_driven_pins(epio);
     assert((driven_pins & EPIO_GPIO0) == EPIO_GPIO0 && "GPIO0 should be an output");
     pin_states = epio_read_pin_states(epio);
-    assert((pin_states & EPIO_GPIO0) == 1 && "GPIO0 should be high");
+    assert((pin_states & EPIO_GPIO0) == 0 && "GPIO0 should be low");
     expected_cycle_count++;
 
     // Step again.  The next instruction executes, which sets GPIO0 high.
