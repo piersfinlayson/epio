@@ -11,26 +11,25 @@
 
 // --- Initial state ---
 
-static void gpios_default_input_high(void **state) {
+static void gpios_default_input_low(void **state) {
     (void)state;
     epio_t *epio = epio_init();
     assert_non_null(epio);
 
     for (uint8_t pin = 0; pin < NUM_GPIOS; pin++) {
-        assert_int_equal(epio_get_gpio_input(epio, pin), 1);
+        assert_int_equal(epio_get_gpio_input(epio, pin), 0);
     }
 
     epio_free(epio);
 }
 
-static void pin_states_all_high_on_init(void **state) {
+static void pin_states_all_low_on_init(void **state) {
     (void)state;
     epio_t *epio = epio_init();
     assert_non_null(epio);
 
     uint64_t pins = epio_read_pin_states(epio);
-    uint64_t expected = (NUM_GPIOS == 64) ? ~0ULL : (1ULL << NUM_GPIOS) - 1;
-    assert_int_equal(pins, expected);
+    assert_int_equal(pins, 0);
 
     epio_free(epio);
 }
@@ -56,8 +55,8 @@ static void set_input_level_low(void **state) {
     assert_int_equal(epio_get_gpio_input(epio, 5), 0);
 
     // Other pins unaffected
-    assert_int_equal(epio_get_gpio_input(epio, 4), 1);
-    assert_int_equal(epio_get_gpio_input(epio, 6), 1);
+    assert_int_equal(epio_get_gpio_input(epio, 4), 0);
+    assert_int_equal(epio_get_gpio_input(epio, 6), 0);
 
     epio_free(epio);
 }
@@ -121,24 +120,24 @@ static void pin_states_mixed_input_output(void **state) {
     // Pin 1: input, driven low externally
     epio_set_gpio_input_level(epio, 1, 0);
 
-    // Pin 2: output, driven high (default from set_gpio_input pull-up, then
-    // set as output — output_state was set high by init)
+    // Pin 2: output, driven high explicitly
     epio_set_gpio_output(epio, 2);
+    epio_set_gpio_output_level(epio, 2, 1);
 
-    // Pin 3: input, left at default high
+    // Pin 3: input, left at default (pull-down = low)
 
     uint64_t pins = epio_read_pin_states(epio);
     assert_false(pins & (1ULL << 0)); // output low
     assert_false(pins & (1ULL << 1)); // input low
     assert_true(pins & (1ULL << 2));  // output high
-    assert_true(pins & (1ULL << 3));  // input high
+    assert_false(pins & (1ULL << 3)); // input low (pull-down default)
 
     epio_free(epio);
 }
 
 // --- Direction change: output back to input ---
 
-static void output_to_input_pulls_up(void **state) {
+static void output_to_input_pulls_down(void **state) {
     (void)state;
     epio_t *epio = epio_init();
     assert_non_null(epio);
@@ -146,11 +145,10 @@ static void output_to_input_pulls_up(void **state) {
     epio_set_gpio_output(epio, 4);
     epio_set_gpio_output_level(epio, 4, 0);
 
-    // Switch back to input — should set output_state high (pull-up)
+    // Switch back to input — pull-down restores level to 0
     epio_set_gpio_input(epio, 4);
 
-    // Pin is input, input level still high from init
-    assert_int_equal(epio_get_gpio_input(epio, 4), 1);
+    assert_int_equal(epio_get_gpio_input(epio, 4), 0);
 
     // Not driven anymore
     assert_false(epio_read_driven_pins(epio) & (1ULL << 4));
@@ -173,18 +171,18 @@ static void drive_gpios_ext_sets_input_levels(void **state) {
     epio_free(epio);
 }
 
-static void drive_gpios_ext_undriven_pulled_up(void **state) {
+static void drive_gpios_ext_undriven_pulled_down(void **state) {
     (void)state;
     epio_t *epio = epio_init();
     assert_non_null(epio);
 
-    // First drive pin 5 low
-    epio_drive_gpios_ext(epio, 1ULL << 5, 0);
-    assert_int_equal(epio_get_gpio_input(epio, 5), 0);
-
-    // Now call again without driving pin 5 — it should be pulled up
-    epio_drive_gpios_ext(epio, 0, 0);
+    // First drive pin 5 high
+    epio_drive_gpios_ext(epio, 1ULL << 5, 1ULL << 5);
     assert_int_equal(epio_get_gpio_input(epio, 5), 1);
+
+    // Now release pin 5 — pull-down restores it to 0
+    epio_drive_gpios_ext(epio, 0, 0);
+    assert_int_equal(epio_get_gpio_input(epio, 5), 0);
 
     epio_free(epio);
 }
@@ -213,15 +211,15 @@ static void init_gpios_resets(void **state) {
     // Make a mess
     epio_set_gpio_output(epio, 0);
     epio_set_gpio_output_level(epio, 0, 0);
-    epio_set_gpio_input_level(epio, 10, 0);
-    epio_drive_gpios_ext(epio, 0xFF, 0x00);
+    epio_set_gpio_input_level(epio, 10, 1);
+    epio_drive_gpios_ext(epio, 0xFF, 0xFF);
 
     // Reset
     epio_init_gpios(epio);
 
-    // All input, all high
+    // All input, all low (pull-down default)
     for (uint8_t pin = 0; pin < NUM_GPIOS; pin++) {
-        assert_int_equal(epio_get_gpio_input(epio, pin), 1);
+        assert_int_equal(epio_get_gpio_input(epio, pin), 0);
     }
     assert_int_equal(epio_read_driven_pins(epio) & ((1ULL << NUM_GPIOS) - 1), 0);
 
@@ -285,13 +283,13 @@ static void inverted_input_flips_read_value(void **state) {
     epio_t *epio = epio_init();
     assert_non_null(epio);
 
-    // Pin starts high, invert it
+    // Pin starts low (pull-down); inverted reads high
     epio_set_gpio_input_inverted(epio, 5, 1);
-    assert_int_equal(epio_get_gpio_input(epio, 5), 0);  // Reads as low
-
-    // Set input low, should read high
-    epio_set_gpio_input_level(epio, 5, 0);
     assert_int_equal(epio_get_gpio_input(epio, 5), 1);
+
+    // Set input high; inverted reads low
+    epio_set_gpio_input_level(epio, 5, 1);
+    assert_int_equal(epio_get_gpio_input(epio, 5), 0);
 
     epio_free(epio);
 }
@@ -328,8 +326,8 @@ static void clear_inversion(void **state) {
     epio_set_gpio_input_inverted(epio, 4, 0);
     assert_int_equal(epio_get_gpio_input_inverted(epio, 4), 0);
 
-    // Behaviour back to normal
-    assert_int_equal(epio_get_gpio_input(epio, 4), 1);
+    // Behaviour back to normal — pull-down default
+    assert_int_equal(epio_get_gpio_input(epio, 4), 0);
 
     epio_free(epio);
 }
@@ -454,11 +452,9 @@ static void block_controls_gpio_when_granted(void **state) {
     epio_t *epio = epio_init();
     assert_non_null(epio);
 
-    // Grant block 0 control of GPIO 10
     epio_set_gpio_output_control(epio, 10, 0);
     epio_set_gpio_output(epio, 10);
     
-    // Block 0 should be able to control it
     epio_set_gpio_output_level(epio, 10, 0);
     uint64_t pins = epio_read_pin_states(epio);
     assert_false(pins & (1ULL << 10));
@@ -471,11 +467,9 @@ static void block_cannot_control_without_grant(void **state) {
     epio_t *epio = epio_init();
     assert_non_null(epio);
 
-    // Do NOT grant block 0 control of GPIO 10
     epio_set_gpio_output(epio, 10);
     epio_set_gpio_output_level(epio, 10, 1);
     
-    // Verify GPIO 10 is high initially
     uint64_t pins = epio_read_pin_states(epio);
     assert_true(pins & (1ULL << 10));
 
@@ -487,7 +481,6 @@ static void different_blocks_control_different_gpios(void **state) {
     epio_t *epio = epio_init();
     assert_non_null(epio);
 
-    // Block 0 controls GPIO 5, Block 1 controls GPIO 15
     epio_set_gpio_output_control(epio, 5, 0);
     epio_set_gpio_output_control(epio, 15, 1);
     
@@ -513,11 +506,9 @@ static void init_clears_output_control(void **state) {
     epio_t *epio = epio_init();
     assert_non_null(epio);
 
-    // Set some output control
     epio_set_gpio_output_control(epio, 5, 0);
     epio_set_gpio_output_control(epio, 10, 1);
 
-    // Re-init should clear it
     epio_init_gpios(epio);
 
     assert_int_equal(epio_get_gpio_output_control(epio, 0), 0);
@@ -532,9 +523,6 @@ static void force_input_low_reads_low(void **state) {
     (void)state;
     epio_t *epio = epio_init();
     assert_non_null(epio);
-
-    // Pin starts high by default
-    assert_int_equal(epio_get_gpio_input(epio, 3), 1);
 
     epio_set_gpio_force_input_low(epio, 3, 1);
     assert_int_equal(epio_get_gpio_input(epio, 3), 0);
@@ -597,8 +585,7 @@ static void force_input_high_reads_high(void **state) {
     epio_t *epio = epio_init();
     assert_non_null(epio);
 
-    // Set pin low first
-    epio_set_gpio_input_level(epio, 3, 0);
+    // Pin starts low (pull-down); force high overrides
     assert_int_equal(epio_get_gpio_input(epio, 3), 0);
 
     epio_set_gpio_force_input_high(epio, 3, 1);
@@ -776,7 +763,7 @@ static void init_gpios_clears_force_low(void **state) {
     epio_init_gpios(epio);
 
     assert_int_equal(epio_get_gpio_force_input_low(epio, 5), 0);
-    assert_int_equal(epio_get_gpio_input(epio, 5), 1); // Back to default high
+    assert_int_equal(epio_get_gpio_input(epio, 5), 0); // Back to pull-down default
 
     epio_free(epio);
 }
@@ -791,7 +778,7 @@ static void init_gpios_clears_force_high(void **state) {
     epio_init_gpios(epio);
 
     assert_int_equal(epio_get_gpio_force_input_high(epio, 5), 0);
-    assert_int_equal(epio_get_gpio_input(epio, 5), 1); // Back to default high
+    assert_int_equal(epio_get_gpio_input(epio, 5), 0); // Back to pull-down default
 
     epio_free(epio);
 }
@@ -799,8 +786,8 @@ static void init_gpios_clears_force_high(void **state) {
 int main(void) {
     const struct CMUnitTest tests[] = {
         // Initial state
-        cmocka_unit_test(gpios_default_input_high),
-        cmocka_unit_test(pin_states_all_high_on_init),
+        cmocka_unit_test(gpios_default_input_low),
+        cmocka_unit_test(pin_states_all_low_on_init),
         cmocka_unit_test(no_driven_pins_on_init),
         // Input levels
         cmocka_unit_test(set_input_level_low),
@@ -811,12 +798,11 @@ int main(void) {
         // Mixed
         cmocka_unit_test(pin_states_mixed_input_output),
         // Direction change
-        cmocka_unit_test(output_to_input_pulls_up),
+        cmocka_unit_test(output_to_input_pulls_down),
         // External drive
         cmocka_unit_test(drive_gpios_ext_sets_input_levels),
-        cmocka_unit_test(drive_gpios_ext_undriven_pulled_up),
+        cmocka_unit_test(drive_gpios_ext_undriven_pulled_down),
         cmocka_unit_test(drive_gpios_ext_shows_in_driven),
-        // Read external
         // Reset
         cmocka_unit_test(init_gpios_resets),
         // High pins
@@ -837,7 +823,6 @@ int main(void) {
         cmocka_unit_test(same_pin_twice_same_block_asserts),
         cmocka_unit_test(same_pin_different_blocks_asserts),
         cmocka_unit_test(invalid_block_number_asserts),
-        // After the output control tests
         cmocka_unit_test(block_controls_gpio_when_granted),
         cmocka_unit_test(block_cannot_control_without_grant),
         cmocka_unit_test(different_blocks_control_different_gpios),

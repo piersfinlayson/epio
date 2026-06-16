@@ -132,6 +132,25 @@ typedef struct {
 
     // Which output GPIOs are controlled by which block
     uint64_t output_control[NUM_PIO_BLOCKS];
+
+    // Pull resistor configuration.  Hardware reset default: pull-down on all
+    // pins (PUE=0, PDE=1).
+    uint64_t pull_up;
+    uint64_t pull_down;
+
+    // Input-only pins: output driver disabled.  epio_set_gpio_output() will
+    // assert if called on a pin with this bit set.
+    uint64_t input_only;
+
+    // Drive strength per pin (APIO_DRIVE_* values).
+    // Hardware reset default: APIO_DRIVE_4MA.
+    // Stored but has no current behavioural effect in emulation.
+    uint8_t drive_strength[NUM_GPIOS];
+
+    // Slew rate per pin: 1 = fast, 0 = slow.
+    // Hardware reset default: slow (0).
+    // Stored but has no current behavioural effect in emulation.
+    uint64_t slew_fast;
 } epio_gpio_state_t;
 
 // IRQ state for a single PIO block
@@ -176,6 +195,13 @@ struct epio_t {
 
     // SRAM
     uint8_t *sram;
+
+    // Float mode: controls the level returned for undriven PULL_NONE pins.
+    // Default: EPIO_FLOAT_HIGH.
+    epio_float_mode_t float_mode;
+
+    // Seed for the PRNG used in EPIO_FLOAT_RANDOM mode.
+    uint32_t float_seed;
 };
 
 // Function prototypes

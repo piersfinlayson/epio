@@ -289,20 +289,25 @@ static void set_pins_without_control(void **state) {
     setup_set_pins_without_control(state);
     epio_t *epio = epio_from_apio();
     assert_non_null(epio);
-
-    // Set GPIOs as outputs
+ 
+    // Set GPIOs as outputs and drive them all high explicitly, so we have a
+    // known non-zero baseline that would visibly change if PIO drove them
     epio_set_gpio_output(epio, 5);
     epio_set_gpio_output(epio, 6);
     epio_set_gpio_output(epio, 7);
-
-    // Cycle 1: SET PINS, 5 (0b101) → should NOT work, pins stay at init state (0b111)
+    epio_set_gpio_output_level(epio, 5, 1);
+    epio_set_gpio_output_level(epio, 6, 1);
+    epio_set_gpio_output_level(epio, 7, 1);
+ 
+    // Cycle 1: SET PINS, 5 (0b101) → should NOT take effect; block has no
+    // output control for GPIOs 5-7, so they stay at 0b111
     epio_step_cycles(epio, 1);
     uint64_t pins = epio_read_pin_states(epio);
-    assert_int_equal((pins >> 5) & 0x7, 0x7);  // Unchanged from init
-
+    assert_int_equal((pins >> 5) & 0x7, 0x7);  // Unchanged
+ 
     epio_free(epio);
 }
-
+ 
 static void set_pins_block1(void **state) {
     setup_set_pins_block1(state);
     epio_t *epio = epio_from_apio();

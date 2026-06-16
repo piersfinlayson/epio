@@ -4,109 +4,153 @@
 
 // epio - A PIO emulator
 //
-// Routines to interface with apio, the PIO assembler
+// Functions for creating an epio instance from apio state.
 
 #if defined(EPIO_WASM)
 #define APIO_LOG_IMPL 1
 #endif // EPIO_WASM
 #define APIO_EMU_IMPL 1
-
-#include <stdlib.h>
+#include <string.h>
 #include <epio_priv.h>
 
-// Creates an epio instance from apio, using its _apio_emulated_pio instance (which is a
-// global).  This decouples epio from apio.
 epio_t *epio_from_apio(void) {
-    // Initialize the epio instance
     epio_t *epio = epio_init();
+    if (epio == NULL) {
+        // LCOV_EXCL_START
+        return NULL;
+        // LCOV_EXCL_STOP
+    }
 
-    EPIO_DBG("Applying PIO configuration...");
-
-    // Set up each SM block
+    // Copy instruction memory for each PIO block
     for (int block = 0; block < NUM_PIO_BLOCKS; block++) {
-        // Set up GPIOBASE
-        epio_set_gpiobase(epio, block, _apio_emulated_pio.gpio_base[block]);
+        for (int instr = 0; instr < NUM_INSTRS_PER_BLOCK; instr++) {
+            epio_set_instr(epio, block, instr,
+                           _apio_emulated_pio.instr[block][instr]);
+        }
+    }
 
-        // Write PIO instructions
-        assert(_apio_emulated_pio.max_offset[block] <= NUM_INSTRS_PER_BLOCK && "Instruction count exceeds block capacity");
-        for (int ii = 0; ii < _apio_emulated_pio.max_offset[block]; ii++) {
-            epio_set_instr(epio, block, ii, _apio_emulated_pio.instr[block][ii]);
+    // Copy SM configuration and pre-instructions for each block
+    for (int block = 0; block < NUM_PIO_BLOCKS; block++) {
+        // GPIOBASE
+        uint32_t gpio_base = _apio_emulated_pio.gpio_base[block];
+        if (gpio_base == 0 || gpio_base == 16) {
+            epio_set_gpiobase(epio, block, gpio_base);
         }
 
-        // Set up each SM in this block
         for (int sm = 0; sm < NUM_SMS_PER_BLOCK; sm++) {
-            // APIO always initializes the start instruction and it should
-            // never be set to an invalid one.
-            assert(_apio_emulated_pio.start[block][sm] <= APIO_MAX_PIO_INSTRS - 1 && "APIO internal error");
-
-            // Set up debug info for this SM
-            epio_sm_debug_t debug = {
-                .first_instr = _apio_emulated_pio.first_instr[block][sm],
-                .start_instr = _apio_emulated_pio.start[block][sm],
-                .end_instr = _apio_emulated_pio.end[block][sm]
-            };
-            epio_set_sm_debug(epio, block, sm, &debug);
-
-            // Set up the SM registers for this SM
-            pio_sm_reg_t apio_reg = _apio_emulated_pio.pio_sm_reg[block][sm];
-            epio_sm_reg_t reg = {
-                .clkdiv = apio_reg.clkdiv,
-                .execctrl = apio_reg.execctrl,
-                .shiftctrl = apio_reg.shiftctrl,
-                .pinctrl = apio_reg.pinctrl
-            };
-            epio_set_sm_reg(epio, block, sm, &reg);
-
-            // Set up the FIFOs for this SM - push in last to first order.
-            uint8_t tx_fifo_count = _apio_emulated_pio.tx_fifo_count[block][sm];
-            assert(tx_fifo_count <= MAX_FIFO_DEPTH && "TX FIFO count exceeds maximum depth");
-            for (int ii = tx_fifo_count; ii > 0; ii--) {
-                epio_push_tx_fifo(epio, block, sm, _apio_emulated_pio.tx_fifos[block][sm][ii-1]);
-            }
-            uint8_t rx_fifo_count = _apio_emulated_pio.rx_fifo_count[block][sm];
-            assert(rx_fifo_count <= MAX_FIFO_DEPTH && "RX FIFO count exceeds maximum depth");
-            for (int ii = rx_fifo_count; ii > 0; ii--) {
-                epio_push_rx_fifo(epio, block, sm, _apio_emulated_pio.rx_fifos[block][sm][ii-1]);
+            // SM configuration registers
+            epio_sm_reg_t reg;
+            reg.clkdiv    = _apio_emulated_pio.pio_sm_reg[block][sm].clkdiv;
+            reg.execctrl  = _apio_emulated_pio.pio_sm_reg[block][sm].execctrl;
+            reg.shiftctrl = _apio_emulated_pio.pio_sm_reg[block][sm].shiftctrl;
+            reg.pinctrl   = _apio_emulated_pio.pio_sm_reg[block][sm].pinctrl;
+            if (reg.clkdiv != 0xFFFFFFFF) {
+                epio_set_sm_reg(epio, block, sm, &reg);
             }
 
-            // Execute pre_instrs, including any JMP start which was added
-            uint8_t pre_instr_count = _apio_emulated_pio.pre_instr_count[block][sm];
-            assert(pre_instr_count <= MAX_PRE_INSTRS && "Pre-instruction count exceeds maximum");
-            for (int ii = 0; ii < pre_instr_count; ii++) {
-                epio_exec_instr_sm(epio, block, sm, _apio_emulated_pio.pre_instr[block][sm][ii]);
+            // Debug info (first_instr == 0xFF means not set)
+            uint8_t first = _apio_emulated_pio.first_instr[block][sm];
+            if (first != 0xFF) {
+                epio_sm_debug_t debug;
+                debug.first_instr = first;
+                debug.start_instr = _apio_emulated_pio.start[block][sm];
+                debug.end_instr   = _apio_emulated_pio.end[block][sm];
+                epio_set_sm_debug(epio, block, sm, &debug);
             }
 
-            // Enable the SM if it's marked as enabled in _apio_emulated_pio.
-            if (_apio_emulated_pio.enabled_sms[block] & (1 << sm)) {
-                epio_enable_sm(epio, block, sm);
+            // TX FIFO pre-load
+            uint8_t tx_count = _apio_emulated_pio.tx_fifo_count[block][sm];
+            if (tx_count <= MAX_FIFO_DEPTH) {
+                for (int f = 0; f < tx_count; f++) {
+                    epio_push_tx_fifo(epio, block, sm,
+                                      _apio_emulated_pio.tx_fifos[block][sm][f]);
+                }
+            }
+
+            // RX FIFO pre-load
+            uint8_t rx_count = _apio_emulated_pio.rx_fifo_count[block][sm];
+            if (rx_count <= MAX_FIFO_DEPTH) {
+                for (int f = 0; f < rx_count; f++) {
+                    epio_push_rx_fifo(epio, block, sm,
+                                      _apio_emulated_pio.rx_fifos[block][sm][f]);
+                }
+            }
+
+            // Pre-instructions (e.g. JMP to start)
+            uint8_t pre_count = _apio_emulated_pio.pre_instr_count[block][sm];
+            if (pre_count <= MAX_PRE_INSTRS) {
+                for (int p = 0; p < pre_count; p++) {
+                    epio_exec_instr_sm(epio, block, sm,
+                                       _apio_emulated_pio.pre_instr[block][sm][p]);
+                }
+            }
+        }
+
+        // Enable SMs
+        uint8_t enabled_sms = _apio_emulated_pio.enabled_sms[block];
+        if (enabled_sms != 0xFF) {
+            for (int sm = 0; sm < NUM_SMS_PER_BLOCK; sm++) {
+                if (enabled_sms & (1 << sm)) {
+                    epio_enable_sm(epio, block, sm);
+                }
             }
         }
     }
 
-    // Configure GPIOs
+    // Configure GPIO state.
+    //
+    // Order within each pin: pull first (establishes default level), then
+    // inversion, then force (force overrides pull level), then output control.
+    // input_only, drive, and slew are independent.
     for (int pin = 0; pin < NUM_GPIOS; pin++) {
-        // Set inversion state
-        uint8_t inverted = _apio_emulated_gpios.inverted[pin];
-        epio_set_gpio_input_inverted(epio, pin, inverted);
+        uint8_t pull_up   = (_apio_emulated_gpios.pull_up   >> pin) & 0x1;
+        uint8_t pull_down = (_apio_emulated_gpios.pull_down >> pin) & 0x1;
 
-        // Set force low
-        uint8_t force_low = _apio_emulated_gpios.force_input_low[pin];
-        if (force_low) {
-            epio_set_gpio_force_input_low(epio, pin, 1);
+        if (pull_up) {
+            epio_set_gpio_pull_up(epio, pin, 1);
+        } else if (pull_down) {
+            epio_set_gpio_pull_down(epio, pin, 1);
+        } else {
+            // Explicitly set pull-none, clearing the pull-down set by
+            // epio_init_gpios
+            epio_set_gpio_pull_none(epio, pin);
         }
 
-        // Set force high
+        // Input-only (set before force and output_control checks)
+        uint8_t input_only = (_apio_emulated_gpios.input_only >> pin) & 0x1;
+        if (input_only) {
+            epio_set_gpio_input_only(epio, pin, 1);
+        }
+
+        // Drive strength (stored, no behavioural effect currently)
+        epio_set_gpio_drive(epio, pin, _apio_emulated_gpios.drive_strength[pin]);
+
+        // Slew rate (stored, no behavioural effect currently)
+        uint8_t slew_fast = (_apio_emulated_gpios.slew_fast >> pin) & 0x1;
+        epio_set_gpio_slew_fast(epio, pin, slew_fast);
+
+        // Inversion (mutually exclusive with force)
+        uint8_t inverted = _apio_emulated_gpios.inverted[pin];
+        if (inverted) {
+            epio_set_gpio_input_inverted(epio, pin, 1);
+        }
+
+        // Force low/high (overrides pull level; mutually exclusive with each
+        // other and with inversion)
+        uint8_t force_low  = _apio_emulated_gpios.force_input_low[pin];
         uint8_t force_high = _apio_emulated_gpios.force_input_high[pin];
-        if (force_high) {
+        if (force_low) {
+            epio_set_gpio_force_input_low(epio, pin, 1);
+        } else if (force_high) {
             epio_set_gpio_force_input_high(epio, pin, 1);
         }
 
-        // Set output control
+        // Output control
         if (_apio_emulated_gpios.output_block[pin] != -1) {
-            epio_set_gpio_output_control(epio, pin, _apio_emulated_gpios.output_block[pin]);
+            epio_set_gpio_output_control(epio, pin,
+                                         (uint8_t)_apio_emulated_gpios.output_block[pin]);
         }
     }
 
     return epio;
 }
-

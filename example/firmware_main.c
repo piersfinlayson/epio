@@ -25,7 +25,7 @@ int firmware_main() {
     APIO_ENABLE_PIOS();     // Bring PIOs out of reset
 
     APIO_GPIO_INIT();       // Initialize APIO GPIO configuration
-    APIO_GPIO_OUTPUT(0, 0); // Configure GPIO0 as controllable output by PIO block 0
+    APIO_GPIO_INPUT_OUTPUT(0, 0); // Configure GPIO0 as controllable output by PIO block 0
 
     // PIO assembler initialization - must be called before using any other
     // assembler macros, and must be in the same function as those macros.

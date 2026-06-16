@@ -55,6 +55,15 @@ WASM_GEN_JS_BIND := wasm/gen_js_bind.py
 WASM_EPIO_BINDINGS_JS := $(WASM_BUILD_DIR)/epio_bindings.js
 WASM_EPIO_INDEX_HTML := $(WASM_BUILD_DIR)/index.html
 
+# macOS (Darwin) requires libtool -static to create archives that Apple's
+# linker accepts.  GNU ar rcs produces an incompatible format on macOS.
+UNAME_S := $(shell uname -s)
+ifeq ($(UNAME_S),Darwin)
+    CREATE_LIB = libtool -static -o
+else
+    CREATE_LIB = $(AR) rcs
+endif
+
 .PHONY: all lib wasm clean clean-lib clean-docs clean-wasm docs clean-hosted-example clean-wasm-example wasm-bindings run-hosted-example run-wasm-example clean-test test cmocka clean-cmocka clean-test-lib clean-apio clean-test-bins cov
 
 all: lib
@@ -100,7 +109,7 @@ $(TEST_LIB_BUILD_DIR)/%.o: src/%.c | $(TEST_LIB_BUILD_DIR) apio  $(CMOCKA_LIB)
 
 $(TEST_LIB): $(TEST_LIB_OBJS)
 	@echo "- Creating test library $@"
-	@$(AR) rcs $@ $^
+	@$(CREATE_LIB) $@ $^
 
 $(TEST_BUILD_DIR)/%: test/%.c $(TEST_LIB) $(CMOCKA_LIB) | $(TEST_BUILD_DIR)
 	@echo "- Building test $@"
@@ -117,7 +126,7 @@ $(WASM_BUILD_DIR)/%.o: src/%.c | $(WASM_BUILD_DIR) apio
 
 $(LIB): $(LIB_OBJS)
 	@echo "- Creating $@"
-	@$(AR) rcs $@ $^
+	@$(CREATE_LIB) $@ $^
 
 $(WASM_BIN): $(WASM_LIB)
 	@echo "- Linking WASM"

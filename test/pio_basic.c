@@ -34,8 +34,10 @@ static void test_initial_gpio_state(void **state) {
     uint64_t driven = epio_read_driven_pins(epio);
     uint64_t states = epio_read_pin_states(epio);
     
+    // GPIO 0 not yet driven by PIO (direction not set)
     assert_int_equal(driven & EPIO_GPIO0, 0);
-    assert_int_equal(states & EPIO_GPIO0, EPIO_GPIO0);
+    // Default is pull-down, so reads low
+    assert_int_equal(states & EPIO_GPIO0, 0);
     
     epio_free(epio);
 }
@@ -53,8 +55,11 @@ static void test_first_instruction_sets_output(void **state) {
     uint64_t driven = epio_read_driven_pins(epio);
     uint64_t states = epio_read_pin_states(epio);
     
+    // GPIO 0 is now driven (direction set to output by SET PINDIRS 1)
     assert_int_equal(driven & EPIO_GPIO0, EPIO_GPIO0);
-    assert_int_equal(states & EPIO_GPIO0, EPIO_GPIO0);
+    // Output data register is 0 (hardware reset default); SET PINDIRS does
+    // not change the output level, only the direction
+    assert_int_equal(states & EPIO_GPIO0, 0);
     assert_int_equal(epio_get_cycle_count(epio), 1);
     
     epio_free(epio);

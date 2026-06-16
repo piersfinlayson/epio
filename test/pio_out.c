@@ -573,15 +573,20 @@ static void drive_gpios_ext_overwrites_input_level(void **state) {
     (void)state;
     epio_t *epio = epio_init();
     assert_non_null(epio);
-
-    // Manually set pin 10 low
-    epio_set_gpio_input_level(epio, 10, 0);
+ 
+    // Give pin 10 a pull-up so undriven (1) and driven (0) are distinct,
+    // making the restoration demonstrably visible
+    epio_set_gpio_pull_up(epio, 10, 1);
+    assert_int_equal(epio_get_gpio_input(epio, 10), 1);
+ 
+    // Drive pin 10 low via drive_gpios_ext
+    epio_drive_gpios_ext(epio, 1ULL << 10, 0);
     assert_int_equal(epio_get_gpio_input(epio, 10), 0);
-
-    // drive_gpios_ext with pin 10 not in mask — pulls it back up
+ 
+    // Release (pin 10 not in mask) — restores to pull-up (1)
     epio_drive_gpios_ext(epio, 0, 0);
     assert_int_equal(epio_get_gpio_input(epio, 10), 1);
-
+ 
     epio_free(epio);
 }
 

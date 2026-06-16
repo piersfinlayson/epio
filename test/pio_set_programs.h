@@ -125,9 +125,9 @@ static int setup_set_pins(void **state) {
     (void)state;
 
     APIO_GPIO_INIT();
-    APIO_GPIO_OUTPUT(5, 0);
-    APIO_GPIO_OUTPUT(6, 0);
-    APIO_GPIO_OUTPUT(7, 0);
+    APIO_GPIO_INPUT_OUTPUT(5, 0);
+    APIO_GPIO_INPUT_OUTPUT(6, 0);
+    APIO_GPIO_INPUT_OUTPUT(7, 0);
 
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
@@ -156,9 +156,9 @@ static int setup_set_pindirs(void **state) {
     (void)state;
 
     APIO_GPIO_INIT();
-    APIO_GPIO_OUTPUT(5, 0);
-    APIO_GPIO_OUTPUT(6, 0);
-    APIO_GPIO_OUTPUT(7, 0);
+    APIO_GPIO_INPUT_OUTPUT(5, 0);
+    APIO_GPIO_INPUT_OUTPUT(6, 0);
+    APIO_GPIO_INPUT_OUTPUT(7, 0);
 
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
@@ -187,9 +187,9 @@ static int setup_set_pins_gpiobase16(void **state) {
     (void)state;
 
     APIO_GPIO_INIT();
-    APIO_GPIO_OUTPUT(21, 0);
-    APIO_GPIO_OUTPUT(22, 0);
-    APIO_GPIO_OUTPUT(23, 0);
+    APIO_GPIO_INPUT_OUTPUT(21, 0);
+    APIO_GPIO_INPUT_OUTPUT(22, 0);
+    APIO_GPIO_INPUT_OUTPUT(23, 0);
 
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
@@ -241,9 +241,9 @@ static int setup_set_pins_wraps_around(void **state) {
     (void)state;
 
     APIO_GPIO_INIT();
-    APIO_GPIO_OUTPUT(30, 0);
-    APIO_GPIO_OUTPUT(31, 0);
-    APIO_GPIO_OUTPUT(0, 0);
+    APIO_GPIO_INPUT_OUTPUT(30, 0);
+    APIO_GPIO_INPUT_OUTPUT(31, 0);
+    APIO_GPIO_INPUT_OUTPUT(0, 0);
 
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
@@ -273,9 +273,9 @@ static int setup_set_pins_wraps_around_gpiobase16(void **state) {
     (void)state;
 
     APIO_GPIO_INIT();
-    APIO_GPIO_OUTPUT(46, 0);
-    APIO_GPIO_OUTPUT(47, 0);
-    APIO_GPIO_OUTPUT(16, 0);
+    APIO_GPIO_INPUT_OUTPUT(46, 0);
+    APIO_GPIO_INPUT_OUTPUT(47, 0);
+    APIO_GPIO_INPUT_OUTPUT(16, 0);
 
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
@@ -305,9 +305,9 @@ static int setup_set_pindirs_gpiobase16(void **state) {
     (void)state;
 
     APIO_GPIO_INIT();
-    APIO_GPIO_OUTPUT(21, 0);
-    APIO_GPIO_OUTPUT(22, 0);
-    APIO_GPIO_OUTPUT(23, 0);
+    APIO_GPIO_INPUT_OUTPUT(21, 0);
+    APIO_GPIO_INPUT_OUTPUT(22, 0);
+    APIO_GPIO_INPUT_OUTPUT(23, 0);
 
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
@@ -332,7 +332,7 @@ static int setup_set_pindirs_gpiobase16(void **state) {
     while (1) { APIO_ASM_WFI(); }
 }
 
-// SET PINS with APIO_GPIO_OUTPUT - block 0 controls GPIOs 5-7
+// SET PINS with APIO_GPIO_INPUT_OUTPUT - block 0 controls GPIOs 5-7
 static int setup_set_pins_with_control(void **state) {
     (void)state;
     APIO_ASM_INIT();
@@ -341,9 +341,9 @@ static int setup_set_pins_with_control(void **state) {
     APIO_SET_SM(0);
 
     // Grant block 0 control of GPIOs 5-7
-    APIO_GPIO_OUTPUT(5, 0);
-    APIO_GPIO_OUTPUT(6, 0);
-    APIO_GPIO_OUTPUT(7, 0);
+    APIO_GPIO_INPUT_OUTPUT(5, 0);
+    APIO_GPIO_INPUT_OUTPUT(6, 0);
+    APIO_GPIO_INPUT_OUTPUT(7, 0);
 
     APIO_ADD_INSTR(APIO_SET_PINS(5));
     APIO_WRAP_TOP();
@@ -363,7 +363,7 @@ static int setup_set_pins_with_control(void **state) {
     while (1) { APIO_ASM_WFI(); }
 }
 
-// SET PINS without APIO_GPIO_OUTPUT - block 0 does NOT control GPIOs 5-7
+// SET PINS without APIO_GPIO_INPUT_OUTPUT - block 0 does NOT control GPIOs 5-7
 static int setup_set_pins_without_control(void **state) {
     (void)state;
     APIO_ASM_INIT();
@@ -400,9 +400,9 @@ static int setup_set_pins_block1(void **state) {
     APIO_SET_SM(0);
 
     // Grant block 1 control of GPIOs 10-12
-    APIO_GPIO_OUTPUT(10, 1);
-    APIO_GPIO_OUTPUT(11, 1);
-    APIO_GPIO_OUTPUT(12, 1);
+    APIO_GPIO_INPUT_OUTPUT(10, 1);
+    APIO_GPIO_INPUT_OUTPUT(11, 1);
+    APIO_GPIO_INPUT_OUTPUT(12, 1);
 
     APIO_ADD_INSTR(APIO_SET_PINS(5));  // 0b101
     APIO_WRAP_TOP();

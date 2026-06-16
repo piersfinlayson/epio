@@ -38,7 +38,7 @@ enum mov_test_src {
 static int setup_mov(uint16_t mov_instr, int src, int exec_nop) {
     APIO_GPIO_INIT();
     for (int ii = 0; ii < 8; ii++) {
-        APIO_GPIO_OUTPUT(ii+8, 0);
+        APIO_GPIO_INPUT_OUTPUT(ii+8, 0);
     }
 
     APIO_ASM_INIT();
@@ -164,7 +164,7 @@ static int setup_mov_exec_executee_delay(void **state) {
 static int setup_mov_pins_gpiobase16(void **state) {
     APIO_GPIO_INIT();
     for (int ii = 0; ii < 3; ii++) {
-        APIO_GPIO_OUTPUT(ii+5+16, 0);
+        APIO_GPIO_INPUT_OUTPUT(ii+5+16, 0);
     }
 
     (void)state;
@@ -224,7 +224,7 @@ static int setup_mov_status(uint16_t mov_instr, uint32_t execctrl,
                             int exec_nop) {
     APIO_GPIO_INIT();
     for (int ii = 0; ii < 8; ii++) {
-        APIO_GPIO_OUTPUT(ii+8, 0);
+        APIO_GPIO_INPUT_OUTPUT(ii+8, 0);
     }
 
     APIO_ASM_INIT();

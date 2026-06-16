@@ -76,6 +76,19 @@ typedef struct {
 } epio_sm_reg_t;
 
 /**
+ * @brief Controls the value returned when reading an undriven GPIO pin that
+ *        has been explicitly configured with no pull resistor (PULL_NONE).
+ *
+ * Does not affect pins with an explicit pull-up or pull-down configured.
+ * Default: EPIO_FLOAT_HIGH.
+ */
+typedef enum {
+    EPIO_FLOAT_LOW    = 0, /**< Undriven PULL_NONE pins read as 0. */
+    EPIO_FLOAT_HIGH   = 1, /**< Undriven PULL_NONE pins read as 1 (default). */
+    EPIO_FLOAT_RANDOM = 2, /**< Undriven PULL_NONE pins return a PRNG value. */
+} epio_float_mode_t;
+
+/**
  * @defgroup global Global API
  * @brief Functions for creating, configuring, and destroying an epio instance.
  * @{
@@ -85,8 +98,8 @@ typedef struct {
  * @brief Create and initialise a new epio instance.
  *
  * Allocates and returns a new epio instance with all state machines disabled
- * and all GPIOs in their default state.  The caller is responsible for
- * configuring the instance before stepping.
+ * and all GPIOs in their default state (pull-down, 4 mA drive, slow slew).
+ * The caller is responsible for configuring the instance before stepping.
  *
  * @return Pointer to the new epio instance, or NULL on allocation failure.
  * @see epio_free(), epio_from_apio()
@@ -191,8 +204,7 @@ EPIO_EXPORT void epio_enable_sm(epio_t *epio, uint8_t block, uint8_t sm);
  *
  * @param epio  The epio instance.
  * @param block PIO block index (0 to NUM_PIO_BLOCKS-1).
- * @param sm    State machine index within the block (0 to NUM_SMS_PER_BLOCK-
- * 1).
+ * @param sm    State machine index within the block (0 to NUM_SMS_PER_BLOCK-1).
  * @return      1 if the SM is enabled, 0 otherwise.
  */
 EPIO_EXPORT uint8_t epio_is_sm_enabled(epio_t *epio, uint8_t block, uint8_t sm);
@@ -205,8 +217,7 @@ EPIO_EXPORT uint8_t epio_is_sm_enabled(epio_t *epio, uint8_t block, uint8_t sm);
  * 
  * @param epio  The epio instance.
  * @param block PIO block index (0 to NUM_PIO_BLOCKS-1).
- * @param sm    State machine index within the block (0 to NUM_SMS_PER_BLOCK-
- * 1).
+ * @param sm    State machine index within the block (0 to NUM_SMS_PER_BLOCK-1).
  */
 EPIO_EXPORT void epio_disable_sm(epio_t *epio, uint8_t block, uint8_t sm);
 
@@ -386,7 +397,8 @@ EPIO_EXPORT void epio_push_rx_fifo(epio_t *epio, uint8_t block, uint8_t sm, uint
  *
  * Simulates external hardware driving GPIO pins.  @p gpios is a bitmask
  * of pins to affect; @p level is a bitmask of the desired levels for those
- * pins.  Pins not set in @p gpios are unaffected.
+ * pins.  Pins not set in @p gpios are restored to their configured pull
+ * state (pull-up → 1, pull-down → 0, pull-none → float mode value).
  *
  * This function only affects the input state of the specified pins.
  *
@@ -482,9 +494,11 @@ uint64_t epio_get_gpio_output_control(epio_t *epio, uint8_t block);
 EPIO_EXPORT uint8_t epio_get_gpio_input(epio_t *epio, uint8_t pin);
 
 /**
- * @brief Reset all GPIOs to their default (input, pulled-up) state.
+ * @brief Reset all GPIOs to their hardware reset defaults.
  *
- * Clears all GPIO directions and levels.  Useful for resetting between
+ * Sets all pins to input direction, pull-down enabled, 4 mA drive strength,
+ * slow slew.  Clears force, inversion, input-only, and output-control state.
+ * Does not affect the float mode setting.  Useful for resetting between
  * test cases.
  *
  * @param epio  The epio instance.
@@ -542,7 +556,9 @@ EPIO_EXPORT uint8_t epio_get_gpio_force_input_high(epio_t *epio, uint8_t pin);
 /**
  * @brief Configure a GPIO pin as an input.
  *
- * Pull-ups are assumed on all input pins.
+ * Sets the pin direction to input and updates the input level to reflect
+ * the pin's configured pull resistor (pull-up → 1, pull-down → 0,
+ * pull-none → float mode value).  The hardware reset default is pull-down.
  *
  * @param epio  The epio instance.
  * @param pin   GPIO pin number (0 to NUM_GPIOS-1).
@@ -552,6 +568,9 @@ EPIO_EXPORT void epio_set_gpio_input(epio_t *epio, uint8_t pin);
 
 /**
  * @brief Configure a GPIO pin as an output.
+ *
+ * Asserts if the pin has been marked input-only via
+ * epio_set_gpio_input_only().
  *
  * @param epio  The epio instance.
  * @param pin   GPIO pin number (0 to NUM_GPIOS-1).
@@ -603,7 +622,7 @@ EPIO_EXPORT uint64_t epio_read_pin_states(epio_t *epio);
  * Returns a bitmask indicating which GPIO pins are configured as outputs
  * and are being actively driven by the PIO state machines combined with
  * any externally driven pins.  This reflects the driving state by the
- * RP2350, and any undriven pins are pulled up.
+ * RP2350, and any undriven pins fall back to their pull configuration.
  *
  * Bit N corresponds to GPIO N, with GPIO0 being the LSB.
  *
@@ -612,6 +631,150 @@ EPIO_EXPORT uint64_t epio_read_pin_states(epio_t *epio);
  * @see epio_read_pin_states()
  */
 EPIO_EXPORT uint64_t epio_read_driven_pins(epio_t *epio);
+
+/**
+ * @brief Enable or disable a pull-up resistor on a GPIO pin.
+ *
+ * Setting pull-up clears any pull-down on the same pin and immediately
+ * updates the undriven input level to 1 (unless a force override is active).
+ *
+ * @param epio   The epio instance.
+ * @param pin    GPIO pin number (0 to NUM_GPIOS-1).
+ * @param enable 1 to enable pull-up, 0 to clear it (leaving the pin with no pull).
+ */
+EPIO_EXPORT void epio_set_gpio_pull_up(epio_t *epio, uint8_t pin, uint8_t enable);
+
+/**
+ * @brief Enable or disable a pull-down resistor on a GPIO pin.
+ *
+ * Setting pull-down clears any pull-up on the same pin and immediately
+ * updates the undriven input level to 0 (unless a force override is active).
+ * The hardware reset default is pull-down on all pins.
+ *
+ * @param epio   The epio instance.
+ * @param pin    GPIO pin number (0 to NUM_GPIOS-1).
+ * @param enable 1 to enable pull-down, 0 to clear it (leaving the pin with no pull).
+ */
+EPIO_EXPORT void epio_set_gpio_pull_down(epio_t *epio, uint8_t pin, uint8_t enable);
+
+/**
+ * @brief Disable both pull-up and pull-down resistors on a GPIO pin.
+ *
+ * The level of an undriven pull-none pin is governed by the float mode
+ * configured via epio_set_float_mode().  Default float mode is
+ * EPIO_FLOAT_HIGH.
+ *
+ * @param epio  The epio instance.
+ * @param pin   GPIO pin number (0 to NUM_GPIOS-1).
+ */
+EPIO_EXPORT void epio_set_gpio_pull_none(epio_t *epio, uint8_t pin);
+
+/**
+ * @brief Get the pull-up state of a GPIO pin.
+ *
+ * @param epio  The epio instance.
+ * @param pin   GPIO pin number (0 to NUM_GPIOS-1).
+ * @return      1 if pull-up is enabled, 0 otherwise.
+ */
+EPIO_EXPORT uint8_t epio_get_gpio_pull_up(epio_t *epio, uint8_t pin);
+
+/**
+ * @brief Get the pull-down state of a GPIO pin.
+ *
+ * @param epio  The epio instance.
+ * @param pin   GPIO pin number (0 to NUM_GPIOS-1).
+ * @return      1 if pull-down is enabled, 0 otherwise.
+ */
+EPIO_EXPORT uint8_t epio_get_gpio_pull_down(epio_t *epio, uint8_t pin);
+
+/**
+ * @brief Mark a GPIO pin as input-only (output driver disabled).
+ *
+ * When set, epio_set_gpio_output() on that pin will assert.  Corresponds
+ * to configuring a pin with PAD_OUTPUT_DIS in hardware.
+ *
+ * @param epio       The epio instance.
+ * @param pin        GPIO pin number (0 to NUM_GPIOS-1).
+ * @param input_only 1 to mark as input-only, 0 to clear.
+ */
+EPIO_EXPORT void epio_set_gpio_input_only(epio_t *epio, uint8_t pin, uint8_t input_only);
+
+/**
+ * @brief Get the input-only state of a GPIO pin.
+ *
+ * @param epio  The epio instance.
+ * @param pin   GPIO pin number (0 to NUM_GPIOS-1).
+ * @return      1 if the pin is input-only, 0 otherwise.
+ */
+EPIO_EXPORT uint8_t epio_get_gpio_input_only(epio_t *epio, uint8_t pin);
+
+/**
+ * @brief Set the drive strength for a GPIO output pin.
+ *
+ * @p strength must be one of APIO_DRIVE_2MA, APIO_DRIVE_4MA, APIO_DRIVE_8MA,
+ * APIO_DRIVE_12MA.  Stored per-pin; has no current behavioural effect in
+ * emulation.  Hardware reset default: APIO_DRIVE_4MA.
+ *
+ * @param epio     The epio instance.
+ * @param pin      GPIO pin number (0 to NUM_GPIOS-1).
+ * @param strength Drive strength value (APIO_DRIVE_*).
+ */
+EPIO_EXPORT void epio_set_gpio_drive(epio_t *epio, uint8_t pin, uint8_t strength);
+
+/**
+ * @brief Get the configured drive strength for a GPIO output pin.
+ *
+ * @param epio  The epio instance.
+ * @param pin   GPIO pin number (0 to NUM_GPIOS-1).
+ * @return      Drive strength value (APIO_DRIVE_*).
+ */
+EPIO_EXPORT uint8_t epio_get_gpio_drive(epio_t *epio, uint8_t pin);
+
+/**
+ * @brief Set the slew rate for a GPIO output pin.
+ *
+ * Stored per-pin; has no current behavioural effect in emulation.
+ * Hardware reset default: slow (0).
+ *
+ * @param epio  The epio instance.
+ * @param pin   GPIO pin number (0 to NUM_GPIOS-1).
+ * @param fast  1 for fast slew, 0 for slow.
+ */
+EPIO_EXPORT void epio_set_gpio_slew_fast(epio_t *epio, uint8_t pin, uint8_t fast);
+
+/**
+ * @brief Get the configured slew rate for a GPIO output pin.
+ *
+ * @param epio  The epio instance.
+ * @param pin   GPIO pin number (0 to NUM_GPIOS-1).
+ * @return      1 if slew rate is fast, 0 if slow.
+ */
+EPIO_EXPORT uint8_t epio_get_gpio_slew_fast(epio_t *epio, uint8_t pin);
+
+/**
+ * @brief Set the float mode for undriven PULL_NONE pins.
+ *
+ * Controls the level returned by epio_get_gpio_input() for pins with no
+ * pull resistor configured that are not being externally driven.  Does not
+ * affect pins with an explicit pull-up or pull-down.
+ *
+ * Default: EPIO_FLOAT_HIGH.
+ *
+ * @param epio  The epio instance.
+ * @param mode  One of EPIO_FLOAT_LOW, EPIO_FLOAT_HIGH, EPIO_FLOAT_RANDOM.
+ */
+EPIO_EXPORT void epio_set_float_mode(epio_t *epio, epio_float_mode_t mode);
+
+/**
+ * @brief Seed the PRNG used by EPIO_FLOAT_RANDOM float mode.
+ *
+ * Allows deterministic replay of failing test runs: record the seed that
+ * produced the failure and pass it here to reproduce the exact same sequence.
+ *
+ * @param epio  The epio instance.
+ * @param seed  32-bit seed value.
+ */
+EPIO_EXPORT void epio_set_float_seed(epio_t *epio, uint32_t seed);
 
 /** @} */
 
@@ -1028,14 +1191,6 @@ EPIO_EXPORT void epio_clear_block_irq(epio_t *epio, uint8_t block, uint8_t irq_n
  * @see epio_init(), epio_free()
  */
 EPIO_EXPORT epio_t *epio_from_apio(void);
-
-/** @} */
-
-/**
- * @defgroup apio apio Integration API
- * @brief Functions for creating an epio instance from apio state.
- * @{
- */
 
 /**
  * @brief Disassemble the instructions of a state machine.

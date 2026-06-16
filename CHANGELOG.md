@@ -1,12 +1,61 @@
 # Changelog
 
+## 2026-06-16
+
+Added support for emulating internal GPIO pulls.
+
+- Added `epio_set_gpio_pull_up`, `epio_get_gpio_pull_up`,
+  `epio_set_gpio_pull_down`, `epio_get_gpio_pull_down`,
+  `epio_set_gpio_pull_none`: per-pin pull resistor configuration.  Pull-up and
+  pull-down are mutually exclusive; setting one clears the other.
+- Added `epio_set_gpio_input_only`, `epio_get_gpio_input_only`: mark a pin as
+  output-disabled.  `epio_set_gpio_output` now asserts if called on a pin
+  marked input-only.
+- Added `epio_set_gpio_drive`, `epio_get_gpio_drive`: per-pin drive strength
+  (stored; no current behavioural effect).
+- Added `epio_set_gpio_slew_fast`, `epio_get_gpio_slew_fast`: per-pin slew rate
+  (stored; no current behavioural effect).
+- Added `epio_set_float_mode(epio, mode)` and `epio_set_float_seed(epio, seed)`:
+  control the value returned when reading an undriven pin configured with
+  `PULL_NONE`.  `epio_float_mode_t` values: `EPIO_FLOAT_LOW` (0),
+  `EPIO_FLOAT_HIGH` (1), `EPIO_FLOAT_RANDOM` (2).  Default: `EPIO_FLOAT_HIGH`.
+  `epio_set_float_seed` seeds the internal PRNG, enabling deterministic replay
+  of failing `EPIO_FLOAT_RANDOM` runs.
+- **Breaking change**: `epio_init_gpios` now defaults all pins to pull-down,
+  4 mA drive, slow slew, matching RP2350 hardware reset state.  Previously all
+  pins defaulted to pull-up (high).  The following tests in `test/gpio.c` and
+  `test/apio.c` require updating: `gpios_default_input_high`,
+  `pin_states_all_high_on_init`, `drive_gpios_ext_undriven_pulled_up`,
+  `output_to_input_pulls_up`, `init_gpios_clears_force_low`,
+  `init_gpios_clears_force_high`, `invert_transfers_via_apio`.
+- `epio_drive_gpios_ext` now restores undriven pins to their configured pull
+  state (pull-up → 1, pull-down → 0, pull-none → float mode value) rather than
+  unconditionally to 1.
+- Added new fields to `epio_gpio_state_t`: `pull_up`, `pull_down`,
+  `input_only`, `drive_strength[NUM_GPIOS]`, `slew_fast`.
+- `epio_from_apio` now propagates `pull_up`, `pull_down`, `input_only`,
+  `drive_strength`, and `slew_fast` state from `_apio_emulated_gpios`.
+- Updated docstrings in `epio.h` to reflect pull-down as the hardware default.
+
+### Examples
+
+- Updated `apio/example/main.c` and `epio/example/firmware_main.c` to use
+  `APIO_GPIO_INPUT_OUTPUT` in place of the removed `APIO_GPIO_OUTPUT`.
+
 ## 2026-05-09
 
-- Fixed invalid assertion in `epio_apio.c` related to the maximum number of PIO instructions. The assertion now correctly checks against `APIO_MAX_PIO_INSTRS - 1` instead of the previously incorrect `MAX_PRE_INSTRS`.
+- Fixed invalid assertion in `epio_apio.c` related to the maximum number of
+  PIO instructions.  The assertion now correctly checks against
+  `APIO_MAX_PIO_INSTRS - 1` instead of the previously incorrect
+  `MAX_PRE_INSTRS`.
 
 ## 2026-02-24
 
-- Changed `epio_set_gpio_inverted` to `epio_set_gpio_input_inverted` and `epio_get_gpio_inverted` to `epio_get_gpio_input_inverted` for clarity.
-- Added `epio_set_gpio_force_input_low` and `epio_set_gpio_force_input_high` APIs to allow forcing GPIO input levels, and updated the internal logic to apply these forced levels immediately when set.
-- Added `epio_get_gpio_force_input_low` and `epio_get_gpio_force_input_high` APIs to retrieve the current forced input level settings for GPIO pins.
+- Changed `epio_set_gpio_inverted` to `epio_set_gpio_input_inverted` and
+  `epio_get_gpio_inverted` to `epio_get_gpio_input_inverted` for clarity.
+- Added `epio_set_gpio_force_input_low` and `epio_set_gpio_force_input_high`
+  APIs to allow forcing GPIO input levels, and updated the internal logic to
+  apply these forced levels immediately when set.
+- Added `epio_get_gpio_force_input_low` and `epio_get_gpio_force_input_high`
+  APIs to retrieve the current forced input level settings for GPIO pins.
 - Removed `epio_read_gpios_ext` as it was not a useful API and confusing.
