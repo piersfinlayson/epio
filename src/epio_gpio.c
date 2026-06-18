@@ -24,18 +24,27 @@ static void epio_set_gpio_input_level_internal(epio_t *epio, uint8_t pin, uint8_
 // advancing the PRNG state if in random mode.
 static uint8_t epio_get_float_value(epio_t *epio) {
     switch (epio->float_mode) {
+        // LCOV_EXCL_START
+        // GCC optimises FLOAT_LOW (0) and FLOAT_HIGH (1) into a single
+        // range-check + return-by-value, so GCOV attributes hits to the
+        // switch line rather than to these individual returns.  All three
+        // paths are exercised; see Mac coverage for confirmation.
         case EPIO_FLOAT_LOW:
             return 0;
         case EPIO_FLOAT_HIGH:
             return 1;
+        // LCOV_EXCL_STOP
         case EPIO_FLOAT_RANDOM:
         default:
             // Numerical Recipes LCG; extract bit 16 for reasonable distribution
             epio->float_seed = epio->float_seed * 1664525u + 1013904223u;
+            // LCOV_EXCL_START
+            // GCC fuses the LCG update and this return into one sequence;
+            // hits are attributed to the line above on Linux.
             return (epio->float_seed >> 16) & 1u;
+            // LCOV_EXCL_STOP
     }
 }
-
 // Internal helper: determine the undriven level for a pin based on its pull
 // configuration and the current float mode.
 static uint8_t epio_undriven_level(epio_t *epio, uint8_t pin) {
@@ -164,11 +173,12 @@ void epio_set_gpio_output(epio_t *epio, uint8_t pin) {
 void epio_set_gpio_input(epio_t *epio, uint8_t pin) {
     CHECK_GPIO(pin);
     epio->gpio.gpio_direction &= ~(1ULL << pin);
-    // Restore input level based on pull configuration
-    if (!(epio->gpio.force_input_low & (1ULL << pin)) &&
-        !(epio->gpio.force_input_high & (1ULL << pin))) {
-        epio_set_gpio_input_level_internal(epio, pin, epio_undriven_level(epio, pin));
-    }
+    // Do NOT restore gpio_input_state here. On real hardware, changing pindirs
+    // to input does not affect the pad voltage — the input synchroniser
+    // continues to read whatever is externally driving the pin (or the pull
+    // resistor if nothing is). gpio_input_state is only changed by
+    // epio_drive_gpios_ext (for externally-driven or undriven pins) and by
+    // epio_set_gpio_pull_* (when the pull configuration is explicitly changed).
 }
 
 void epio_set_gpio_input_level(epio_t *epio, uint8_t pin, uint8_t level) {

@@ -778,6 +778,65 @@ static void high_pin_input_only(void **state) {
     epio_free(epio);
 }
 
+// =============================================================================
+// epio_set_gpio_input preserves gpio_input_state
+//
+// Changing pin direction must not clobber gpio_input_state.  On real hardware
+// setting pindirs to input does not affect the pad voltage; the input
+// synchroniser continues to read whatever is externally driving the pin (or
+// the pull resistor if nothing is).  These tests cover the bug where we
+// incorrectly restored to pull state inside epio_set_gpio_input.
+// =============================================================================
+
+static void set_input_preserves_externally_driven_high(void **state) {
+    (void)state;
+    epio_t *epio = epio_init();
+    assert_non_null(epio);
+
+    // Default pull-down; external drive overrides to high
+    epio_drive_gpios_ext(epio, 1ULL << 5, 1ULL << 5);
+    assert_int_equal(epio_get_gpio_input(epio, 5), 1);
+
+    // Simulate PIO mov pindirs, null — must not clobber the driven level
+    epio_set_gpio_input(epio, 5);
+    assert_int_equal(epio_get_gpio_input(epio, 5), 1);
+
+    epio_free(epio);
+}
+
+static void set_input_preserves_externally_driven_low(void **state) {
+    (void)state;
+    epio_t *epio = epio_init();
+    assert_non_null(epio);
+
+    // Pull-up pin; external drive forces low
+    epio_set_gpio_pull_up(epio, 5, 1);
+    epio_drive_gpios_ext(epio, 1ULL << 5, 0ULL);
+    assert_int_equal(epio_get_gpio_input(epio, 5), 0);
+
+    // Direction change must not restore to pull-up
+    epio_set_gpio_input(epio, 5);
+    assert_int_equal(epio_get_gpio_input(epio, 5), 0);
+
+    epio_free(epio);
+}
+
+static void set_input_preserves_undriven_pull_state(void **state) {
+    (void)state;
+    epio_t *epio = epio_init();
+    assert_non_null(epio);
+
+    // Drive pin 7, leaving pin 5 undriven — ext drive restores pin 5 to pull-down
+    epio_drive_gpios_ext(epio, 1ULL << 7, 1ULL << 7);
+    assert_int_equal(epio_get_gpio_input(epio, 5), 0);
+
+    // Direction change must leave it at pull-down, not somehow flip it
+    epio_set_gpio_input(epio, 5);
+    assert_int_equal(epio_get_gpio_input(epio, 5), 0);
+
+    epio_free(epio);
+}
+
 int main(void) {
     const struct CMUnitTest tests[] = {
         // Default state
@@ -849,6 +908,10 @@ int main(void) {
         // High pin numbers
         cmocka_unit_test(high_pin_pull_up),
         cmocka_unit_test(high_pin_input_only),
+        // epio_set_gpio_input preserves gpio_input_state
+        cmocka_unit_test(set_input_preserves_externally_driven_high),
+        cmocka_unit_test(set_input_preserves_externally_driven_low),
+        cmocka_unit_test(set_input_preserves_undriven_pull_state),
     };
     return cmocka_run_group_tests(tests, NULL, NULL);
 }

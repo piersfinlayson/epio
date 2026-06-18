@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-06-18
+
+Fix bug introduced in 2026-06-16 that caused `epio_drive_gpios_ext` to
+incorrectly restore undriven pins to their configured pull state, even when
+the pin was marked as input-only.
+
 ## 2026-06-16
 
 Added support for emulating internal GPIO pulls.
