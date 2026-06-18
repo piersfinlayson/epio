@@ -2,6 +2,10 @@
 
 ## 2026-06-18
 
+Add `epio_read_pull_up_pins` and `epio_read_pull_down_pins` APIs to read the current state of pull-up and pull-down configurations.
+
+## 2026-06-18
+
 Fix bug introduced in 2026-06-16 that caused `epio_drive_gpios_ext` to
 incorrectly restore undriven pins to their configured pull state, even when
 the pin was marked as input-only.

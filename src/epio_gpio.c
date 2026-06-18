@@ -45,6 +45,7 @@ static uint8_t epio_get_float_value(epio_t *epio) {
             // LCOV_EXCL_STOP
     }
 }
+
 // Internal helper: determine the undriven level for a pin based on its pull
 // configuration and the current float mode.
 static uint8_t epio_undriven_level(epio_t *epio, uint8_t pin) {
@@ -260,6 +261,14 @@ uint64_t epio_read_driven_pins(epio_t *epio) {
     uint64_t driven_pins = epio->gpio.ext_driven | epio->gpio.gpio_direction;
     CHECK_GPIO_MASK(driven_pins);
     return driven_pins;
+}
+
+uint64_t epio_read_pull_up_pins(epio_t *epio) {
+    return epio->gpio.pull_up;
+}
+
+uint64_t epio_read_pull_down_pins(epio_t *epio) {
+    return epio->gpio.pull_down;
 }
 
 // --- Pull resistor configuration ---

@@ -837,6 +837,84 @@ static void set_input_preserves_undriven_pull_state(void **state) {
     epio_free(epio);
 }
 
+// =============================================================================
+// epio_read_pull_up_pins / epio_read_pull_down_pins
+// =============================================================================
+
+static void read_pull_up_pins_default_zero(void **state) {
+    (void)state;
+    epio_t *epio = epio_init();
+    assert_non_null(epio);
+
+    assert_true(epio_read_pull_up_pins(epio) == 0ULL);
+
+    epio_free(epio);
+}
+
+static void read_pull_down_pins_default_all(void **state) {
+    (void)state;
+    epio_t *epio = epio_init();
+    assert_non_null(epio);
+
+    // Every pin has pull-down by default
+    uint64_t expected = (NUM_GPIOS < 64) ? (1ULL << NUM_GPIOS) - 1 : ~0ULL;
+    assert_true(epio_read_pull_down_pins(epio) == expected);
+
+    epio_free(epio);
+}
+
+static void read_pull_up_pins_after_set(void **state) {
+    (void)state;
+    epio_t *epio = epio_init();
+    assert_non_null(epio);
+
+    epio_set_gpio_pull_up(epio, 5, 1);
+    assert_true(epio_read_pull_up_pins(epio) & (1ULL << 5));
+    // Setting pull-up clears pull-down for that pin
+    assert_false(epio_read_pull_down_pins(epio) & (1ULL << 5));
+
+    epio_free(epio);
+}
+
+static void read_pull_down_pins_after_pull_none(void **state) {
+    (void)state;
+    epio_t *epio = epio_init();
+    assert_non_null(epio);
+
+    // Default pull-down; clear with pull-none
+    epio_set_gpio_pull_none(epio, 8);
+    assert_false(epio_read_pull_down_pins(epio) & (1ULL << 8));
+    assert_false(epio_read_pull_up_pins(epio)   & (1ULL << 8));
+    // Neighbouring pins unaffected
+    assert_true(epio_read_pull_down_pins(epio) & (1ULL << 7));
+    assert_true(epio_read_pull_down_pins(epio) & (1ULL << 9));
+
+    epio_free(epio);
+}
+
+static void read_pull_pins_multiple(void **state) {
+    (void)state;
+    epio_t *epio = epio_init();
+    assert_non_null(epio);
+
+    epio_set_gpio_pull_up(epio, 3, 1);
+    epio_set_gpio_pull_up(epio, 7, 1);
+    epio_set_gpio_pull_none(epio, 15);   // clear pull-down, no pull-up
+
+    uint64_t pu = epio_read_pull_up_pins(epio);
+    assert_true (pu & (1ULL << 3));
+    assert_true (pu & (1ULL << 7));
+    assert_false(pu & (1ULL << 15));
+
+    uint64_t pd = epio_read_pull_down_pins(epio);
+    assert_false(pd & (1ULL << 3));   // pull-up cleared pull-down
+    assert_false(pd & (1ULL << 7));
+    assert_false(pd & (1ULL << 15));  // pull-none cleared pull-down
+    assert_true (pd & (1ULL << 5));   // untouched pin still pull-down
+
+    epio_free(epio);
+}
+
 int main(void) {
     const struct CMUnitTest tests[] = {
         // Default state
@@ -912,6 +990,12 @@ int main(void) {
         cmocka_unit_test(set_input_preserves_externally_driven_high),
         cmocka_unit_test(set_input_preserves_externally_driven_low),
         cmocka_unit_test(set_input_preserves_undriven_pull_state),
+        // epio_read_pull_up_pins / epio_read_pull_down_pins
+        cmocka_unit_test(read_pull_up_pins_default_zero),
+        cmocka_unit_test(read_pull_down_pins_default_all),
+        cmocka_unit_test(read_pull_up_pins_after_set),
+        cmocka_unit_test(read_pull_down_pins_after_pull_none),
+        cmocka_unit_test(read_pull_pins_multiple),
     };
     return cmocka_run_group_tests(tests, NULL, NULL);
 }

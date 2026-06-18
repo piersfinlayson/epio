@@ -49,6 +49,8 @@ EPIO_WASM_EXPORTS := \
 	"_epio_set_gpio_output_level", \
 	"_epio_read_pin_states", \
 	"_epio_read_driven_pins", \
+	"_epio_read_pull_up_pins", \
+	"_epio_read_pull_down_pins", \
 	"_epio_set_gpio_pull_up", \
 	"_epio_get_gpio_pull_up", \
 	"_epio_set_gpio_pull_down", \

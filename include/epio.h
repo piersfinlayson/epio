@@ -633,6 +633,28 @@ EPIO_EXPORT uint64_t epio_read_pin_states(epio_t *epio);
 EPIO_EXPORT uint64_t epio_read_driven_pins(epio_t *epio);
 
 /**
+ * @brief Return a bitmask of all GPIO pins that have a pull-up configured.
+ *
+ * Bit N corresponds to GPIO N, with GPIO0 being the LSB.
+ *
+ * @param epio  The epio instance.
+ * @return      Bitmask of GPIO pins with pull-up enabled.
+ * @see epio_read_pull_down_pins()
+ */
+EPIO_EXPORT uint64_t epio_read_pull_up_pins(epio_t *epio);
+
+/**
+ * @brief Return a bitmask of all GPIO pins that have a pull-down configured.
+ *
+ * Bit N corresponds to GPIO N, with GPIO0 being the LSB.
+ *
+ * @param epio  The epio instance.
+ * @return      Bitmask of GPIO pins with pull-down enabled.
+ * @see epio_read_pull_up_pins()
+ */
+EPIO_EXPORT uint64_t epio_read_pull_down_pins(epio_t *epio);
+
+/**
  * @brief Enable or disable a pull-up resistor on a GPIO pin.
  *
  * Setting pull-up clears any pull-down on the same pin and immediately
