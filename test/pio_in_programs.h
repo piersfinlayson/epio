@@ -11,6 +11,7 @@
 // IN PINS shift left - read 3 pins starting at IN_BASE=5
 static int setup_in_pins_shift_left(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -33,6 +34,7 @@ static int setup_in_pins_shift_left(void **state) {
 // IN X shift left - read 8 bits from X
 static int setup_in_x_shift_left(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -56,6 +58,7 @@ static int setup_in_x_shift_left(void **state) {
 // IN Y shift left - read 5 bits from Y
 static int setup_in_y_shift_left(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -79,6 +82,7 @@ static int setup_in_y_shift_left(void **state) {
 // IN NULL shift left - shift in zeros for alignment
 static int setup_in_null_shift_left(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -103,6 +107,7 @@ static int setup_in_null_shift_left(void **state) {
 // IN PINS shift right - read 3 pins with right shift
 static int setup_in_pins_shift_right(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -125,6 +130,7 @@ static int setup_in_pins_shift_right(void **state) {
 // Two INs accumulating into ISR (shift left)
 static int setup_in_accumulate_shift_left(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -150,6 +156,7 @@ static int setup_in_accumulate_shift_left(void **state) {
 // Shift count saturates at 32
 static int setup_in_shift_count_saturates(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -175,6 +182,7 @@ static int setup_in_shift_count_saturates(void **state) {
 // Autopush - PUSH_THRESH=8, IN X 8 triggers push
 static int setup_in_autopush(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -202,6 +210,7 @@ static int setup_in_autopush(void **state) {
 // Autopush stall - RX FIFO full when autopush triggers
 static int setup_in_autopush_stall(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -229,6 +238,7 @@ static int setup_in_autopush_stall(void **state) {
 // IN PINS with IN_BASE=10 - verify correct GPIO range
 static int setup_in_pins_in_base(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -251,6 +261,7 @@ static int setup_in_pins_in_base(void **state) {
 // IN PINS with GPIOBASE=16
 static int setup_in_pins_gpiobase16(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_GPIOBASE_16();
@@ -274,6 +285,7 @@ static int setup_in_pins_gpiobase16(void **state) {
 // IN with delay
 static int setup_in_with_delay(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -297,6 +309,7 @@ static int setup_in_with_delay(void **state) {
 // IN ISR - shift ISR into itself
 static int setup_in_isr_source(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -321,6 +334,7 @@ static int setup_in_isr_source(void **state) {
 // IN OSR - read from OSR after PULL
 static int setup_in_osr_source(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -344,6 +358,7 @@ static int setup_in_osr_source(void **state) {
 // IN with bit_count = 32 shift right
 static int setup_in_bit_count_32_shift_right(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -367,6 +382,7 @@ static int setup_in_bit_count_32_shift_right(void **state) {
 // Autopush threshold crossing — PUSH_THRESH=6, IN X 8 crosses it
 static int setup_in_autopush_threshold_crossing(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -394,6 +410,7 @@ static int setup_in_autopush_threshold_crossing(void **state) {
 // Autopush with PUSH_THRESH=0 (encodes 32)
 static int setup_in_autopush_thresh_0_means_32(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -422,6 +439,7 @@ static int setup_in_autopush_thresh_0_means_32(void **state) {
 // IN with bit_count = 32 (encoded as 0)
 static int setup_in_bit_count_32(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -445,6 +463,7 @@ static int setup_in_bit_count_32(void **state) {
 // IN PINS wrap around — IN_BASE=30, shift right, 3 bits
 static int setup_in_pins_wraps_around(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -470,6 +489,7 @@ static int setup_in_pins_wraps_around(void **state) {
 // Window pins 30, 31, 0 → actual GPIOs 46, 47, 16
 static int setup_in_pins_wraps_around_gpiobase16(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_GPIOBASE_16();
@@ -495,6 +515,7 @@ static int setup_in_pins_wraps_around_gpiobase16(void **state) {
 // IN PINS with inverted GPIO - GPIO5 driven low but inverted
 static int setup_in_pins_inverted_low(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_GPIO_INIT();
     APIO_SET_BLOCK(0);
@@ -521,6 +542,7 @@ static int setup_in_pins_inverted_low(void **state) {
 // IN PINS with inverted GPIO - GPIO6 driven high but inverted
 static int setup_in_pins_inverted_high(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_GPIO_INIT();
     APIO_SET_BLOCK(0);
@@ -547,6 +569,7 @@ static int setup_in_pins_inverted_high(void **state) {
 // IN PINS with multiple inverted GPIOs
 static int setup_in_pins_multiple_inverted(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_GPIO_INIT();
     APIO_SET_BLOCK(0);
@@ -574,6 +597,7 @@ static int setup_in_pins_multiple_inverted(void **state) {
 // IN PINS with inverted GPIO and GPIOBASE=16
 static int setup_in_pins_inverted_gpiobase16(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_GPIO_INIT();
     APIO_SET_BLOCK(0);

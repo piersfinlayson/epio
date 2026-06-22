@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-06-22
+
+Police APIO_ENABLE_PIOS() being called.
+
+This may break existing code that does not call APIO_ENABLE_PIOS() before calling APIO_ASM_INIT().  However, this is considered a bug fix - if existing code doesn't call APIO_ENABLE_PIOS(), it will not correctly enable the PIO blocks on real hardware. 
+
 ## 2026-06-18
 
 Add `epio_read_pull_up_pins` and `epio_read_pull_down_pins` APIs to read the current state of pull-up and pull-down configurations.

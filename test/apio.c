@@ -21,6 +21,7 @@ static void epio_from_apio_basic(void **state) {
 static int setup_gpiobase_16(void **state) {
     (void)state;
 
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_CLEAR_ALL_IRQS();
 
@@ -78,6 +79,7 @@ void test_rxf_initial_value(void **state) {
 static int setup_force_input_low_apio(void **state) {
     (void)state;
 
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_CLEAR_ALL_IRQS();
 
@@ -118,6 +120,7 @@ static void force_input_low_transfers_via_apio(void **state) {
 static int setup_force_input_high_apio(void **state) {
     (void)state;
 
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_CLEAR_ALL_IRQS();
 
@@ -158,6 +161,7 @@ static void force_input_high_transfers_via_apio(void **state) {
 static int setup_invert_transfers_via_apio_setup(void **state) {
     (void)state;
 
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_CLEAR_ALL_IRQS();
 
@@ -203,6 +207,7 @@ static void invert_transfers_via_apio(void **state) {
 static int setup_pull_up_apio(void **state) {
     (void)state;
 
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_CLEAR_ALL_IRQS();
     APIO_SET_BLOCK(0);
@@ -242,6 +247,7 @@ static void pull_up_transfers_via_apio(void **state) {
 static int setup_pull_down_explicit_apio(void **state) {
     (void)state;
 
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_CLEAR_ALL_IRQS();
     APIO_SET_BLOCK(0);
@@ -279,6 +285,7 @@ static void pull_down_explicit_transfers_via_apio(void **state) {
 static int setup_pull_none_apio(void **state) {
     (void)state;
 
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_CLEAR_ALL_IRQS();
     APIO_SET_BLOCK(0);
@@ -315,6 +322,7 @@ static void pull_none_transfers_via_apio(void **state) {
 static int setup_input_only_apio(void **state) {
     (void)state;
 
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_CLEAR_ALL_IRQS();
     APIO_SET_BLOCK(0);
@@ -352,6 +360,7 @@ static void input_only_transfers_via_apio(void **state) {
 static int setup_drive_strength_apio(void **state) {
     (void)state;
 
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_CLEAR_ALL_IRQS();
     APIO_SET_BLOCK(0);
@@ -389,6 +398,7 @@ static void drive_strength_transfers_via_apio(void **state) {
 static int setup_slew_fast_apio(void **state) {
     (void)state;
 
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_CLEAR_ALL_IRQS();
     APIO_SET_BLOCK(0);

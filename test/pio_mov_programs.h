@@ -41,6 +41,7 @@ static int setup_mov(uint16_t mov_instr, int src, int exec_nop) {
         APIO_GPIO_INPUT_OUTPUT(ii+8, 0);
     }
 
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -90,6 +91,7 @@ static int setup_mov(uint16_t mov_instr, int src, int exec_nop) {
 // MOV X, Y with delay [3] - tests delay on a non-EXEC MOV
 static int setup_mov_with_delay(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -112,6 +114,7 @@ static int setup_mov_with_delay(void **state) {
 // MOV EXEC with delay on the MOV - delay should be ignored
 static int setup_mov_exec_delay_ignored(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -137,6 +140,7 @@ static int setup_mov_exec_delay_ignored(void **state) {
 // MOV EXEC where exec'd instruction has its own delay
 static int setup_mov_exec_executee_delay(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -168,6 +172,7 @@ static int setup_mov_pins_gpiobase16(void **state) {
     }
 
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_GPIOBASE_16();
@@ -194,6 +199,7 @@ static int setup_mov_pins_gpiobase16(void **state) {
 // MOV OSR, OSR with non-zero osr_count - tests that count resets
 static int setup_mov_osr_osr_count_reset(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -227,6 +233,7 @@ static int setup_mov_status(uint16_t mov_instr, uint32_t execctrl,
         APIO_GPIO_INPUT_OUTPUT(ii+8, 0);
     }
 
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);

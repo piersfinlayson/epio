@@ -16,6 +16,7 @@ static int setup_basic_pio_apio(void **state) {
     APIO_GPIO_INIT();
     APIO_GPIO_INPUT_OUTPUT(0, 0);  // GPIO 0 controlled by PIO block 0
 
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_CLEAR_ALL_IRQS();
 

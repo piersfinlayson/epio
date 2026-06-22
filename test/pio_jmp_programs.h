@@ -11,6 +11,7 @@
 // JMP unconditional - should always jump
 static int setup_jmp_unconditional(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -35,6 +36,7 @@ static int setup_jmp_unconditional(void **state) {
 // JMP !X when X=0 - should jump
 static int setup_jmp_not_x_when_zero(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -60,6 +62,7 @@ static int setup_jmp_not_x_when_zero(void **state) {
 // JMP !X when X!=0 - should not jump
 static int setup_jmp_not_x_when_nonzero(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -85,6 +88,7 @@ static int setup_jmp_not_x_when_nonzero(void **state) {
 // JMP X-- when X=0 - should not jump, X wraps to 0xFFFFFFFF
 static int setup_jmp_x_dec_when_zero(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -110,6 +114,7 @@ static int setup_jmp_x_dec_when_zero(void **state) {
 // JMP X-- when X=5 - should jump, X becomes 4
 static int setup_jmp_x_dec_when_nonzero(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -135,6 +140,7 @@ static int setup_jmp_x_dec_when_nonzero(void **state) {
 // JMP X-- when X=1 - should jump (nonzero), X becomes 0
 static int setup_jmp_x_dec_when_one(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -160,6 +166,7 @@ static int setup_jmp_x_dec_when_one(void **state) {
 // JMP !Y when Y=0 - should jump
 static int setup_jmp_not_y_when_zero(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -185,6 +192,7 @@ static int setup_jmp_not_y_when_zero(void **state) {
 // JMP !Y when Y!=0 - should not jump
 static int setup_jmp_not_y_when_nonzero(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -210,6 +218,7 @@ static int setup_jmp_not_y_when_nonzero(void **state) {
 // JMP Y-- when Y=0 - should not jump, Y wraps to 0xFFFFFFFF
 static int setup_jmp_y_dec_when_zero(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -235,6 +244,7 @@ static int setup_jmp_y_dec_when_zero(void **state) {
 // JMP Y-- when Y=3 - should jump, Y becomes 2
 static int setup_jmp_y_dec_when_nonzero(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -260,6 +270,7 @@ static int setup_jmp_y_dec_when_nonzero(void **state) {
 // JMP Y-- when Y=1 - should jump (nonzero), Y becomes 0
 static int setup_jmp_y_dec_when_one(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -285,6 +296,7 @@ static int setup_jmp_y_dec_when_one(void **state) {
 // JMP X!=Y when X==Y - should not jump
 static int setup_jmp_x_not_y_when_equal(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -311,6 +323,7 @@ static int setup_jmp_x_not_y_when_equal(void **state) {
 // JMP X!=Y when X!=Y - should jump
 static int setup_jmp_x_not_y_when_different(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -336,6 +349,7 @@ static int setup_jmp_x_not_y_when_different(void **state) {
 // JMP PIN when pin is low - should not jump
 static int setup_jmp_pin_when_low(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -360,6 +374,7 @@ static int setup_jmp_pin_when_low(void **state) {
 // JMP PIN when pin is high - should jump
 static int setup_jmp_pin_when_high(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -383,6 +398,7 @@ static int setup_jmp_pin_when_high(void **state) {
 // JMP PIN with GPIOBASE=16 when pin is low - should not jump
 static int setup_jmp_pin_gpiobase16_when_low(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_GPIOBASE_16();
@@ -408,6 +424,7 @@ static int setup_jmp_pin_gpiobase16_when_low(void **state) {
 // JMP PIN with GPIOBASE=16 when pin is high - should jump
 static int setup_jmp_pin_gpiobase16_when_high(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_GPIOBASE_16();
@@ -432,6 +449,7 @@ static int setup_jmp_pin_gpiobase16_when_high(void **state) {
 // JMP unconditional with delay - delay applies after taken branch
 static int setup_jmp_with_delay_taken(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -456,6 +474,7 @@ static int setup_jmp_with_delay_taken(void **state) {
 // JMP !X with delay when X!=0 - delay applies after not-taken branch
 static int setup_jmp_with_delay_not_taken(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -481,6 +500,7 @@ static int setup_jmp_with_delay_not_taken(void **state) {
 // JMP !OSRE when OSR is empty (count=32) - should jump
 static int setup_jmp_not_osre_when_empty(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -507,6 +527,7 @@ static int setup_jmp_not_osre_when_empty(void **state) {
 // JMP !OSRE when OSR is not empty (count<32) - should not jump
 static int setup_jmp_not_osre_when_not_empty(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -539,6 +560,7 @@ static int setup_jmp_not_osre_when_not_empty(void **state) {
 // JMP !OSRE with PULL_THRESH=16 - shift 16 bits, should jump (at threshold)
 static int setup_jmp_not_osre_threshold_at(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -569,6 +591,7 @@ static int setup_jmp_not_osre_threshold_at(void **state) {
 // JMP !OSRE with PULL_THRESH=16 - shift 8 bits, should not jump (below threshold)
 static int setup_jmp_not_osre_threshold_below(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -599,6 +622,7 @@ static int setup_jmp_not_osre_threshold_below(void **state) {
 // JMP PIN with inverted GPIO - pin driven low but inverted, so reads high
 static int setup_jmp_pin_inverted_low(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_GPIO_INIT();
     APIO_SET_BLOCK(0);
@@ -626,6 +650,7 @@ static int setup_jmp_pin_inverted_low(void **state) {
 // JMP PIN with inverted GPIO - pin driven high but inverted, so reads low
 static int setup_jmp_pin_inverted_high(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_GPIO_INIT();
     APIO_SET_BLOCK(0);
@@ -654,6 +679,7 @@ static int setup_jmp_pin_inverted_high(void **state) {
 // JMP PIN with inverted GPIO and GPIOBASE=16
 static int setup_jmp_pin_inverted_gpiobase16(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_GPIO_INIT();
     APIO_SET_BLOCK(0);

@@ -11,6 +11,7 @@
 // Basic PUSH: SET X, IN X 32, PUSH BLOCK
 static int setup_push_basic(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -35,6 +36,7 @@ static int setup_push_basic(void **state) {
 // PUSH full 32-bit value via PULL → IN OSR 32 → PUSH
 static int setup_push_full_value(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -59,6 +61,7 @@ static int setup_push_full_value(void **state) {
 // PUSH BLOCK stalls on full RX FIFO
 static int setup_push_stalls_full_fifo(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -83,6 +86,7 @@ static int setup_push_stalls_full_fifo(void **state) {
 // PUSH noblock (Block=0) on full RX FIFO
 static int setup_push_noblock_full_fifo(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -107,6 +111,7 @@ static int setup_push_noblock_full_fifo(void **state) {
 // PUSH IFFULL BLOCK when threshold met (PUSH_THRESH=8, IN 8 bits)
 static int setup_push_iffull_threshold_met(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -131,6 +136,7 @@ static int setup_push_iffull_threshold_met(void **state) {
 // PUSH IFFULL BLOCK when threshold NOT met (PUSH_THRESH=16, IN 8 bits)
 static int setup_push_iffull_threshold_not_met(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -155,6 +161,7 @@ static int setup_push_iffull_threshold_not_met(void **state) {
 // PUSH with delay
 static int setup_push_with_delay(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -179,6 +186,7 @@ static int setup_push_with_delay(void **state) {
 // Multiple PUSHes: PULL → IN OSR 32 → PUSH loop
 static int setup_push_multiple_values(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -202,6 +210,7 @@ static int setup_push_multiple_values(void **state) {
 // PUSH IFFULL with PUSH_THRESH=0 (encodes 32)
 static int setup_push_iffull_thresh_0_means_32(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -226,6 +235,7 @@ static int setup_push_iffull_thresh_0_means_32(void **state) {
 // PUSH after partial IN (8 bits only)
 static int setup_push_partial_isr(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -250,6 +260,7 @@ static int setup_push_partial_isr(void **state) {
 // PUSH IFFULL noblock when threshold NOT met
 static int setup_push_iffull_noblock_threshold_not_met(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -274,6 +285,7 @@ static int setup_push_iffull_noblock_threshold_not_met(void **state) {
 // PUSH IFFULL noblock on full FIFO when threshold met
 static int setup_push_iffull_noblock_full_fifo(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);

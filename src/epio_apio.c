@@ -21,6 +21,14 @@ epio_t *epio_from_apio(void) {
         // LCOV_EXCL_STOP
     }
 
+    if (_apio_emulated_pio.pios_enabled != 1) {
+        // LCOV_EXCL_START
+        assert(0 &&
+        "APIO_ENABLE_PIOS() must be called before using PIO blocks");
+        return NULL;
+        // LCOV_EXCL_STOP
+    }
+
     // Copy instruction memory for each PIO block
     for (int block = 0; block < NUM_PIO_BLOCKS; block++) {
         for (int instr = 0; instr < NUM_INSTRS_PER_BLOCK; instr++) {

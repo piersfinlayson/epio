@@ -11,6 +11,7 @@
 // Basic PULL: load from TX FIFO, verify OSR
 static int setup_pull_basic(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -34,6 +35,7 @@ static int setup_pull_basic(void **state) {
 // PULL BLOCK stalls on empty TX FIFO
 static int setup_pull_stalls_empty_fifo(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -57,6 +59,7 @@ static int setup_pull_stalls_empty_fifo(void **state) {
 // PULL NOBLOCK on empty TX FIFO — copies X to OSR
 static int setup_pull_noblock_empty_fifo(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -80,6 +83,7 @@ static int setup_pull_noblock_empty_fifo(void **state) {
 // PULL NOBLOCK with data in TX FIFO — pulls normally
 static int setup_pull_noblock_with_data(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -104,6 +108,7 @@ static int setup_pull_noblock_with_data(void **state) {
 // PULL IFEMPTY BLOCK when threshold met (PULL_THRESH=8, after OUT 8)
 static int setup_pull_ifempty_threshold_met(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -129,6 +134,7 @@ static int setup_pull_ifempty_threshold_met(void **state) {
 // PULL IFEMPTY BLOCK when threshold NOT met (PULL_THRESH=16, after OUT 8)
 static int setup_pull_ifempty_threshold_not_met(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -154,6 +160,7 @@ static int setup_pull_ifempty_threshold_not_met(void **state) {
 // PULL IFEMPTY with PULL_THRESH=0 (encodes 32)
 static int setup_pull_ifempty_thresh_0_means_32(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -179,6 +186,7 @@ static int setup_pull_ifempty_thresh_0_means_32(void **state) {
 // PULL IFEMPTY BLOCK stalls on empty TX FIFO when threshold met
 static int setup_pull_ifempty_block_stalls_empty_fifo(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -204,6 +212,7 @@ static int setup_pull_ifempty_block_stalls_empty_fifo(void **state) {
 // PULL IFEMPTY NOBLOCK on empty FIFO when threshold met — copies X to OSR
 static int setup_pull_ifempty_noblock_empty_fifo(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -229,6 +238,7 @@ static int setup_pull_ifempty_noblock_empty_fifo(void **state) {
 // PULL IFEMPTY NOBLOCK when threshold NOT met — no-op
 static int setup_pull_ifempty_noblock_threshold_not_met(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -254,6 +264,7 @@ static int setup_pull_ifempty_noblock_threshold_not_met(void **state) {
 // PULL with delay
 static int setup_pull_with_delay(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -277,6 +288,7 @@ static int setup_pull_with_delay(void **state) {
 // PULL with autopull enabled and OSR full — should be no-op
 static int setup_pull_autopull_noop_when_full(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);

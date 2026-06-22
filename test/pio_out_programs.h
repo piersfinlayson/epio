@@ -11,6 +11,7 @@
 // OUT X shift right - basic: PULL then OUT X 8
 static int setup_out_x_shift_right(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -34,6 +35,7 @@ static int setup_out_x_shift_right(void **state) {
 // OUT Y shift right
 static int setup_out_y_shift_right(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -57,6 +59,7 @@ static int setup_out_y_shift_right(void **state) {
 // OUT NULL shift right - discard data, verify OSR shifted
 static int setup_out_null_shift_right(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -86,6 +89,7 @@ static int setup_out_pins_shift_right(void **state) {
         APIO_GPIO_INPUT_OUTPUT(ii+5, 0);
     }
 
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -112,6 +116,7 @@ static int setup_out_pins_shift_right(void **state) {
 // OUT PC - unconditional jump from shifted data
 static int setup_out_pc(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -137,6 +142,7 @@ static int setup_out_pc(void **state) {
 // OUT ISR - writes shifted data into ISR, sets isr_count
 static int setup_out_isr(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -160,6 +166,7 @@ static int setup_out_isr(void **state) {
 // OUT EXEC - shifted data executes as instruction next cycle
 static int setup_out_exec(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -185,6 +192,7 @@ static int setup_out_exec(void **state) {
 // OUT X shift left
 static int setup_out_x_shift_left(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -208,6 +216,7 @@ static int setup_out_x_shift_left(void **state) {
 // Shift count saturates at 32
 static int setup_out_shift_count_saturates(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -232,6 +241,7 @@ static int setup_out_shift_count_saturates(void **state) {
 // Autopull - PULL_THRESH=8, explicit PULL then two OUTs
 static int setup_out_autopull(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -260,6 +270,7 @@ static int setup_out_autopull(void **state) {
 // Autopull stall - TX FIFO empty when autopull triggers
 static int setup_out_autopull_stall(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -294,6 +305,7 @@ static int setup_out_pins_gpiobase16(void **state) {
         APIO_GPIO_INPUT_OUTPUT(ii+5+16, 0);
     }
 
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_GPIOBASE_16();
@@ -321,6 +333,7 @@ static int setup_out_pins_gpiobase16(void **state) {
 // OUT with delay
 static int setup_out_with_delay(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -344,6 +357,7 @@ static int setup_out_with_delay(void **state) {
 // OUT EXEC with delay - delay on the OUT should be ignored
 static int setup_out_exec_delay_ignored(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -369,6 +383,7 @@ static int setup_out_exec_delay_ignored(void **state) {
 // OUT with bit_count = 32, shift right
 static int setup_out_bit_count_32(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -392,6 +407,7 @@ static int setup_out_bit_count_32(void **state) {
 // OUT with bit_count = 32, shift left
 static int setup_out_bit_count_32_shift_left(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -415,6 +431,7 @@ static int setup_out_bit_count_32_shift_left(void **state) {
 // Autopull threshold crossing - PULL_THRESH=6, OUT X 8
 static int setup_out_autopull_threshold_crossing(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -443,6 +460,7 @@ static int setup_out_autopull_threshold_crossing(void **state) {
 // Autopull with PULL_THRESH=0 (encodes 32)
 static int setup_out_autopull_thresh_0_means_32(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -477,6 +495,7 @@ static int setup_out_pindirs_shift_right(void **state) {
         APIO_GPIO_INPUT_OUTPUT(ii+5, 0);
     }
 
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -503,6 +522,7 @@ static int setup_out_pindirs_shift_right(void **state) {
 // OUT EXEC where exec'd instruction has its own delay
 static int setup_out_exec_with_executee_delay(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -534,6 +554,7 @@ static int setup_out_pins_wraps_around(void **state) {
     APIO_GPIO_INPUT_OUTPUT(30, 0);
     APIO_GPIO_INPUT_OUTPUT(31, 0);
 
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -567,6 +588,7 @@ static int setup_out_pins_wraps_around_gpiobase16(void **state) {
     APIO_GPIO_INPUT_OUTPUT(46, 0);
     APIO_GPIO_INPUT_OUTPUT(47, 0);
 
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_GPIOBASE_16();

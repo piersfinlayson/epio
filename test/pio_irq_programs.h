@@ -11,6 +11,7 @@
 // 1. IRQ SET — single SM sets IRQ3
 static int setup_irq_set(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -33,6 +34,7 @@ static int setup_irq_set(void **state) {
 // 2. IRQ CLEAR — single SM sets then clears IRQ3
 static int setup_irq_clear(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -58,6 +60,7 @@ static int setup_irq_clear(void **state) {
 //    Shared instr mem: SM1 at 0-1, SM0 at 2-5
 static int setup_irq_set_already_set(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
 
@@ -95,6 +98,7 @@ static int setup_irq_set_already_set(void **state) {
 // 4. IRQ CLEAR already clear — clear flag that is already 0
 static int setup_irq_clear_already_clear(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -117,6 +121,7 @@ static int setup_irq_clear_already_clear(void **state) {
 // 5. IRQ SET multiple flags — set 0, 3, 7 in sequence
 static int setup_irq_set_multiple_flags(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -142,6 +147,7 @@ static int setup_irq_set_multiple_flags(void **state) {
 //    Shared instr mem: SM0 at 0-1, SM1 at 2-5
 static int setup_irq_set_wait_stalls(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
 
@@ -179,6 +185,7 @@ static int setup_irq_set_wait_stalls(void **state) {
 // 7. IRQ SET NEXT — PIO0 sets IRQ5 on PIO1
 static int setup_irq_set_next(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
 
     // PIO1 — empty block, just need it to exist for IRQ target
@@ -216,6 +223,7 @@ static int setup_irq_set_next(void **state) {
 // 8. IRQ SET PREV — PIO1 sets IRQ5 on PIO0
 static int setup_irq_set_prev(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
 
     // PIO0 — empty block for IRQ target
@@ -253,6 +261,7 @@ static int setup_irq_set_prev(void **state) {
 // 9. IRQ CLEAR NEXT — PIO1 sets IRQ5 locally, PIO0 clears it on PIO1
 static int setup_irq_clear_next(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
 
     // PIO1 SM0 — sets its own IRQ5
@@ -291,6 +300,7 @@ static int setup_irq_clear_next(void **state) {
 // 10. IRQ CLEAR PREV — PIO0 sets IRQ5 locally, PIO1 clears it on PIO0
 static int setup_irq_clear_prev(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
 
     // PIO0 SM0 — sets its own IRQ5
@@ -329,6 +339,7 @@ static int setup_irq_clear_prev(void **state) {
 // 11. IRQ SET PREV wraps — PIO0 PREV sets on PIO2
 static int setup_irq_set_prev_wraps(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
 
     // PIO2 — empty block for IRQ target
@@ -366,6 +377,7 @@ static int setup_irq_set_prev_wraps(void **state) {
 // 12. IRQ SET NEXT wraps — PIO2 NEXT sets on PIO0
 static int setup_irq_set_next_wraps(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
 
     // PIO0 — empty block for IRQ target
@@ -403,6 +415,7 @@ static int setup_irq_set_next_wraps(void **state) {
 // 13. IRQ SET REL SM0 — SM0 REL(2): (0+2)%4=2, bit2=0 → IRQ 2
 static int setup_irq_set_rel_sm0(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -425,6 +438,7 @@ static int setup_irq_set_rel_sm0(void **state) {
 // 14. IRQ SET REL SM1 — SM1 REL(2): (1+2)%4=3, bit2=0 → IRQ 3
 static int setup_irq_set_rel_sm1(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(1);
@@ -447,6 +461,7 @@ static int setup_irq_set_rel_sm1(void **state) {
 // 15. IRQ SET REL SM3 — SM3 REL(2): (3+2)%4=1, bit2=0 → IRQ 1
 static int setup_irq_set_rel_sm3(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(3);
@@ -470,6 +485,7 @@ static int setup_irq_set_rel_sm3(void **state) {
 //     Index=5=0b101, bit2=1(4), low2=01, (2+1)%4=3 → IRQ 4|3=7
 static int setup_irq_set_rel_bit2_unaffected(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(2);
@@ -493,6 +509,7 @@ static int setup_irq_set_rel_bit2_unaffected(void **state) {
 //     Index=1=0b001, bit2=0, low2=01, (2+1)%4=3 → clears IRQ 3
 static int setup_irq_clear_rel(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(2);
@@ -517,6 +534,7 @@ static int setup_irq_clear_rel(void **state) {
 // 18. IRQ SET with delay — SET IRQ3 [3], verify flag set on exec cycle
 static int setup_irq_set_with_delay(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -541,6 +559,7 @@ static int setup_irq_set_with_delay(void **state) {
 //     SM1 self-loops after clearing to avoid wrap conflict
 static int setup_irq_set_wait_delay_after_wait(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
 
@@ -578,6 +597,7 @@ static int setup_irq_set_wait_delay_after_wait(void **state) {
 //     Raw encoding: Clear=1, Wait=1, IdxMode=00, Index=3 → 0xC063
 static int setup_irq_clear_overrides_wait(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -604,6 +624,7 @@ static int setup_irq_clear_overrides_wait(void **state) {
 //     Shared instr mem: SM0 at 0-1, SM1 at 2-3
 static int setup_irq_set_clear_same_cycle(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
 
@@ -639,6 +660,7 @@ static int setup_irq_set_clear_same_cycle(void **state) {
 // 22. IRQ SET WAIT NEXT — PIO0 sets IRQ5 on PIO1 and waits, PIO1 clears it
 static int setup_irq_set_wait_next(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
 
     // PIO1 SM0 — NOP, NOP, clear its own IRQ5, self-loop
@@ -678,6 +700,7 @@ static int setup_irq_set_wait_next(void **state) {
 // 23. IRQ SET WAIT PREV — PIO1 sets IRQ5 on PIO0 and waits, PIO0 clears it
 static int setup_irq_set_wait_prev(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
 
     // PIO0 SM0 — NOP, NOP, clear its own IRQ5, self-loop
@@ -718,6 +741,7 @@ static int setup_irq_set_wait_prev(void **state) {
 //     Shared instr mem: SM2 at 0-1, SM0 at 2-5
 static int setup_irq_set_wait_rel(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
 
@@ -755,6 +779,7 @@ static int setup_irq_set_wait_rel(void **state) {
 // 25. IRQ CLEAR PREV wraps — PIO2 sets IRQ5, PIO0 CLEAR_PREV wraps to PIO2
 static int setup_irq_clear_prev_wraps(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
 
     // PIO2 SM0 — sets its own IRQ5, then self-loops
@@ -793,6 +818,7 @@ static int setup_irq_clear_prev_wraps(void **state) {
 // 26. IRQ CLEAR NEXT wraps — PIO0 sets IRQ5, PIO2 CLEAR_NEXT wraps to PIO0
 static int setup_irq_clear_next_wraps(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
 
     // PIO0 SM0 — sets its own IRQ5, then self-loops
@@ -831,6 +857,7 @@ static int setup_irq_clear_next_wraps(void **state) {
 // 27. Cross-block IRQ isolation — SET on block 0 does not affect block 1
 static int setup_irq_cross_block_isolation(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
 
     // PIO1 SM0 — just NOPs
@@ -868,6 +895,7 @@ static int setup_irq_cross_block_isolation(void **state) {
 // 28. IRQ flag 4 direct — SET(4), verify only flag 4 set
 static int setup_irq_flag4_direct(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -890,6 +918,7 @@ static int setup_irq_flag4_direct(void **state) {
 // 29. IRQ flag 6 direct — SET(6), verify only flag 6 set
 static int setup_irq_flag6_direct(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -912,6 +941,7 @@ static int setup_irq_flag6_direct(void **state) {
 // 30. IRQ CLEAR with delay — SET then CLEAR [3], verify clears on exec cycle
 static int setup_irq_clear_with_delay(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -935,6 +965,7 @@ static int setup_irq_clear_with_delay(void **state) {
 // 31. IRQ SET WAIT — host clears IRQ between steps (no second SM needed)
 static int setup_irq_set_wait_host_clear(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);

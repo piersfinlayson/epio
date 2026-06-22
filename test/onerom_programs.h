@@ -18,6 +18,7 @@ static int setup_onerom(void **state) {
         APIO_GPIO_INPUT_OUTPUT(ii, 0);  // Data GPIOs 0-7 controlled by PIO block 0
     }
 
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_CLEAR_ALL_IRQS();
     APIO_SET_BLOCK(0);

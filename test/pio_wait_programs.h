@@ -11,6 +11,7 @@
 // WAIT GPIO high - GPIO already high, should not stall
 static int setup_wait_gpio_high(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -33,6 +34,7 @@ static int setup_wait_gpio_high(void **state) {
 // WAIT GPIO low - GPIO already low, should not stall
 static int setup_wait_gpio_low(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -55,6 +57,7 @@ static int setup_wait_gpio_low(void **state) {
 // WAIT GPIO - stalls then releases when GPIO changes
 static int setup_wait_gpio_stall_then_release(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -77,6 +80,7 @@ static int setup_wait_gpio_stall_then_release(void **state) {
 // WAIT PIN high - uses IN_BASE offset
 static int setup_wait_pin_high(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -102,6 +106,7 @@ static int setup_wait_pin_high(void **state) {
 // WAIT PIN low
 static int setup_wait_pin_low(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -127,6 +132,7 @@ static int setup_wait_pin_low(void **state) {
 // WAIT IRQ high - same block (SM0 waits, SM1 sets)
 static int setup_wait_irq_high_same_block(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     
@@ -162,6 +168,7 @@ static int setup_wait_irq_high_same_block(void **state) {
 // WAIT IRQ low - same block (SM0 waits for IRQ3 low, which it already is)
 static int setup_wait_irq_low_same_block(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -185,6 +192,7 @@ static int setup_wait_irq_low_same_block(void **state) {
 // WAIT IRQ high - previous block (PIO0 SM0 waits for PIO2 SM0 to set IRQ5)
 static int setup_wait_irq_high_prev_block(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     
     // PIO2 SM0 - sets IRQ5
@@ -223,6 +231,7 @@ static int setup_wait_irq_high_prev_block(void **state) {
 // WAIT IRQ high - next block (PIO0 SM0 waits for PIO1 SM0 to set IRQ5)
 static int setup_wait_irq_high_next_block(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     
     // PIO1 SM0 - sets IRQ5
@@ -261,6 +270,7 @@ static int setup_wait_irq_high_next_block(void **state) {
 // WAIT IRQ relative - SM2 waits for IRQ3, SM1 sets it
 static int setup_wait_irq_relative(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     
@@ -297,6 +307,7 @@ static int setup_wait_irq_relative(void **state) {
 // WAIT IRQ with clear (SM0 waits for IRQ3 and clears it, SM1 sets it)
 static int setup_wait_irq_with_clear(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     
@@ -332,6 +343,7 @@ static int setup_wait_irq_with_clear(void **state) {
 // WAIT JMP_PIN
 static int setup_wait_jmp_pin(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -354,6 +366,7 @@ static int setup_wait_jmp_pin(void **state) {
 // WAIT GPIO HIGH with delay - delay should only apply on completion cycle
 static int setup_wait_gpio_high_with_delay(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -376,6 +389,7 @@ static int setup_wait_gpio_high_with_delay(void **state) {
 // WAIT IRQ HIGH - stall then release (SM0 waits, SM1 sets after delay)
 static int setup_wait_irq_stall_then_release(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     
@@ -413,6 +427,7 @@ static int setup_wait_irq_stall_then_release(void **state) {
 // WAIT IRQ LOW when IRQ is HIGH - should stall until cleared
 static int setup_wait_irq_low_when_high(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     
@@ -451,6 +466,7 @@ static int setup_wait_irq_low_when_high(void **state) {
 // Two SMs waiting on same IRQ HIGH - tests auto-clear race
 static int setup_wait_irq_two_sms_same_irq(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     
@@ -497,6 +513,7 @@ static int setup_wait_irq_two_sms_same_irq(void **state) {
 // WAIT PIN stall then release - pin low, wait for high, then set high
 static int setup_wait_pin_stall_then_release(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -522,6 +539,7 @@ static int setup_wait_pin_stall_then_release(void **state) {
 // WAIT JMP_PIN low - should not stall when pin is low
 static int setup_wait_jmp_pin_low(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -544,6 +562,7 @@ static int setup_wait_jmp_pin_low(void **state) {
 // WAIT JMP_PIN stall then release
 static int setup_wait_jmp_pin_stall_then_release(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -566,6 +585,7 @@ static int setup_wait_jmp_pin_stall_then_release(void **state) {
 // IRQ relative with wrapping - SM3 REL(2) = IRQ ((3+2) mod 4) = IRQ 1
 static int setup_wait_irq_relative_wrap(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     
@@ -601,6 +621,7 @@ static int setup_wait_irq_relative_wrap(void **state) {
 // WAIT GPIO HIGH with GPIOBASE=16
 static int setup_wait_gpio_high_gpiobase16(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_GPIOBASE_16();
@@ -624,6 +645,7 @@ static int setup_wait_gpio_high_gpiobase16(void **state) {
 // WAIT PIN with GPIOBASE=16
 static int setup_wait_pin_high_gpiobase16(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_GPIOBASE_16();

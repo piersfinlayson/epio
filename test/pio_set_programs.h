@@ -11,6 +11,7 @@
 // SET X, 17
 static int setup_set_x(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -33,6 +34,7 @@ static int setup_set_x(void **state) {
 // SET Y, 25
 static int setup_set_y(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -55,6 +57,7 @@ static int setup_set_y(void **state) {
 // SET X, 0 — boundary: minimum value
 static int setup_set_x_zero(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -77,6 +80,7 @@ static int setup_set_x_zero(void **state) {
 // SET X, 31 — boundary: maximum value
 static int setup_set_x_max(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -99,6 +103,7 @@ static int setup_set_x_max(void **state) {
 // SET X clears upper bits — load X with 0xFFFFFFFF via PULL+OUT, then SET X, 5
 static int setup_set_x_clears_upper_bits(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -129,6 +134,7 @@ static int setup_set_pins(void **state) {
     APIO_GPIO_INPUT_OUTPUT(6, 0);
     APIO_GPIO_INPUT_OUTPUT(7, 0);
 
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -160,6 +166,7 @@ static int setup_set_pindirs(void **state) {
     APIO_GPIO_INPUT_OUTPUT(6, 0);
     APIO_GPIO_INPUT_OUTPUT(7, 0);
 
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -191,6 +198,7 @@ static int setup_set_pins_gpiobase16(void **state) {
     APIO_GPIO_INPUT_OUTPUT(22, 0);
     APIO_GPIO_INPUT_OUTPUT(23, 0);
 
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_GPIOBASE_16();
@@ -217,6 +225,7 @@ static int setup_set_pins_gpiobase16(void **state) {
 // SET X with delay — SET X, 17 [3]
 static int setup_set_with_delay(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -245,6 +254,7 @@ static int setup_set_pins_wraps_around(void **state) {
     APIO_GPIO_INPUT_OUTPUT(31, 0);
     APIO_GPIO_INPUT_OUTPUT(0, 0);
 
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_SET_SM(0);
@@ -277,6 +287,7 @@ static int setup_set_pins_wraps_around_gpiobase16(void **state) {
     APIO_GPIO_INPUT_OUTPUT(47, 0);
     APIO_GPIO_INPUT_OUTPUT(16, 0);
 
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_GPIOBASE_16();
@@ -309,6 +320,7 @@ static int setup_set_pindirs_gpiobase16(void **state) {
     APIO_GPIO_INPUT_OUTPUT(22, 0);
     APIO_GPIO_INPUT_OUTPUT(23, 0);
 
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_SET_BLOCK(0);
     APIO_GPIOBASE_16();
@@ -335,6 +347,7 @@ static int setup_set_pindirs_gpiobase16(void **state) {
 // SET PINS with APIO_GPIO_INPUT_OUTPUT - block 0 controls GPIOs 5-7
 static int setup_set_pins_with_control(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_GPIO_INIT();
     APIO_SET_BLOCK(0);
@@ -366,6 +379,7 @@ static int setup_set_pins_with_control(void **state) {
 // SET PINS without APIO_GPIO_INPUT_OUTPUT - block 0 does NOT control GPIOs 5-7
 static int setup_set_pins_without_control(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_GPIO_INIT();
     APIO_SET_BLOCK(0);
@@ -394,6 +408,7 @@ static int setup_set_pins_without_control(void **state) {
 // SET PINS with block 1 controlling GPIOs 10-12
 static int setup_set_pins_block1(void **state) {
     (void)state;
+    APIO_ENABLE_PIOS();
     APIO_ASM_INIT();
     APIO_GPIO_INIT();
     APIO_SET_BLOCK(1);
