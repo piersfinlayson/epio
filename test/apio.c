@@ -5,6 +5,17 @@
 // epio - A PIO emulator
 //
 // Unit tests for apio related functions from apio.c
+//
+// Note on test state: APIO_ASM_INIT() resets _apio_emulated_pio (PIO programs,
+// SM configs, pre-instrs, FIFOs, enabled SMs) but does NOT reset
+// _apio_emulated_gpios (pull resistors, output_block assignments, force
+// overrides, inversion, drive strength, slew rate).  GPIO state therefore
+// accumulates across tests in this file.  Tests that verify GPIO behaviour
+// set only the specific pins they care about; tests that call
+// epio_update_from_apio() may find GPIO state set by earlier tests already
+// present in the epio instance, which apply_apio_state() handles correctly
+// by checking before setting output_control rather than asserting on a
+// double-assign.
 
 #define APIO_LOG_IMPL
 #include "test.h"
@@ -432,6 +443,354 @@ static void slew_fast_transfers_via_apio(void **state) {
     epio_free(epio);
 }
 
+// =============================================================================
+// Shared setup for epio_get_sram_ptr and epio_update_from_apio tests.
+//
+// Builds a minimal single-SM PIO program: block 0, SM 0 runs a NOP loop.
+// No GPIO configuration; no TX/RX FIFO preload.
+// =============================================================================
+
+static int setup_minimal_sm0(void **state) {
+    (void)state;
+
+    APIO_ENABLE_PIOS();
+    APIO_ASM_INIT();
+    APIO_CLEAR_ALL_IRQS();
+
+    APIO_SET_BLOCK(0);
+    APIO_SET_SM(0);
+    APIO_ADD_INSTR(APIO_NOP);
+    APIO_WRAP_BOTTOM();
+    APIO_WRAP_TOP();
+    APIO_SM_CLKDIV_SET(1, 0);
+    APIO_SM_EXECCTRL_SET(0);
+    APIO_SM_SHIFTCTRL_SET(0);
+    APIO_SM_PINCTRL_SET(0);
+    APIO_SM_JMP_TO_START();
+    APIO_END_BLOCK();
+
+    APIO_ENABLE_SMS(0, (1 << 0));
+
+    while (1) { APIO_ASM_WFI(); }
+}
+
+// Variant of the minimal setup that also assigns GPIO 5 to block 0 as an
+// output-capable pin, exercising the output_block != -1 branch in
+// apply_apio_state().
+static int setup_with_output_gpio(void **state) {
+    (void)state;
+
+    APIO_ENABLE_PIOS();
+    APIO_ASM_INIT();
+    APIO_CLEAR_ALL_IRQS();
+
+    APIO_SET_BLOCK(0);
+    APIO_SET_SM(0);
+    APIO_ADD_INSTR(APIO_NOP);
+    APIO_WRAP_BOTTOM();
+    APIO_WRAP_TOP();
+    APIO_SM_CLKDIV_SET(1, 0);
+    APIO_SM_EXECCTRL_SET(0);
+    APIO_SM_SHIFTCTRL_SET(0);
+    APIO_SM_PINCTRL_SET(0);
+    APIO_SM_JMP_TO_START();
+    APIO_END_BLOCK();
+
+    APIO_GPIO_INPUT_OUTPUT(5, 0);
+
+    APIO_ENABLE_SMS(0, (1 << 0));
+
+    while (1) { APIO_ASM_WFI(); }
+}
+
+// =============================================================================
+// epio_get_sram_ptr tests
+// =============================================================================
+
+// Basic: the returned pointer is non-NULL for a valid instance.
+static void test_get_sram_ptr_not_null(void **state) {
+    setup_minimal_sm0(state);
+    epio_t *epio = epio_from_apio();
+    assert_non_null(epio);
+
+    uint8_t *ptr = epio_get_sram_ptr(epio);
+    assert_non_null(ptr);
+
+    epio_free(epio);
+}
+
+// The raw pointer and the SRAM API are two views of the same buffer.
+// ptr[0] corresponds to MIN_SRAM_ADDR, ptr[1] to MIN_SRAM_ADDR+1, etc.
+static void test_get_sram_ptr_aliases_sram_api(void **state) {
+    setup_minimal_sm0(state);
+    epio_t *epio = epio_from_apio();
+    assert_non_null(epio);
+
+    uint8_t *ptr = epio_get_sram_ptr(epio);
+    assert_non_null(ptr);
+
+    // Write via raw pointer, read back via the byte API
+    ptr[0] = 0xAB;
+    assert_int_equal(epio_sram_read_byte(epio, MIN_SRAM_ADDR), 0xAB);
+
+    // Write via the byte API, read back via raw pointer
+    epio_sram_write_byte(epio, MIN_SRAM_ADDR + 1, 0xCD);
+    assert_int_equal(ptr[1], 0xCD);
+
+    epio_free(epio);
+}
+
+// =============================================================================
+// epio_from_apio — new branch coverage
+// =============================================================================
+
+// apply_apio_state() resets pre_instr_count, tx_fifo_count, and
+// rx_fifo_count to zero after applying them.  Verify this for epio_from_apio.
+static void test_from_apio_resets_counts(void **state) {
+    setup_minimal_sm0(state);
+
+    // APIO_SM_JMP_TO_START() will have set pre_instr_count[0][0] = 1 before
+    // we call epio_from_apio().
+    epio_t *epio = epio_from_apio();
+    assert_non_null(epio);
+
+    for (int b = 0; b < NUM_PIO_BLOCKS; b++) {
+        for (int s = 0; s < NUM_SMS_PER_BLOCK; s++) {
+            assert_int_equal(_apio_emulated_pio.pre_instr_count[b][s], 0);
+            assert_int_equal(_apio_emulated_pio.tx_fifo_count[b][s], 0);
+            assert_int_equal(_apio_emulated_pio.rx_fifo_count[b][s], 0);
+        }
+    }
+
+    epio_free(epio);
+}
+
+// Exercise the inner RX FIFO loop (rx_count > 0 path) in apply_apio_state().
+static void test_from_apio_rx_fifo_preload(void **state) {
+    setup_minimal_sm0(state);
+
+    // Directly preload one RX FIFO entry for block 0, SM 0.
+    // epio_from_apio() will push it into epio's RX FIFO.
+    _apio_emulated_pio.rx_fifos[0][0][0]  = 0xDEADBEEF;
+    _apio_emulated_pio.rx_fifo_count[0][0] = 1;
+
+    epio_t *epio = epio_from_apio();
+    assert_non_null(epio);
+
+    assert_int_equal(epio_rx_fifo_depth(epio, 0, 0), 1);
+    assert_int_equal(epio_peek_rx_fifo(epio, 0, 0, 0), 0xDEADBEEF);
+    // Count must be reset after apply
+    assert_int_equal(_apio_emulated_pio.rx_fifo_count[0][0], 0);
+
+    epio_free(epio);
+}
+
+// Exercise the output_block != -1 branch in apply_apio_state().
+static void test_from_apio_output_gpio(void **state) {
+    setup_with_output_gpio(state);
+    epio_t *epio = epio_from_apio();
+    assert_non_null(epio);
+
+    // GPIO 5 should now be under the output control of block 0
+    assert_int_equal(epio_block_can_control_gpio_output(epio, 0, 5), 1);
+    // Adjacent pin was not configured as an output
+    assert_int_equal(epio_block_can_control_gpio_output(epio, 0, 4), 0);
+
+    epio_free(epio);
+}
+
+// =============================================================================
+// epio_update_from_apio tests
+// =============================================================================
+
+// Simulate pio_switch_rom_region: push a value to TX FIFO then execute
+// PULL_BLOCK + MOV_X_OSR as pre-instructions on an already-running SM.
+// Verifies: TX FIFO path, pre-instruction path, and "SM enabled — skip
+// config" branch of apply_apio_state().
+static void test_update_from_apio_pre_instrs_update_x(void **state) {
+    setup_minimal_sm0(state);
+    epio_t *epio = epio_from_apio();
+    assert_non_null(epio);
+
+    // SM 0 is running; X starts at 0
+    assert_int_equal(epio_is_sm_enabled(epio, 0, 0), 1);
+    assert_int_equal(epio_peek_sm_x(epio, 0, 0), 0);
+
+    // Accumulate the update (mirrors what pio_switch_rom_region does)
+    APIO_ASM_CONTINUE(); // no-op in emulation
+    APIO_SET_BLOCK(0);
+    APIO_SET_SM(0);
+    APIO_TXF = 0x12345678;            // tx_fifo_count[0][0] → 1
+    APIO_SM_EXEC_INSTR(APIO_PULL_BLOCK); // pre_instr[0][0][0], count → 1
+    APIO_SM_EXEC_INSTR(APIO_MOV_X_OSR); // pre_instr[0][0][1], count → 2
+
+    epio_update_from_apio(epio);
+
+    // X must now be 0x12345678 (PULL consumed TX entry into OSR, MOV
+    // moved OSR into X)
+    assert_int_equal(epio_peek_sm_x(epio, 0, 0), 0x12345678);
+
+    // SM still running — runtime state otherwise preserved
+    assert_int_equal(epio_is_sm_enabled(epio, 0, 0), 1);
+
+    // Counts reset after apply
+    assert_int_equal(_apio_emulated_pio.pre_instr_count[0][0], 0);
+    assert_int_equal(_apio_emulated_pio.tx_fifo_count[0][0], 0);
+
+    epio_free(epio);
+}
+
+// Simulate pio_setup_address_monitor_pios: add a second SM to an already-live
+// block.  Verifies: new SM gets config applied, new SM is enabled, already-
+// enabled SM 0 is left alone (config skipped, enable call skipped).
+static void test_update_from_apio_new_sm_configured(void **state) {
+    setup_minimal_sm0(state);
+    epio_t *epio = epio_from_apio();
+    assert_non_null(epio);
+
+    assert_int_equal(epio_is_sm_enabled(epio, 0, 0), 1);
+    assert_int_equal(epio_is_sm_enabled(epio, 0, 1), 0);
+    // X is 0: no pre-instructions have modified it
+    assert_int_equal(epio_peek_sm_x(epio, 0, 0), 0);
+
+    // Append SM 1 starting at the next free instruction slot
+    APIO_ASM_CONTINUE(); // no-op in emulation
+    uint8_t offset = _apio_emulated_pio.offset[0];
+    APIO_SET_BLOCK_FROM_VAR(0, offset);
+    APIO_SET_SM(1);
+    APIO_ADD_INSTR(APIO_NOP);
+    APIO_WRAP_BOTTOM();
+    APIO_WRAP_TOP();
+    APIO_SM_CLKDIV_SET(2, 0);
+    APIO_SM_EXECCTRL_SET(0);
+    APIO_SM_SHIFTCTRL_SET(0);
+    APIO_SM_PINCTRL_SET(0);
+    APIO_SM_JMP_TO_START();
+    APIO_END_BLOCK();
+    APIO_ENABLE_SMS(0, 0b11); // enable SM 0 and SM 1
+
+    epio_update_from_apio(epio);
+
+    // SM 0: still enabled, X untouched (no pre-instrs for SM 0)
+    assert_int_equal(epio_is_sm_enabled(epio, 0, 0), 1);
+    assert_int_equal(epio_peek_sm_x(epio, 0, 0), 0);
+
+    // SM 1: now configured and enabled
+    assert_int_equal(epio_is_sm_enabled(epio, 0, 1), 1);
+
+    epio_free(epio);
+}
+
+// After epio_update_from_apio(), all accumulated counts are reset to zero.
+static void test_update_from_apio_counts_reset(void **state) {
+    setup_minimal_sm0(state);
+    epio_t *epio = epio_from_apio();
+    assert_non_null(epio);
+
+    APIO_ASM_CONTINUE();
+    APIO_SET_BLOCK(0);
+    APIO_SET_SM(0);
+    APIO_TXF = 0xABCD1234;
+    APIO_SM_EXEC_INSTR(APIO_PULL_BLOCK);
+    APIO_SM_EXEC_INSTR(APIO_MOV_X_OSR);
+
+    epio_update_from_apio(epio);
+
+    for (int b = 0; b < NUM_PIO_BLOCKS; b++) {
+        for (int s = 0; s < NUM_SMS_PER_BLOCK; s++) {
+            assert_int_equal(_apio_emulated_pio.pre_instr_count[b][s], 0);
+            assert_int_equal(_apio_emulated_pio.tx_fifo_count[b][s], 0);
+            assert_int_equal(_apio_emulated_pio.rx_fifo_count[b][s], 0);
+        }
+    }
+
+    epio_free(epio);
+}
+
+// tx_count > MAX_FIFO_DEPTH: the overflow guard must skip the push entirely.
+// After epio_from_apio() resets counts, directly set an overflow value and
+// verify no entry lands in epio's TX FIFO.
+static void test_update_from_apio_tx_overflow_guard(void **state) {
+    setup_minimal_sm0(state);
+    epio_t *epio = epio_from_apio();
+    assert_non_null(epio);
+
+    uint8_t depth_before = epio_tx_fifo_depth(epio, 0, 0);
+
+    // Bypass the apio macros to force an out-of-range count
+    _apio_emulated_pio.tx_fifo_count[0][0] = MAX_FIFO_DEPTH + 1;
+
+    epio_update_from_apio(epio);
+
+    // No entry should have been pushed
+    assert_int_equal(epio_tx_fifo_depth(epio, 0, 0), depth_before);
+
+    epio_free(epio);
+}
+
+// rx_count > MAX_FIFO_DEPTH: symmetric guard for RX.
+static void test_update_from_apio_rx_overflow_guard(void **state) {
+    setup_minimal_sm0(state);
+    epio_t *epio = epio_from_apio();
+    assert_non_null(epio);
+
+    uint8_t depth_before = epio_rx_fifo_depth(epio, 0, 0);
+
+    _apio_emulated_pio.rx_fifo_count[0][0] = MAX_FIFO_DEPTH + 1;
+
+    epio_update_from_apio(epio);
+
+    assert_int_equal(epio_rx_fifo_depth(epio, 0, 0), depth_before);
+
+    epio_free(epio);
+}
+
+// pre_count > MAX_PRE_INSTRS: guard must skip execution.  Verify by setting
+// up a pre-instruction that would modify X, with an overflow count, and
+// checking that X is not modified and the count is reset to 0 afterwards.
+static void test_update_from_apio_pre_overflow_guard(void **state) {
+    setup_minimal_sm0(state);
+    epio_t *epio = epio_from_apio();
+    assert_non_null(epio);
+
+    uint32_t x_before = epio_peek_sm_x(epio, 0, 0);
+
+    // Set a pre-instruction that would change X, but with an overflow count
+    // so the entire pre-instruction block is skipped.
+    _apio_emulated_pio.pre_instr[0][0][0]  = APIO_MOV_X_NULL; // would zero X
+    _apio_emulated_pio.pre_instr_count[0][0] = MAX_PRE_INSTRS + 1;
+
+    epio_update_from_apio(epio);
+
+    // X must not have changed — pre-instructions were skipped
+    assert_int_equal(epio_peek_sm_x(epio, 0, 0), x_before);
+    // Count reset regardless of overflow
+    assert_int_equal(_apio_emulated_pio.pre_instr_count[0][0], 0);
+
+    epio_free(epio);
+}
+
+// gpio_base not in {0, 16}: the validity guard must skip epio_set_gpiobase().
+// An invalid value must not propagate to epio.
+static void test_update_from_apio_invalid_gpiobase(void **state) {
+    setup_minimal_sm0(state);
+    epio_t *epio = epio_from_apio();
+    assert_non_null(epio);
+
+    // gpiobase for block 1 starts at 0 (default after APIO_ASM_INIT)
+    assert_int_equal(epio_get_gpiobase(epio, 1), 0);
+
+    // Inject an invalid gpiobase for block 1
+    _apio_emulated_pio.gpio_base[1] = 32;
+
+    epio_update_from_apio(epio);
+
+    // Block 1's gpiobase in epio must remain 0 — the invalid value was skipped
+    assert_int_equal(epio_get_gpiobase(epio, 1), 0);
+
+    epio_free(epio);
+}
+
 int main(void) {
     (void)disassembly_basic_pio_apio;
     const struct CMUnitTest tests[] = {
@@ -441,13 +800,28 @@ int main(void) {
         cmocka_unit_test(force_input_low_transfers_via_apio),
         cmocka_unit_test(force_input_high_transfers_via_apio),
         cmocka_unit_test(invert_transfers_via_apio),
-        // New: GPIO pad property propagation
+        // GPIO pad property propagation
         cmocka_unit_test(pull_up_transfers_via_apio),
         cmocka_unit_test(pull_down_explicit_transfers_via_apio),
         cmocka_unit_test(pull_none_transfers_via_apio),
         cmocka_unit_test(input_only_transfers_via_apio),
         cmocka_unit_test(drive_strength_transfers_via_apio),
         cmocka_unit_test(slew_fast_transfers_via_apio),
+        // epio_get_sram_ptr
+        cmocka_unit_test(test_get_sram_ptr_not_null),
+        cmocka_unit_test(test_get_sram_ptr_aliases_sram_api),
+        // epio_from_apio new branch coverage
+        cmocka_unit_test(test_from_apio_resets_counts),
+        cmocka_unit_test(test_from_apio_rx_fifo_preload),
+        cmocka_unit_test(test_from_apio_output_gpio),
+        // epio_update_from_apio
+        cmocka_unit_test(test_update_from_apio_pre_instrs_update_x),
+        cmocka_unit_test(test_update_from_apio_new_sm_configured),
+        cmocka_unit_test(test_update_from_apio_counts_reset),
+        cmocka_unit_test(test_update_from_apio_tx_overflow_guard),
+        cmocka_unit_test(test_update_from_apio_rx_overflow_guard),
+        cmocka_unit_test(test_update_from_apio_pre_overflow_guard),
+        cmocka_unit_test(test_update_from_apio_invalid_gpiobase),
     };
     return cmocka_run_group_tests(tests, NULL, NULL);
 }

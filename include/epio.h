@@ -846,6 +846,26 @@ EPIO_EXPORT void epio_dma_setup_read_pio_chain(
  */
 
 /**
+ * @brief Get a direct pointer to the emulated SRAM buffer.
+ *
+ * Returns the raw backing buffer for epio's emulated SRAM.  The returned
+ * pointer is valid for the lifetime of the epio instance; address @p addr
+ * in the RP2350 memory map corresponds to offset (addr - MIN_SRAM_ADDR) in
+ * this buffer.
+ *
+ * The primary use is to unify the firmware's sram_to_host() backing store
+ * with epio's SRAM after calling epio_from_apio(), so that subsequent
+ * firmware SRAM writes land directly in the running simulation without any
+ * explicit syncing step.
+ *
+ * @param epio  The epio instance.  Must not be NULL.
+ * @return      Pointer to the internal SRAM buffer; never NULL for a valid
+ *              instance.
+ * @see epio_sram_set(), epio_sram_read_byte()
+ */
+EPIO_EXPORT uint8_t *epio_get_sram_ptr(epio_t *epio);
+
+/**
  * @brief Read a byte from the emulated SRAM.
  *
  * @param epio  The epio instance.
@@ -1196,7 +1216,7 @@ EPIO_EXPORT void epio_clear_block_irq(epio_t *epio, uint8_t block, uint8_t irq_n
 
 /**
  * @defgroup apio apio Integration API
- * @brief Functions for creating an epio instance from apio state.
+ * @brief Functions for creating and updating an epio instance from apio state.
  * @{
  */
 
@@ -1207,12 +1227,54 @@ EPIO_EXPORT void epio_clear_block_irq(epio_t *epio, uint8_t block, uint8_t irq_n
  * apio and uses it to initialise and return a fully configured epio instance.
  * This is the recommended entry point when using epio with apio.
  *
+ * After applying all apio state, the accumulated pre_instr_count,
+ * tx_fifo_count, and rx_fifo_count in the apio global state are reset to zero.
+ * This marks those items as consumed, so that a subsequent call to
+ * epio_update_from_apio() sees only the delta accumulated since this call.
+ *
  * Only available when APIO_EMULATION is defined (i.e. on non-RP2350 hosts).
  *
  * @return Pointer to the configured epio instance, or NULL on failure.
- * @see epio_init(), epio_free()
+ * @see epio_init(), epio_free(), epio_update_from_apio()
  */
 EPIO_EXPORT epio_t *epio_from_apio(void);
+
+/**
+ * @brief Update a live epio instance from the current accumulated apio state.
+ *
+ * Applies any apio configuration or state accumulated since the last call to
+ * epio_from_apio() or epio_update_from_apio() to the running epio instance,
+ * without disturbing the live runtime state of already-enabled SMs.
+ *
+ * Specifically:
+ * - PIO instruction memory is updated for all blocks (safe: instructions are
+ *   append-only once written; existing slots are never modified in place).
+ * - SM configuration registers and debug info are applied only to SMs not
+ *   yet enabled in epio, preserving the runtime state (PC, X, Y, ISR, OSR,
+ *   FIFOs, stall, delay) of already-running SMs.
+ * - Pre-instructions, TX FIFO entries, and RX FIFO entries are applied to all
+ *   SMs regardless of enabled state, as these are intentional modifications to
+ *   live SM state (e.g. the PULL/MOV X OSR pair emitted by
+ *   pio_switch_rom_region to atomically update the address SM's X register).
+ * - Newly enabled SMs (those enabled in apio but not yet enabled in epio) are
+ *   started; already-enabled SMs are left alone.
+ * - GPIO configuration is re-applied from the accumulated apio GPIO state.
+ *
+ * After applying, the accumulated pre_instr_count, tx_fifo_count, and
+ * rx_fifo_count in the apio global state are reset to zero so that the next
+ * call sees only the delta.
+ *
+ * Must be called after any firmware function that uses APIO_ASM_CONTINUE() to
+ * extend the PIO configuration of a live epio instance:
+ * - pio_switch_rom_region() — updates the address SM's X register via
+ *   PULL/MOV X OSR pre-instructions.
+ * - pio_setup_address_monitor_pios() — appends two new SMs for CS monitoring
+ *   and address capture.
+ *
+ * @param epio  The live epio instance to update.  Must not be NULL.
+ * @see epio_from_apio()
+ */
+EPIO_EXPORT void epio_update_from_apio(epio_t *epio);
 
 /**
  * @brief Disassemble the instructions of a state machine.

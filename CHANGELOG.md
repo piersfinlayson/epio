@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-06-28
+
+Added `epio_get_sram_ptr()` and `epio_update_from_apio()` methods to give emulators more control.
+
 ## 2026-06-22
 
 Police APIO_ENABLE_PIOS() being called.

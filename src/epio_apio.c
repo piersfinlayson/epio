@@ -4,7 +4,7 @@
 
 // epio - A PIO emulator
 //
-// Functions for creating an epio instance from apio state.
+// Functions for creating and updating an epio instance from apio state.
 
 #if defined(EPIO_WASM)
 #define APIO_LOG_IMPL 1
@@ -13,23 +13,46 @@
 #include <string.h>
 #include <epio_priv.h>
 
-epio_t *epio_from_apio(void) {
-    epio_t *epio = epio_init();
-    if (epio == NULL) {
-        // LCOV_EXCL_START
-        return NULL;
-        // LCOV_EXCL_STOP
-    }
-
-    if (_apio_emulated_pio.pios_enabled != 1) {
-        // LCOV_EXCL_START
-        assert(0 &&
-        "APIO_ENABLE_PIOS() must be called before using PIO blocks");
-        return NULL;
-        // LCOV_EXCL_STOP
-    }
-
-    // Copy instruction memory for each PIO block
+// Internal: Apply the current accumulated apio state to an epio instance.
+//
+// See the doc comment on epio_update_from_apio() in epio.h for the full
+// description of what is applied and what is preserved.
+//
+// SM configuration (registers and debug info) is applied only for SMs not
+// yet enabled in epio, preserving the live runtime state (PC, X, Y, ISR,
+// OSR, FIFOs, stall, delay) of already-running SMs.  This makes the function
+// correct for both callers:
+//
+//   epio_from_apio()        — fresh instance, no SMs enabled → all configs
+//                             applied.
+//   epio_update_from_apio() — live instance, running SMs have their configs
+//                             skipped; only newly-added SMs are configured.
+//
+// Pre-instructions, TX FIFO entries, and RX FIFO entries are always applied
+// regardless of enabled state, because they are intentional modifications to
+// live SM state (e.g. the PULL/MOV X OSR pair emitted by
+// pio_switch_rom_region to atomically update the address SM's X register).
+//
+// After applying all state, pre_instr_count, tx_fifo_count, and
+// rx_fifo_count are reset to zero in the apio global so the next call sees
+// only the delta since this one.
+//
+// Guards kept (validate run-time invariants):
+//   gpio_base == 0 || 16   — only the two RP2350-valid GPIOBASE values are
+//                             forwarded to epio; any other value (programming
+//                             error) is silently skipped rather than applied.
+//   tx/rx/pre count <= MAX — counts written by the apio accumulator macros
+//                             must never overflow; an out-of-range count
+//                             indicates a caller bug, so the entry is skipped.
+//   clkdiv != 0xFFFFFFFF   — 0xFFFFFFFF is the static-initialiser sentinel
+//   first_instr != 0xFF      meaning the field was never set via APIO macros.
+//   enabled_sms != 0xFF      A call to epio_from_apio() before APIO_ASM_INIT()
+//                             would otherwise pass sentinel values to epio.
+//                             All three guards protect against that.
+static void apply_apio_state(epio_t *epio) {
+    // Copy instruction memory for each PIO block.  Safe to overwrite because
+    // instructions are append-only — existing slots are never modified in
+    // place once written.
     for (int block = 0; block < NUM_PIO_BLOCKS; block++) {
         for (int instr = 0; instr < NUM_INSTRS_PER_BLOCK; instr++) {
             epio_set_instr(epio, block, instr,
@@ -37,36 +60,43 @@ epio_t *epio_from_apio(void) {
         }
     }
 
-    // Copy SM configuration and pre-instructions for each block
     for (int block = 0; block < NUM_PIO_BLOCKS; block++) {
-        // GPIOBASE
+        // GPIOBASE: only the two RP2350-valid values (0 and 16) are applied.
         uint32_t gpio_base = _apio_emulated_pio.gpio_base[block];
         if (gpio_base == 0 || gpio_base == 16) {
             epio_set_gpiobase(epio, block, gpio_base);
         }
 
         for (int sm = 0; sm < NUM_SMS_PER_BLOCK; sm++) {
-            // SM configuration registers
-            epio_sm_reg_t reg;
-            reg.clkdiv    = _apio_emulated_pio.pio_sm_reg[block][sm].clkdiv;
-            reg.execctrl  = _apio_emulated_pio.pio_sm_reg[block][sm].execctrl;
-            reg.shiftctrl = _apio_emulated_pio.pio_sm_reg[block][sm].shiftctrl;
-            reg.pinctrl   = _apio_emulated_pio.pio_sm_reg[block][sm].pinctrl;
-            if (reg.clkdiv != 0xFFFFFFFF) {
-                epio_set_sm_reg(epio, block, sm, &reg);
+            // Only apply SM configuration and debug info for SMs not yet
+            // running in epio.  Touching the config of an already-enabled SM
+            // would disturb live runtime state (wrap pointers, shift
+            // thresholds, etc.) and must be avoided.
+            if (!epio_is_sm_enabled(epio, block, sm)) {
+                epio_sm_reg_t reg;
+                reg.clkdiv    = _apio_emulated_pio.pio_sm_reg[block][sm].clkdiv;
+                reg.execctrl  = _apio_emulated_pio.pio_sm_reg[block][sm].execctrl;
+                reg.shiftctrl = _apio_emulated_pio.pio_sm_reg[block][sm].shiftctrl;
+                reg.pinctrl   = _apio_emulated_pio.pio_sm_reg[block][sm].pinctrl;
+                if (reg.clkdiv != 0xFFFFFFFF) {
+                    epio_set_sm_reg(epio, block, sm, &reg);
+                }
+
+                // Debug info (first_instr == 0xFF means not set)
+                uint8_t first = _apio_emulated_pio.first_instr[block][sm];
+                if (first != 0xFF) {
+                    epio_sm_debug_t debug;
+                    debug.first_instr = first;
+                    debug.start_instr = _apio_emulated_pio.start[block][sm];
+                    debug.end_instr   = _apio_emulated_pio.end[block][sm];
+                    epio_set_sm_debug(epio, block, sm, &debug);
+                }
             }
 
-            // Debug info (first_instr == 0xFF means not set)
-            uint8_t first = _apio_emulated_pio.first_instr[block][sm];
-            if (first != 0xFF) {
-                epio_sm_debug_t debug;
-                debug.first_instr = first;
-                debug.start_instr = _apio_emulated_pio.start[block][sm];
-                debug.end_instr   = _apio_emulated_pio.end[block][sm];
-                epio_set_sm_debug(epio, block, sm, &debug);
-            }
-
-            // TX FIFO pre-load
+            // TX FIFO: always applied regardless of SM enabled state.
+            // For example, pio_switch_rom_region pushes a value to the TX
+            // FIFO before its PULL/MOV X OSR pre-instructions even for a
+            // running SM.
             uint8_t tx_count = _apio_emulated_pio.tx_fifo_count[block][sm];
             if (tx_count <= MAX_FIFO_DEPTH) {
                 for (int f = 0; f < tx_count; f++) {
@@ -75,7 +105,7 @@ epio_t *epio_from_apio(void) {
                 }
             }
 
-            // RX FIFO pre-load
+            // RX FIFO: same treatment.
             uint8_t rx_count = _apio_emulated_pio.rx_fifo_count[block][sm];
             if (rx_count <= MAX_FIFO_DEPTH) {
                 for (int f = 0; f < rx_count; f++) {
@@ -84,7 +114,8 @@ epio_t *epio_from_apio(void) {
                 }
             }
 
-            // Pre-instructions (e.g. JMP to start)
+            // Pre-instructions: executed immediately against the live SM
+            // state.  Applied for the same reason as TX FIFO entries.
             uint8_t pre_count = _apio_emulated_pio.pre_instr_count[block][sm];
             if (pre_count <= MAX_PRE_INSTRS) {
                 for (int p = 0; p < pre_count; p++) {
@@ -94,11 +125,14 @@ epio_t *epio_from_apio(void) {
             }
         }
 
-        // Enable SMs
+        // Enable newly-enabled SMs.  Already-enabled SMs are skipped so
+        // epio_enable_sm() is never called redundantly on a running SM.
+        // enabled_sms == 0xFF is the static-initialiser sentinel meaning
+        // APIO_ENABLE_SMS() was never called for this block.
         uint8_t enabled_sms = _apio_emulated_pio.enabled_sms[block];
         if (enabled_sms != 0xFF) {
             for (int sm = 0; sm < NUM_SMS_PER_BLOCK; sm++) {
-                if (enabled_sms & (1 << sm)) {
+                if ((enabled_sms & (1 << sm)) && !epio_is_sm_enabled(epio, block, sm)) {
                     epio_enable_sm(epio, block, sm);
                 }
             }
@@ -153,12 +187,52 @@ epio_t *epio_from_apio(void) {
             epio_set_gpio_force_input_high(epio, pin, 1);
         }
 
-        // Output control
+        // Output control: only set if not already assigned, so that repeated
+        // calls to apply_apio_state() (e.g. epio_from_apio() followed by
+        // epio_update_from_apio()) are idempotent.  epio_set_gpio_output_control()
+        // asserts on a double-assign, which would fire if the apio GPIO state
+        // persists across tests (APIO_ASM_INIT() resets _apio_emulated_pio but
+        // not _apio_emulated_gpios).
         if (_apio_emulated_gpios.output_block[pin] != -1) {
-            epio_set_gpio_output_control(epio, pin,
-                                         (uint8_t)_apio_emulated_gpios.output_block[pin]);
+            uint8_t blk = (uint8_t)_apio_emulated_gpios.output_block[pin];
+            if (!epio_block_can_control_gpio_output(epio, blk, pin)) {
+                epio_set_gpio_output_control(epio, pin, blk);
+            }
         }
     }
 
+    // Reset accumulated counts so the next call to epio_update_from_apio()
+    // sees only the delta since this call.
+    for (int block = 0; block < NUM_PIO_BLOCKS; block++) {
+        for (int sm = 0; sm < NUM_SMS_PER_BLOCK; sm++) {
+            _apio_emulated_pio.pre_instr_count[block][sm] = 0;
+            _apio_emulated_pio.tx_fifo_count[block][sm]   = 0;
+            _apio_emulated_pio.rx_fifo_count[block][sm]   = 0;
+        }
+    }
+}
+
+epio_t *epio_from_apio(void) {
+    epio_t *epio = epio_init();
+    if (epio == NULL) {
+        // LCOV_EXCL_START
+        return NULL;
+        // LCOV_EXCL_STOP
+    }
+
+    if (_apio_emulated_pio.pios_enabled != 1) {
+        // LCOV_EXCL_START
+        assert(0 &&
+        "APIO_ENABLE_PIOS() must be called before using PIO blocks");
+        return NULL;
+        // LCOV_EXCL_STOP
+    }
+
+    apply_apio_state(epio);
     return epio;
+}
+
+void epio_update_from_apio(epio_t *epio) {
+    assert(epio != NULL && "epio_update_from_apio: epio must not be NULL");
+    apply_apio_state(epio);
 }
