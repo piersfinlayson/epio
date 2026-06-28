@@ -2,6 +2,10 @@
 
 ## 2026-06-28
 
+Fixed `apply_apio_state()` clobbering a running SM's in-flight delay when applying injected pre-instructions (e.g. the PULL/MOV X,OSR pair from `pio_switch_rom_region`). The pending delay is now preserved across pre-instruction execution, so switching the served region on a live SM no longer phase-shifts it against the bus.
+
+## 2026-06-28
+
 Added `epio_get_sram_ptr()` and `epio_update_from_apio()` methods to give emulators more control.
 
 ## 2026-06-22

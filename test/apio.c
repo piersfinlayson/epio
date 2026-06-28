@@ -791,6 +791,85 @@ static void test_update_from_apio_invalid_gpiobase(void **state) {
     epio_free(epio);
 }
 
+// =============================================================================
+// Regression: pre-instructions must preserve the SM's in-flight delay
+// =============================================================================
+
+// pio_switch_rom_region injects PULL_BLOCK + MOV X, OSR as pre-instructions to
+// atomically update a *running* SM's X register.  Those instructions must not
+// disturb the SM's in-flight delay: epio_exec_instr_sm() unconditionally writes
+// SM.delay at the end of every instruction, so without a guard the injected pair
+// clobbers a pending delay (e.g. the [2] on the One ROM address SM's
+// `in x, 21 [2]`), permanently phase-shifting the SM against the bus and
+// corrupting every served byte whose address toggles the affected line.
+//
+// This parks the SM mid-delay, injects the same pre-instruction pair, and
+// verifies the remaining delay is honoured (the post-delay marker does NOT run
+// early) while the X update still takes effect.  It also verifies the delay is
+// preserved, not frozen: once it drains, the marker runs as normal.
+static void test_update_from_apio_preserves_inflight_delay(void **state) {
+    (void)state;
+
+    // SM 0 = [ NOP, NOP[3], MOV X,NULL, NOP ].  NOP[3] leaves a 3-cycle delay
+    // pending after it executes, with PC parked on the MOV X,NULL marker.  The
+    // trailing NOP keeps the wrap point beyond the marker so bounded stepping
+    // never wraps.
+    APIO_ENABLE_PIOS();
+    APIO_ASM_INIT();
+    APIO_CLEAR_ALL_IRQS();
+
+    APIO_SET_BLOCK(0);
+    APIO_SET_SM(0);
+    APIO_WRAP_BOTTOM();
+    APIO_ADD_INSTR(APIO_NOP);                    // instr 0
+    APIO_ADD_INSTR(APIO_ADD_DELAY(APIO_NOP, 3)); // instr 1: NOP [3]
+    APIO_ADD_INSTR(APIO_MOV_X_NULL);             // instr 2: marker (X = 0)
+    APIO_ADD_INSTR(APIO_NOP);                    // instr 3: tail (wrap guard)
+    APIO_WRAP_TOP();
+    APIO_SM_CLKDIV_SET(1, 0);
+    APIO_SM_EXECCTRL_SET(0);
+    APIO_SM_SHIFTCTRL_SET(0);
+    APIO_SM_PINCTRL_SET(0);
+    APIO_SM_JMP_TO_START();
+    APIO_END_BLOCK();
+    APIO_ENABLE_SMS(0, (1 << 0));
+
+    epio_t *epio = epio_from_apio();
+    assert_non_null(epio);
+    assert_int_equal(epio_is_sm_enabled(epio, 0, 0), 1);
+
+    // Execute instr 0 (NOP) and instr 1 (NOP[3]): leaves a 3-cycle delay
+    // pending with PC parked on the marker (instr 2).
+    epio_step_cycles(epio, 2);
+    assert_int_equal(epio_peek_sm_x(epio, 0, 0), 0);
+
+    // Inject the pio_switch_rom_region pre-instruction pair onto the running SM.
+    APIO_ASM_CONTINUE(); // no-op in emulation
+    APIO_SET_BLOCK(0);
+    APIO_SET_SM(0);
+    APIO_TXF = 0x12345678;
+    APIO_SM_EXEC_INSTR(APIO_PULL_BLOCK);
+    APIO_SM_EXEC_INSTR(APIO_MOV_X_OSR);
+    epio_update_from_apio(epio);
+
+    // The X update must have taken effect.
+    assert_int_equal(epio_peek_sm_x(epio, 0, 0), 0x12345678);
+
+    // The in-flight delay must be intact: one more cycle decrements it but must
+    // NOT execute the marker.  Pre-fix the injected pair clobbers the delay to
+    // 0, the marker runs immediately, and X is reset to 0 here — this assert is
+    // the one that fails without the fix.
+    epio_step_cycles(epio, 1);
+    assert_int_equal(epio_peek_sm_x(epio, 0, 0), 0x12345678);
+
+    // Preserved, not frozen: once the delay drains (two more cycles, then a
+    // fourth to execute) the marker runs and resets X to 0.
+    epio_step_cycles(epio, 3);
+    assert_int_equal(epio_peek_sm_x(epio, 0, 0), 0);
+
+    epio_free(epio);
+}
+
 int main(void) {
     (void)disassembly_basic_pio_apio;
     const struct CMUnitTest tests[] = {
@@ -822,6 +901,7 @@ int main(void) {
         cmocka_unit_test(test_update_from_apio_rx_overflow_guard),
         cmocka_unit_test(test_update_from_apio_pre_overflow_guard),
         cmocka_unit_test(test_update_from_apio_invalid_gpiobase),
+        cmocka_unit_test(test_update_from_apio_preserves_inflight_delay),
     };
     return cmocka_run_group_tests(tests, NULL, NULL);
 }
