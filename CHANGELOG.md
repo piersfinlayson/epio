@@ -1,5 +1,9 @@
 # Changelog
 
+## 2026-07-26
+
+Added `epio_dma_setup_capture_pio_ring()`: a capture-mode DMA channel that drains a source state machine's RX FIFO into a circular ring buffer in SRAM, advancing an exposed write position (wrapping within the ring), one entry per configurable transfer latency. This models the RP2350 address-monitor DMA (PIO RX FIFO -> circular SRAM buffer), complementing the existing serving-path `epio_dma_setup_read_pio_chain()`. Added `epio_dma_capture_write_slot()` to expose the channel's live host write pointer, so a consumer can observe how far the ring has filled without polling every cycle.
+
 ## 2026-06-28
 
 Fixed `apply_apio_state()` clobbering a running SM's in-flight delay when applying injected pre-instructions (e.g. the PULL/MOV X,OSR pair from `pio_switch_rom_region`). The pending delay is now preserved across pre-instruction execution, so switching the served region on a live SM no longer phase-shifts it against the bus.

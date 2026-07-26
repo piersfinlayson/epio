@@ -833,6 +833,52 @@ EPIO_EXPORT void epio_dma_setup_read_pio_chain(
     uint8_t bit_mode
 );
 
+/**
+ * @brief Configure a DMA channel for PIO-capture into a circular SRAM ring.
+ *
+ * Sets up a single "capture" DMA channel that drains the source state
+ * machine's RX FIFO into a circular ring buffer in emulated SRAM, mirroring
+ * the RP2350 address-monitor DMA.  Each pushed word is written into the ring
+ * (as an 8-, 16- or 32-bit entry) @p src_cycles cycles after it is popped, and
+ * the channel's write position advances, wrapping within the ring.  A consumer
+ * can poll the write position to observe how far the ring has filled.
+ *
+ * @param epio           The epio instance.
+ * @param dma_chan       DMA channel number (0 to NUM_DMA_CHANNELS-1).
+ * @param src_block      PIO block index of the source SM (0 to NUM_PIO_BLOCKS-1).
+ * @param src_sm         Source SM index (0 to NUM_SMS_PER_BLOCK-1).
+ * @param src_cycles     Transfer latency in cycles (>= 1).
+ * @param ring_base      RP2350 SRAM address of the ring buffer.  Must be
+ *                       aligned to the ring size (1 << @p ring_size_log2).
+ * @param ring_size_log2 Log2 of the ring size in bytes.
+ * @param bit_mode       Entry size in bits: 8, 16 or 32.
+ */
+EPIO_EXPORT void epio_dma_setup_capture_pio_ring(
+    epio_t *epio,
+    uint8_t dma_chan,
+    uint8_t src_block,
+    uint8_t src_sm,
+    uint8_t src_cycles,
+    uint32_t ring_base,
+    uint8_t ring_size_log2,
+    uint8_t bit_mode
+);
+
+/**
+ * @brief Get the address of a capture channel's live host write pointer.
+ *
+ * Returns a pointer to the capture channel's internal host pointer, which
+ * tracks the current ring write position and advances (wrapping) as the ring
+ * fills.  Intended for emulator test seams that need to observe how far a
+ * capture channel has written without polling every cycle.
+ *
+ * @param epio      The epio instance.
+ * @param dma_chan  A DMA channel previously configured with
+ *                  epio_dma_setup_capture_pio_ring().
+ * @return          Address of the channel's live host write pointer.
+ */
+EPIO_EXPORT uint8_t **epio_dma_capture_write_slot(epio_t *epio, uint8_t dma_chan);
+
  /** @} */
 
 /**
