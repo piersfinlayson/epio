@@ -10,9 +10,24 @@
 #include <string.h>
 #include <epio_priv.h>
 
+// Alignment of the emulated SRAM buffer.  A DMA ring buffer must be aligned to
+// its size (up to the 2^15 maximum the RING_SIZE field encodes).  Aligning the
+// buffer base to that maximum means a ring placed at a ring-size-aligned SRAM
+// offset is also aligned in host address space, so callers that validate a
+// host ring pointer's alignment (as the firmware does) behave as they would
+// against the fixed, highly-aligned SRAM base on real hardware.
+#define SRAM_ALIGN 32768u
+
 // Internal: allocate and zero-initialise the emulated SRAM buffer.
 uint8_t *epio_sram_init(epio_t *epio) {
-    epio->sram = calloc(1, SRAM_SIZE);
+    size_t alloc_size = ((SRAM_SIZE + (SRAM_ALIGN - 1u)) / SRAM_ALIGN) * SRAM_ALIGN;
+    epio->sram = (uint8_t *)aligned_alloc(SRAM_ALIGN, alloc_size);
+    // LCOV_EXCL_START
+    if (epio->sram == NULL) {
+        return NULL;
+    }
+    // LCOV_EXCL_STOP
+    memset(epio->sram, 0, alloc_size);
     return epio->sram;
 }
 
