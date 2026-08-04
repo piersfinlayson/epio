@@ -6,6 +6,11 @@
 #
 
 TOOLCHAIN ?= /usr/bin
+
+# Version of apio to build against.  See README.md - remove the apio/ directory
+# after changing this, so it is re-cloned.
+APIO_VERSION ?= v0.2.0
+
 CC := $(TOOLCHAIN)/arm-none-eabi-gcc
 LD := $(TOOLCHAIN)/arm-none-eabi-gcc
 OBJCOPY := $(TOOLCHAIN)/arm-none-eabi-objcopy
@@ -86,7 +91,8 @@ clean: clean-segger-rtt
 
 apio:
 	@if [ ! -d "$@" ]; then \
-		git clone https://github.com/piersfinlayson/apio.git; \
+		echo "- Cloning apio $(APIO_VERSION)"; \
+		git -c advice.detachedHead=false clone --quiet --depth 1 --branch $(APIO_VERSION) https://github.com/piersfinlayson/apio.git; \
 	fi
 
 clean-apio-src:

@@ -71,6 +71,38 @@ Start [here](https://piers.rocks/epio/topics.html).
 
 See [the GitHub repo](https://github.com/piersfinlayson/epio).
 
+## Versioning
+
+`epio` follows [semantic versioning](https://semver.org/), with each release tagged in git.  While the major version is 0, breaking changes are released in a new minor version, and additions and fixes in a new patch version.  See [CHANGELOG.md](CHANGELOG.md) for what changed in each release.
+
+`main` is not a release branch, and may take breaking changes at any time.  Pin your project to a tag:
+
+```bash
+git clone --depth 1 --branch v0.2.0 https://github.com/piersfinlayson/epio.git
+```
+
+If your project clones `epio` from a `Makefile`, keep the version in a variable, so it is visible and easy to bump:
+
+```make
+EPIO_VERSION ?= v0.2.0
+
+epio:
+	@if [ ! -d "$@" ]; then \
+		git -c advice.detachedHead=false clone --quiet --depth 1 \
+			--branch $(EPIO_VERSION) https://github.com/piersfinlayson/epio.git; \
+	fi
+```
+
+Checking out a tag leaves the repository with a detached `HEAD`, which is what you want for a vendored copy - the contents are then frozen at that release.  The `-c advice.detachedHead=false` just suppresses git's advice message about it, to keep the build output readable.
+
+Note that this target will not update an existing checkout - after bumping `EPIO_VERSION`, remove the `epio/` directory so it is re-cloned.
+
+### apio compatibility
+
+`epio` v0.2.0 requires [`apio`](https://github.com/piersfinlayson/apio) v0.2.0 or later, as `epio_from_apio()` reads GPIO pull, drive strength and slew rate state that earlier versions of `apio` do not track.
+
+`epio`'s own build clones `apio` at the version given by `APIO_VERSION` in the [`Makefile`](Makefile).  If your project already vendors `apio`, make sure it is pinned to a compatible version too - the two are built from source together, so a mismatch shows up as a compile error in `apio.h` rather than anything more helpful.
+
 ## Requirements
 
 In order to use `epio` for emulation, you can either use `apio` to set up your PIO programs, or manually configure the `epio` instance to match the state of your PIOs.

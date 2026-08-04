@@ -1,5 +1,34 @@
 # Changelog
 
+## v0.2.0 - 2026-06-28
+
+First tagged release.  Covers everything in the dated entries below.
+
+Requires `apio` **v0.2.0** or later.  `epio_from_apio()` reads the `pull_up`,
+`pull_down`, `input_only`, `drive_strength` and `slew_fast` fields of
+`_apio_emulated_gpios`, which earlier versions of `apio` do not provide.
+
+**Breaking** (relative to untagged `main` before this release):
+
+- `epio_init_gpios()` now defaults all pins to pull-down, 4 mA drive and slow
+  slew, matching the RP2350 hardware reset state.  Previously all pins defaulted
+  to pull-up.  This is a silent behavioural change - it produces no compiler
+  diagnostic.
+- `APIO_ENABLE_PIOS()` must now be called before `APIO_ASM_INIT()`.  Code that
+  omitted it was already failing to enable the PIO blocks on real hardware.
+- `epio_drive_gpios_ext()` now restores undriven pins to their configured pull
+  state, rather than unconditionally to 1.
+
+Added:
+
+- GPIO pull, drive strength and slew rate emulation, with the associated
+  `epio_set_*` / `epio_get_*` accessors.
+- Float mode control for undriven `PULL_NONE` pins: `epio_set_float_mode()` and
+  `epio_set_float_seed()`.
+- `epio_read_pull_up_pins()` and `epio_read_pull_down_pins()`.
+- `epio_get_sram_ptr()` and `epio_update_from_apio()`, giving emulators more
+  direct control.
+
 ## 2026-06-28
 
 Fixed `apply_apio_state()` clobbering a running SM's in-flight delay when applying injected pre-instructions (e.g. the PULL/MOV X,OSR pair from `pio_switch_rom_region`). The pending delay is now preserved across pre-instruction execution, so switching the served region on a live SM no longer phase-shifts it against the bus.

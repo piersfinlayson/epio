@@ -7,6 +7,10 @@ CC := gcc
 AR := ar
 WASM_CC := emcc  # emscripten
 
+# Version of apio to build against.  See README.md - remove the apio/ directory
+# after changing this, so it is re-cloned.
+APIO_VERSION ?= v0.2.0
+
 LIB_BUILD_DIR := build/lib
 LIB := build/libepio.a
 WASM_BUILD_DIR := build/wasm
@@ -138,7 +142,8 @@ $(WASM_LIB): $(WASM_OBJS) | $(WASM_BUILD_DIR)
 
 apio:
 	@if [ ! -d "$@" ]; then \
-		git clone https://github.com/piersfinlayson/apio.git; \
+		echo "- Cloning apio $(APIO_VERSION)"; \
+		git -c advice.detachedHead=false clone --quiet --depth 1 --branch $(APIO_VERSION) https://github.com/piersfinlayson/apio.git; \
 	fi
 
 hosted-example: lib
