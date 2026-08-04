@@ -91,7 +91,15 @@ typedef struct {
 
 // DMA state for a single DMA channel
 //
-// Strictly this a pair of channels.
+// A channel is one of two kinds:
+//  - read-PIO-chain (capture == 0): the serving path, a pair of channels that
+//    move a word from one SM's RX FIFO, through an SRAM lookup, into another
+//    SM's TX FIFO.  Uses the read_*/write_* fields.
+//  - capture (capture == 1): the address-monitor path, a single channel that
+//    drains the source SM's RX FIFO into a circular ring buffer in SRAM,
+//    exposing the advancing write position via write_addr.  Mirrors the
+//    RP2350 address-monitor DMA.  Uses read_block/read_sm/read_cycles as the
+//    source and the ring_*/write_addr/cap_* fields as the destination.
 typedef struct {
     uint8_t setup;
     uint8_t read_block;
@@ -105,6 +113,15 @@ typedef struct {
     uint8_t bit_mode;
     uint32_t read_addr;
     uint32_t read_value;
+
+    // Capture-mode (capture == 1) fields
+    uint8_t  capture;      // 1 = capture channel (PIO RX FIFO -> SRAM ring)
+    uint32_t ring_base;    // RP2350 SRAM address of the ring buffer
+    uint32_t ring_size;    // ring size in bytes (power of two)
+    uint32_t write_addr;   // current ring write position (RP2350 address)
+    uint8_t *cap_write_host; // host pointer to the current ring write position
+    uint32_t cap_value;    // value latched from the RX FIFO awaiting commit
+    uint8_t  cap_delay;    // transfer-latency countdown for the latched value
 } epio_dma_state_t;
 
 // GPIO states on the emulated RP2350
