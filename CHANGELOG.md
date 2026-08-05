@@ -1,6 +1,6 @@
 # Changelog
 
-## v0.2.0 - 2026-06-28
+## v0.2.0 - 2026-07-27
 
 First tagged release.  Covers everything in the dated entries below.
 
@@ -28,6 +28,14 @@ Added:
 - `epio_read_pull_up_pins()` and `epio_read_pull_down_pins()`.
 - `epio_get_sram_ptr()` and `epio_update_from_apio()`, giving emulators more
   direct control.
+- `epio_dma_setup_capture_pio_ring()`: a capture-mode DMA channel draining a
+  source SM's RX FIFO into a circular SRAM ring, modelling the RP2350 address
+  monitor path.  `epio_dma_capture_write_slot()` exposes the live host write
+  position, so a consumer can see how far the ring has filled without polling
+  every cycle.
+- The emulated SRAM buffer is now aligned to the maximum DMA ring size (2^15),
+  so a ring placed at a ring-size-aligned SRAM offset is also aligned in host
+  address space, rather than depending on where `calloc` happened to place it.
 
 ## 2026-07-27
 
