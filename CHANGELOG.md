@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.2.1 - 2026-08-20
+
+Requires `apio` **v0.3.0** or later.  `apio` v0.3.0 makes `APIO_RXF` a read on
+both a device and a host, where the emulated form used to append a word instead,
+and epio's own tests were the only thing in either repository writing through
+it.  A word is staged in an emulated RX FIFO with `epio_push_rx_fifo()`, which
+is what the rest of the tests already did.
+
+No change to epio's API or behaviour - the library never used those macros, only
+the tests did.
+
 ## v0.2.0 - 2026-07-27
 
 First tagged release.  Covers everything in the dated entries below.

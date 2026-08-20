@@ -9,7 +9,7 @@ WASM_CC := emcc  # emscripten
 
 # Version of apio to build against.  See README.md - remove the apio/ directory
 # after changing this, so it is re-cloned.
-APIO_VERSION ?= v0.2.0
+APIO_VERSION ?= v0.3.0
 
 LIB_BUILD_DIR := build/lib
 LIB := build/libepio.a

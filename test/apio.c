@@ -76,13 +76,16 @@ static void gpiobase_16(void **state) {
     epio_free(epio);
 }
 
+// An SM's RX FIFO is what the program put there, and a program that has not
+// run has put nothing.  A word only reaches epio's RX FIFO by being pushed
+// into it - see test_from_apio_rx_fifo_preload for that path, and
+// epio_push_rx_fifo for a test that wants to stage one.
 void test_rxf_initial_value(void **state) {
     setup_basic_pio_apio(state);
     epio_t *epio = epio_from_apio();
     assert_non_null(epio);
 
-    uint32_t rxf = epio_peek_rx_fifo(epio, 0, 0, 0);
-    assert_int_equal(rxf, 0xFFFFFFFF);
+    assert_int_equal(epio_rx_fifo_depth(epio, 0, 0), 0);
 
     epio_free(epio);
 }
@@ -640,6 +643,74 @@ static void test_update_from_apio_pre_instrs_update_x(void **state) {
     epio_free(epio);
 }
 
+// A full TX FIFO discards the word written to it, as a device's does, rather
+// than running past the end of the row.
+//
+// The arming half is the four words that do fit - a bound that rejected
+// everything would pass a test that only checked the fifth was dropped.
+static void test_txf_full_discards_and_counts(void **state) {
+    setup_minimal_sm0(state);
+
+    APIO_SET_BLOCK(0);
+    APIO_SET_SM(0);
+
+    for (uint32_t ii = 0; ii < APIO_MAX_FIFO_DEPTH; ii++) {
+        APIO_TXF = 0x1000 + ii;
+    }
+    assert_int_equal(_apio_emulated_pio.tx_fifo_count[0][0], APIO_MAX_FIFO_DEPTH);
+    assert_int_equal(_apio_emulated_pio.tx_fifo_overflow[0][0], 0);
+
+    // One more than fits.  The queued words stay, the new one goes.
+    APIO_TXF = 0xDEADBEEF;
+
+    assert_int_equal(_apio_emulated_pio.tx_fifo_count[0][0], APIO_MAX_FIFO_DEPTH);
+    assert_int_equal(_apio_emulated_pio.tx_fifo_overflow[0][0], 1);
+    for (uint32_t ii = 0; ii < APIO_MAX_FIFO_DEPTH; ii++) {
+        assert_int_equal(_apio_emulated_pio.tx_fifos[0][0][ii], 0x1000 + ii);
+    }
+}
+
+// APIO_TXF_AT reaches a named SM's FIFO, and leaves the program bookkeeping
+// APIO_SET_SM would have reset exactly where it was.
+static void test_txf_at_addresses_without_touching_the_assembler(void **state) {
+    setup_minimal_sm0(state);
+
+    APIO_SET_BLOCK(0);
+    APIO_SET_SM(0);
+
+    uint8_t start_before = __pio_start[0][0];
+    uint8_t end_before = __pio_end[0][0];
+    uint8_t wrap_before = __pio_wrap_top[0][0];
+
+    APIO_TXF_AT(0, 1) = 0xC0FFEE;
+
+    // The word landed on SM 1, not on the SM the assembler is building.
+    assert_int_equal(_apio_emulated_pio.tx_fifo_count[0][1], 1);
+    assert_int_equal(_apio_emulated_pio.tx_fifos[0][1][0], 0xC0FFEE);
+    assert_int_equal(_apio_emulated_pio.tx_fifo_count[0][0], 0);
+
+    // And SM 0's program state is untouched, which is what going through
+    // APIO_SET_SM would have destroyed.
+    assert_int_equal(__pio_start[0][0], start_before);
+    assert_int_equal(__pio_end[0][0], end_before);
+    assert_int_equal(__pio_wrap_top[0][0], wrap_before);
+}
+
+// APIO_RXF_AT reads without popping, and an SM that has produced nothing
+// reads as zero rather than as whatever the array was initialised to.
+static void test_rxf_at_reads_without_popping(void **state) {
+    setup_minimal_sm0(state);
+
+    assert_int_equal(APIO_RXF_AT(0, 0), 0);
+
+    _apio_emulated_pio.rx_fifos[0][0][0] = 0xABCDEF01;
+    _apio_emulated_pio.rx_fifo_count[0][0] = 1;
+
+    assert_int_equal(APIO_RXF_AT(0, 0), 0xABCDEF01);
+    assert_int_equal(APIO_RXF_AT(0, 0), 0xABCDEF01);
+    assert_int_equal(_apio_emulated_pio.rx_fifo_count[0][0], 1);
+}
+
 // Simulate pio_setup_address_monitor_pios: add a second SM to an already-live
 // block.  Verifies: new SM gets config applied, new SM is enabled, already-
 // enabled SM 0 is left alone (config skipped, enable call skipped).
@@ -896,6 +967,9 @@ int main(void) {
         // epio_update_from_apio
         cmocka_unit_test(test_update_from_apio_pre_instrs_update_x),
         cmocka_unit_test(test_update_from_apio_new_sm_configured),
+        cmocka_unit_test(test_txf_full_discards_and_counts),
+        cmocka_unit_test(test_txf_at_addresses_without_touching_the_assembler),
+        cmocka_unit_test(test_rxf_at_reads_without_popping),
         cmocka_unit_test(test_update_from_apio_counts_reset),
         cmocka_unit_test(test_update_from_apio_tx_overflow_guard),
         cmocka_unit_test(test_update_from_apio_rx_overflow_guard),

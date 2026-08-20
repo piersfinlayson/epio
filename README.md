@@ -78,13 +78,13 @@ See [the GitHub repo](https://github.com/piersfinlayson/epio).
 `main` is not a release branch, and may take breaking changes at any time.  Pin your project to a tag:
 
 ```bash
-git clone --depth 1 --branch v0.2.0 https://github.com/piersfinlayson/epio.git
+git clone --depth 1 --branch v0.2.1 https://github.com/piersfinlayson/epio.git
 ```
 
 If your project clones `epio` from a `Makefile`, keep the version in a variable, so it is visible and easy to bump:
 
 ```make
-EPIO_VERSION ?= v0.2.0
+EPIO_VERSION ?= v0.2.1
 
 epio:
 	@if [ ! -d "$@" ]; then \
@@ -99,7 +99,7 @@ Note that this target will not update an existing checkout - after bumping `EPIO
 
 ### apio compatibility
 
-`epio` v0.2.0 requires [`apio`](https://github.com/piersfinlayson/apio) v0.2.0 or later, as `epio_from_apio()` reads GPIO pull, drive strength and slew rate state that earlier versions of `apio` do not track.
+`epio` v0.2.1 requires [`apio`](https://github.com/piersfinlayson/apio) v0.3.0 or later.  `epio_from_apio()` reads GPIO pull, drive strength and slew rate state that `apio` did not track before v0.2.0, and epio's tests stage RX FIFO words in a way that `apio` v0.3.0 changed.
 
 `epio`'s own build clones `apio` at the version given by `APIO_VERSION` in the [`Makefile`](Makefile).  If your project already vendors `apio`, make sure it is pinned to a compatible version too - the two are built from source together, so a mismatch shows up as a compile error in `apio.h` rather than anything more helpful.
 
